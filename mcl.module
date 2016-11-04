@@ -1,0 +1,377 @@
+<?php
+// $Id$
+/**
+ * @file
+ * Use this module
+ */
+/**
+ * Global variables.
+ */
+/**
+ * Implementation of hook_init().
+ */
+function mcl_init() {
+  $module_path = drupal_get_path('module', 'mcl');
+
+  // Registers autoloader.
+  require_once "$module_path/includes/class/mcl_class_loader.class.inc";
+  $bims_autoloader = new MCL_CLASS_LOADER($module_path);
+  $bims_autoloader->register();
+
+  // Includes .inc file.
+  require_once("$module_path/includes/mcl.inc");
+
+  // Adds libraries.
+  drupal_add_library('system', 'drupal.ajax');
+  drupal_add_library('system', 'jquery');
+  drupal_add_library('system', 'jquery.form');
+  drupal_add_library('system', 'drupal.collapse');
+
+  // Adds javascript and css files.
+  drupal_add_js("$module_path/theme/js/mcl.js");
+  drupal_add_css("$module_path/theme/css/mcl.css");
+}
+
+/**
+ * Implementation of hook_permission().
+ */
+function mcl_permission() {
+  return array(
+    'view_mcl' => array(
+      'title' => t('View MCL'),
+      'description' => t('Allow users to view MCL'),
+    ),
+    'admin_mcl' => array(
+      'title' => t('Administer MCL'),
+      'description' => t('Allow users to perform administrative tasks for MCL'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_access().
+ */
+function mcl_access($access_args) {
+  if (user_access($access_args)) {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/*
+* Implementation of hook_theme().
+*/
+function mcl_theme () {
+  $template_path = drupal_get_path('module', 'mcl') . '/theme/templates';
+  return array();
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function mcl_cron() {}
+
+/**
+ * Implementation of hook_menu().
+ */
+function mcl_menu() {
+  $items = array();
+
+  // MCL ADMIN PAGES.
+  $weight = 0;
+  $items['admin/mcl'] = array(
+    'title' => 'MCL',
+    'description' => 'Admin page for Mainlab Chado Loader',
+    'page callback' => 'mcl_admin_page',
+    'access arguments' => array('admin_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/admin/mcl.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/mcl/template_type'] = array(
+    'title' => 'Template Type',
+    'description' => 'The data template types for MCL',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_admin_template_type_form'),
+    'access arguments' => array('admin_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/admin/mcl.admin.template_type.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => $weight++,
+  );
+  $items['admin/mcl/template'] = array(
+    'title' => 'Template',
+    'description' => 'The data templates for MCL',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_admin_template_form'),
+    'access arguments' => array('admin_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/admin/mcl.admin.template.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => $weight++,
+  );
+  $items['admin/mcl/user'] = array(
+    'title' => 'User',
+    'description' => 'Manage users for MCL',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_admin_user_form'),
+    'access arguments' => array('admin_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/admin/mcl.admin.user.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => $weight++,
+  );
+  $items['admin/mcl/global_var'] = array(
+    'title' => 'Variables',
+    'description' => 'MCL global variables',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_admin_global_var_form'),
+    'access arguments' => array('admin_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/admin/mcl.admin.global_var.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => $weight++,
+  );
+  $items['admin/mcl/global_var/edit'] = array(
+    'title' => 'Variables',
+    'description' => 'Edit MCL global variables',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_admin_global_var_edit_form', 4),
+    'access arguments' => array('admin_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/admin/mcl.admin.global_var.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => $weight++,
+  );
+  $items['admin/mcl/config'] = array(
+    'title' => 'Configuration',
+    'description' => 'The configuration for MCL',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_admin_config_form'),
+    'access arguments' => array('admin_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/admin/mcl.admin.config.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => $weight++,
+  );
+
+  // MCL PAGES.
+  $items['mcl'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_form'),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/form/mcl.form.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['mcl/drush'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_drush_form'),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/form/mcl.drush.form.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['mcl/upload_data'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_upload_data_form'),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/form/mcl.upload_data.form.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['mcl/job_view'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_job_view_form', 2),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/form/mcl.job_view.form.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['mcl/delete_job/%'] = array(
+    'page callback' => 'mcl_delete_job',
+    'page arguments' => array(2),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'type' => MENU_CALLBACK,
+  );
+  $items['mcl/template_list'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_template_list_form'),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/form/mcl.template_list.form.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['mcl/template/view/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_template_form', 3),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/form/mcl.template.form.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['mcl/template/download'] = array(
+    'page callback' => 'mcl_download_template',
+    'page arguments' => array(3),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'type' => MENU_CALLBACK,
+  );
+
+  // Download a file.
+  $items['mcl/download_file/%'] = array(
+    'access arguments' => array('view_mcl'),
+    'page callback' => 'mcl_download_file',
+    'page arguments' => array(2),
+    'access callback' => 'mcl_access',
+    'type' => MENU_CALLBACK,
+  );
+
+  // Dowloading log files.
+  $items['mcl/download_log/%'] = array(
+    'access arguments' => array('view_mcl'),
+    'page callback' => 'mcl_download_log',
+    'page arguments' => array(2),
+    'access callback' => 'mcl_access',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/************************************************/
+/* MCL configuration setting */
+/************************************************/
+/**
+ * function for retreiving a MCL configuration setting.
+ *
+ * @param $setting
+ *   The name of the configuration setting to retreive
+ */
+function mcl_get_config_setting($setting) {
+  switch($setting) {
+    case 'mcl_file_dir':
+      $default_mcl_file_dir = realpath('./') . '/' .  variable_get('file_public_path', conf_path() . '/files');
+      return variable_get('mcl_file_dir', $default_mcl_file_dir);
+      break;
+    case 'mcl_working_dir':
+      $default_mcl_working_dir = realpath('./') . '/' .  variable_get('file_public_path', conf_path() . '/files') . '/mcl';
+      return variable_get('mcl_working_dir', $default_mcl_working_dir);
+      break;
+    case 'mcl_working_url':
+      $default_mcl_working_url = realpath('./') . '/' .  variable_get('file_public_path', conf_path() . '/files') . '/mcl/working';
+      return variable_get('mcl_working_url', $default_mcl_working_url);
+      break;
+    case 'mcl_library_dir':
+      $default_mcl_library_dir = realpath('./') . '/' . '/sites/all/libraries';
+      return variable_get('mcl_library_dir', $default_mcl_library_dir);
+      break;
+  }
+}
+
+/************************************************/
+/* CALLBACK FUNCTIONS                           */
+/************************************************/
+/**
+ * Delete a job.
+ */
+function mcl_delete_job($job_id) {
+
+  // Gets the MCL_JOB.
+	$mcl_job = MCL_JOB::byKey(array('job_id' => $job_id));
+  if ($mcl_job) {
+
+    // Deletes the job.
+    if ($mcl_job->delete()) {
+      drupal_set_message("The job ($job_id) has been deleted successfully.");
+    }
+    else {
+      drupal_set_message("Error : Failed to delete the job ($job_id).");
+    }
+  }
+  else {
+    drupal_set_message("Error : Cannot found a job for Job ID ($job_id).");
+  }
+  $commands = array();
+  print ajax_render($commands);
+}
+
+/**
+ * Generates a template in an Excel file for downloading.
+ */
+function mcl_download_template($template_id) {
+
+  // Generates template file in Excel format.
+  $args = array(
+    'template_id' => $template_id,
+    'type'        => 'online',
+  );
+  mcl_download_template_excel($args);
+}
+
+/**
+ * Generates a template in an Excel file for downloading.
+ *
+ * @return boolean
+ */
+function mcl_download_template_excel($args) {
+
+  // Gets parameters.
+  $template_id = array_key_exists('template_id', $args) ? $args['template_id'] : '';
+  $version     = array_key_exists('version', $args)     ? $args['version']     : 'Excel2007';
+  $type        = array_key_exists('type', $args)        ? $args['type']        : 'online';
+  $filepath    = array_key_exists('filepath', $args)    ? $args['filepath']    : '';
+
+  // Returns if template ID is empty.
+  if (!$template_id) {
+    return FALSE;
+  }
+
+  // Gets the template.
+  $mcl_template = MCL_TEMPLATE::getTemplateByID($template_id);
+  $filename = 'mcl_template_' . $mcl_template->getTemplate() . '.xlsx';
+
+  // Gets template array for excel sheet.
+  $sheets = $mcl_template->getTemplateInfo();
+
+  // Creates MCL_EXCEL.
+  $details = array(
+    'creator'   => 'MAIN',
+    'filename'  => $filename,
+    'filepath'  => "$filepath/$filename",
+    'version'   => $version,
+    'sheets'    => $sheets,
+  );
+  $excel = new MCL_EXCEL($details);
+  $excel->create($type);
+  return TRUE;
+}
+
+/************************************************/
+/* EMAIL                                        */
+/************************************************/
+/**
+ * Implements hook_mail().
+ */
+function mcl_mail($key, &$message, $params) {
+
+}
+
+ /************************************************/
+/* CONFIGURATIONS                                */
+/*************************************************/
+/**
+ * Checks the configuration.
+ */
+function mcl_check_setup() {
+
+  // Checks PHPExcel library.
+  // Checks PHPZip library.
+
+
+
+  $issues = '';
+  $is_ready = TRUE;
+}

@@ -1,0 +1,453 @@
+<?php
+/**
+ * @file
+ * Contains functions used to install/uninstall MCL module
+ */
+/**
+ * Implementation of hook_install().
+ *
+ * @ingroup
+ */
+function mcl_install() {
+
+  // Populates table with default values.
+  mcl_populate_table_defaults();
+}
+
+/**
+ * Implementation of hook_uninstall().
+ *
+ */
+function mcl_uninstall() {
+  // Remove MCL directory and its sub-directories.
+}
+
+/**
+ * Implementation of hook_schema().
+ *
+ */
+function mcl_schema() {
+  $schema = array();
+  mcl_add_table_mcl_var($schema);
+  mcl_add_table_mcl_user($schema);
+  mcl_add_table_mcl_file($schema);
+  mcl_add_table_mcl_job($schema);
+  mcl_add_table_mcl_template($schema);
+  mcl_add_table_mcl_template_type($schema);
+  return $schema;
+}
+
+/**
+ * Adds mcl_var table.
+ *
+ * @param  $schema
+ */
+function mcl_add_table_mcl_var(&$schema) {
+  $schema['mcl_var'] = array(
+    'fields' => array(
+      'var_id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'type' => 'varchar',
+        'length' => '1024',
+      ),
+      'description' => array(
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('var_id'),
+    'unique keys' => array(
+      'ukey_mcl_var_name' => array('name')
+    ),
+  );
+}
+
+/**
+ * Adds mcl_user table.
+ *
+ * @param  $schema
+ */
+function mcl_add_table_mcl_user(&$schema) {
+  $schema['mcl_user'] = array(
+    'fields' => array(
+      'user_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'mail' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'prop' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('user_id'),
+  );
+}
+
+/**
+ * Adds mcl_template table.
+ *
+ * @param  $schema
+ */
+function mcl_add_table_mcl_template(&$schema) {
+  $schema['mcl_template'] = array(
+    'fields' => array(
+      'template_id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'template' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'template_type_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('template_id'),
+    'unique keys' => array(
+      'ukey_mcl_template_template' => array('template')
+    ),
+  );
+}
+
+/**
+ * Adds template_type table.
+ *
+ * @param  $schema
+ */
+function mcl_add_table_mcl_template_type(&$schema) {
+  $schema['mcl_template_type'] = array(
+    'fields' => array(
+      'template_type_id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'rank' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('template_type_id'),
+    'unique keys' => array(
+      'ukey_mcl_template_type' => array('type')
+    ),
+  );
+}
+
+/**
+ * Adds mcl_file table.
+ *
+ * @param  $schema
+ */
+function mcl_add_table_mcl_file(&$schema) {
+  $schema['mcl_file'] = array(
+    'fields' => array(
+      'file_id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'filename' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'filepath' => array(
+        'type' => 'varchar',
+        'length' => '512',
+        'not null' => TRUE,
+      ),
+      'filesize' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'uri' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'user_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'job_id' => array(
+        'type' => 'int',
+      ),
+      'submit_date' => array(
+        'type' => 'datetime',
+        'mysql_type' => 'datetime',                     // The equivalent MySQL data type
+        'pgsql_type' => 'timestamp without time zone',  // The equivalent PostgreSQL data type
+        'not null' => TRUE,
+      ),
+    'prop' => array(
+        'type' => 'text',
+      ),
+    ),
+    'primary key' => array('file_id'),
+  );
+}
+
+/**
+ * Adds mcl_job table.
+ *
+ * @param  $schema
+ */
+function mcl_add_table_mcl_job(&$schema) {
+  $schema['mcl_job'] = array(
+    'fields' => array(
+      'job_id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'class_name' => array(
+        'type' => 'varchar',
+        'length' => '255',
+      ),
+      'status' => array(
+        'type' => 'int',
+      ),
+      'param' => array(
+        'type' => 'text',
+      ),
+      'prop' => array(
+        'type' => 'text',
+      ),
+      'user_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'program_id' => array(
+        'type' => 'int',
+      ),
+      'submit_date' => array(
+        'type' => 'datetime',
+        'mysql_type' => 'datetime',                     // The equivalent MySQL data type
+        'pgsql_type' => 'timestamp without time zone',  // The equivalent PostgreSQL data type
+        'not null' => TRUE,
+      ),
+      'complete_date' => array(
+        'type' => 'datetime',
+        'mysql_type' => 'datetime',                     // The equivalent MySQL data type
+        'pgsql_type' => 'timestamp without time zone',  // The equivalent PostgreSQL data type
+      ),
+    ),
+    'primary key' => array('job_id'),
+  );
+}
+
+/**
+ * Populates table with default values.
+ *
+ */
+function mcl_populate_table_defaults() {
+  $module_path = drupal_get_path('module', 'mcl');
+
+  // Includes .inc file.
+  require_once("$module_path/includes/mcl.inc");
+
+  // Registers autoloader.
+  require_once "$module_path/includes/class/mcl_class_loader.class.inc";
+  $bims_autoloader = new MCL_CLASS_LOADER($module_path);
+  $bims_autoloader->register();
+
+  // Populates mcl_var table.
+  mcl_populate_mcl_var();
+
+  // Populates mcl_template_type table.
+  mcl_populate_mcl_template_type();
+
+  // Populates mcl_template table.
+  mcl_populate_mcl_template();
+}
+
+/**
+ * Populates mcl_var table.
+ *
+ */
+function mcl_populate_mcl_var() {
+
+  // Gets null/default value.
+  $null_cvterm   = MCL_CHADO_CVTERM::addNull();
+  $null_pub      = MCL_CHADO_PUB::addNull();
+  $null_organism = MCL_CHADO_ORGANISM::addNull();
+  $na_location   = MCL_CHADO_LOCATION::addNA();
+
+  // Adds MCL global variables.
+  $mcl_vars = array(
+    'SITE_DB'               => array('type' => 'SITE',    'value' => 'MAIN',                             'desc' => 'The name of the site specific DB'),
+    'SITE_CV'               => array('type' => 'SITE',    'value' => 'MAIN',                             'desc' => 'The name of the site specific CV'),
+    'SITE_TRAIT_ONTOLOGY'   => array('type' => 'SITE',    'value' => 'rosaceae_triat_ontology',          'desc' => 'CV.name for site specific trait ontology'),
+    'CVTERM_ID'             => array('type' => 'DEFAULT', 'value' => $null_cvterm->getCvtermID(),        'desc' => 'dummy cvterm ID. It is used for type_id of NULL pub.'),
+    'PUB_ID'                => array('type' => 'DEFAULT', 'value' => $null_pub->getPubID(),              'desc' => 'dummy pub ID. It is used for chado.cvterm_feature.pub_id.'),
+    'ORGANISM_ID'           => array('type' => 'DEFAULT', 'value' => $null_organism->getOrganismID(),    'desc' => 'dummy organism ID. It is used for organims ID of a linkage group.'),
+    'ND_GEOLOCATION_ID'     => array('type' => 'DEFAULT', 'value' => $na_location->getNdGeolocationID(), 'desc' => 'chado.nd_geolocation.nd_geolocation_id for "Not Available"'),
+  );
+
+  // Adds variables.
+  foreach ($mcl_vars as $name => $prop) {
+    if (!MCL_VAR::addVar($prop['type'], $name, $prop['value'], $prop['desc'])) {
+      print "\nError : Failed to add a variable.\n\n";
+      exit;
+    }
+  }
+}
+
+/**
+ * Populates mcl_template_type table.
+ *
+ */
+function mcl_populate_mcl_template_type() {
+
+  // Default template types.
+  $template_types = array(
+    'DB',
+    'CV',
+    'CVTERM',
+    'LIBRARY',
+    'TRAIT',
+    'CONTACT',
+    'DATASET',
+    'IMAGE',
+    'DESCRIPTOR',
+    'SITE',
+    'STOCK',
+    'PROGENY',
+    'MARKER',
+    'MTL',
+    'QTL',
+    'CROSS',
+    'MAP',
+    'MAP_POSITION',
+    'FIELD_BOOK',
+    'PHENOTYPE',
+    'GENOTYPE',
+  );
+
+  // Adds template types.
+  $rank = 20;
+  foreach ($template_types as $template_type) {
+    $details = array(
+      'type' => $template_type,
+    );
+    $mcl_template_type = MCL_TEMPLATE_TYPE::byKey($details);
+    if ($mcl_template_type) {
+      print "\n$template_type already existed.\n\n";
+    }
+    else {
+      $details['rank'] = $rank;
+      $mcl_template_type = new MCL_TEMPLATE_TYPE($details);
+      if (!$mcl_template_type->insert()) {
+        print "\nError : Failed to add a template type\n\n";
+        exit;
+      }
+      $rank += 10;
+    }
+  }
+}
+
+/**
+ * Populates mcl_template table.
+ *
+ */
+function mcl_populate_mcl_template() {
+
+  // Default templates.
+  $templates = array(
+    array('type' => 'DB',           'name' => 'db'),
+    array('type' => 'CV',           'name' => 'cv'),
+    array('type' => 'CVTERM',       'name' => 'cvterm'),
+    array('type' => 'LIBRARY',      'name' => 'library'),
+    array('type' => 'TRAIT',        'name' => 'trait'),
+    array('type' => 'DESCRIPTOR',   'name' => 'descriptor'),
+    array('type' => 'CONTACT',      'name' => 'contact'),
+    array('type' => 'DATASET',      'name' => 'dataset'),
+    array('type' => 'SITE',         'name' => 'site'),
+    array('type' => 'STOCK',        'name' => 'stock'),
+    array('type' => 'MTL',          'name' => 'mtl'),
+    array('type' => 'MARKER',       'name' => 'marker'),
+    array('type' => 'QTL',          'name' => 'qtl'),
+    array('type' => 'MTL',          'name' => 'mtl'),
+    array('type' => 'CROSS',        'name' => 'cross'),
+    array('type' => 'MAP',          'name' => 'map'),
+    array('type' => 'MAP_POSITION', 'name' => 'map_position'),
+    array('type' => 'PHENOTYPE',    'name' => 'qtl_trait_data'),
+    array('type' => 'PHENOTYPE',    'name' => 'phenotype'),
+    array('type' => 'GENOTYPE',     'name' => 'genotype'),
+  );
+
+  // Adds templates.
+  foreach ($templates as $template) {
+    $template_type = $template['type'];
+    $template_name = $template['name'];
+    if (!MCL_TEMPLATE::addTemplate($template_type, $template_name)) {
+      print "\nError : Failed to add a template ($template_type - $template_name)\n\n";
+      exit;
+    }
+  }
+}
+
+/**
+ * Update function defined below.
+ */
+/**
+ * .....
+ */
+function mcl_update_7007() {
+  $transaction = db_transaction();
+  try {
+    mcl_populate_table_defaults();
+  }
+  catch (\PDOException $e) {
+    $transaction->rollback();
+    $error = $e->getMessage();
+    throw new DrupalUpdateException($error);
+  }
+}
