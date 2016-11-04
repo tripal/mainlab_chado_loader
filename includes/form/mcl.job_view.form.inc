@@ -345,7 +345,7 @@ function _mcl_get_detail_table(MCL_JOB_UPLOAD $mcl_job) {
   $rows []= array('<b>Data Template File</b>', $link_template);
   $rows []= array('<b>Submit Date</b>', $mcl_job->getSubmitDate());
   $rows []= array('<b>Complete Date</b>', $complete_date);
-//  $rows []= array('<b>Log Files</b>', $link_log);
+  $rows []= array('<b>Log Files</b>', $link_log);
 
   // Table variables.
   $table_vars = array(

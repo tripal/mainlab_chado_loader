@@ -127,7 +127,9 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
     // Checks SNP_chip_name.
-//    MCL_CHADO_LIBRARY::checkLibrary($this, $line['snp_chip']);
+    $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
+    $type_id  = $this->cvterms['SITE_CV']['SNP_chip'];
+    MCL_CHADO_LIBRARY::checkLibrary($this, $line['snp_chip_name'], $type_id. $organism->getOrganismID());
 
     // Checks contacts.
     MCL_CHADO_CONTACT::checkContact($this, $line['contact'], '[;,]');

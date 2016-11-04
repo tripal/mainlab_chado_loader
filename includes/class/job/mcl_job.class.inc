@@ -123,21 +123,19 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     // Insert a new job.
     if (parent::insert()) {
 
-      // If $this->working_dir is empty, assigns the default working directory.
-      if (empty($this->working_dir)) {
-        $this->working_dir = mcl_get_config_setting('mcl_working_dir');
-      }
+      // Get MCL user directory.
+      $mcl_user_directory = mcl_get_config_setting('mcl_working_dir') . '/user';
 
-      // Creates the user directory if not exists.
-      if (empty($this->user_dir)) {
-        $drupal_user = MCL_USER::getDrupalUser($this->user_id);
-        $this->user_dir  = $this->working_dir . '/' . $drupal_user->name;
-      }
+      // Gets username.
+      $drupal_user = MCL_USER::getDrupalUser($this->user_id);
+      $username = $drupal_user->name;
 
+      // Updates MCL directories.
+      $this->user_dir = "$mcl_user_directory/$username";
       $this->job_dir  = $this->user_dir . '/' . $this->job_id;
       $this->log_dir  = $this->job_dir . '/logs';
       $this->file_dir = $this->job_dir . '/files';
-      $this->setPropByKey('working_dir', $this->working_dir);
+      $this->setPropByKey('working_dir', $this->user_dir);
       $this->setPropByKey('user_dir', $this->user_dir);
       $this->setPropByKey('job_dir', $this->job_dir);
       $this->setPropByKey('log_dir', $this->log_dir);

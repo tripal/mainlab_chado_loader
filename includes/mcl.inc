@@ -161,20 +161,23 @@ function mcl_download_log($job_id) {
   $log_root_dir = dirname($mcl_job->getLogDir());
 
   // Sets zip path and name.
-  $filename = "mcl-$job_id-" . date("Y-m-d-G-i-s") . '.zip';
-  $filepath = file_directory_temp() . "/$filename";
+  $filename = "mcl-$job_id-logs.zip";
+  $filepath = $mcl_job->getLogDir() . "/$filename";
 
-  // Zips the folder.
-  $cmd = "cd $log_root_dir;zip -rq $filepath logs";
-  exec("which zip", $output, $return_var);
-  if ($return_var) {
-    drupal_set_message("Failed to zip the folder");
+  // Create a zip file.
+  $zip = new ZipArchive;
+  $zip->open($filepath, ZipArchive::OVERWRITE);
 
-//    return FALSE;
+  $files = mcl_retrive_files($mcl_job->getLogDir(), '/.*\.log$/');
+  foreach ($files as $file) {
+    $file_name = basename($file);
+    $rel_path = str_replace($log_root_dir, '', dirname($file));
+    $zip->addFile($file, "$rel_path/$file_name");
   }
+  $zip->close();
 
   // Attaches the zip file.
-  header("Content-Type: text/plain");
+  header("Content-Type: application/zip");
   header("Content-Disposition: attachment; filename=$filename");
   readfile($filepath);
   exit();
