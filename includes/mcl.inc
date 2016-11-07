@@ -162,7 +162,7 @@ function mcl_download_log($job_id) {
 
   // Sets zip path and name.
   $filename = "mcl-$job_id-logs.zip";
-  $filepath = $mcl_job->getLogDir() . "/$filename";
+  $filepath = "$log_root_dir/$filename";
 
   // Create a zip file.
   $zip = new ZipArchive;
@@ -171,7 +171,7 @@ function mcl_download_log($job_id) {
   $files = mcl_retrive_files($mcl_job->getLogDir(), '/.*\.log$/');
   foreach ($files as $file) {
     $file_name = basename($file);
-    $rel_path = str_replace($log_root_dir, '', dirname($file));
+    $rel_path = str_replace("$log_root_dir/", '', dirname($file));
     $zip->addFile($file, "$rel_path/$file_name");
   }
   $zip->close();

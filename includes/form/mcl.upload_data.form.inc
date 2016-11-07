@@ -92,7 +92,7 @@ function _mcl_get_uploading_job_table() {
 
   // Sets the headers.
   $headers = array(
-    array('data' => 'Job ID', 'style' => 'width:50px'),
+    array('data' => 'Job ID', 'style' => 'width:80px'),
     array('data' => 'Status', 'style' => 'width:60px'),
     array('data' => 'Name', 'style' => ''),
     array('data' => 'Submit Date', 'style' => 'width:120px'),
@@ -115,10 +115,17 @@ function _mcl_get_uploading_job_table() {
     );
     $delete_link = l('delete', "mcl/delete_job/$job_id", $confirm_attr);
 
+    // Sets status.
+    $status = $mcl_job->getStatusLabel();
+    $run_lock = $mcl_job->getJobDir() . '/run.lock';
+    if (file_exists($run_lock)) {
+      $status = "Running";
+    }
+
     // Adds the row.
     $row = array(
       $job_id,
-      $mcl_job->getStatusLabel(),
+      $status,
       $mcl_job->getName(),
       $mcl_job->getSubmitDate(),
       l('view', "/mcl/job_view/$job_id"),

@@ -80,8 +80,8 @@ class MCL_TEMPLATE_LIBRARY extends MCL_TEMPLATE {
   public function uploadDataLine($line) {
 
     // Adds a library.
-    $type_id = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $line['type']);
-    $library = MCL_CHADO_LIBRARY::addLibrary($this, $line['library_name'], $type_id);
+    $cvterm = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $line['type']);
+    $library = MCL_CHADO_LIBRARY::addLibrary($this, $line['library_name'], $cvterm->getCvtermID());
     if ($library) {
 
       // Adds properties.

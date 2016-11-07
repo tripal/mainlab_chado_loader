@@ -337,11 +337,18 @@ function _mcl_get_detail_table(MCL_JOB_UPLOAD $mcl_job) {
     $complete_date = '<em>N/A</em>';
   }
 
+  // Sets status.
+  $status = $mcl_job->getStatusLabel();
+  $run_lock = $mcl_job->getJobDir() . '/run.lock';
+  if (file_exists($run_lock)) {
+    $status = "Running";
+  }
+
   // Adds job information.
   $rows = array();
-  $rows []= array(array('data' => '<b>Job ID</b>', 'style' => 'width:150px;'), $mcl_job->getJobID());
+  $rows []= array(array('data' => '<b>Job ID</b>', 'style' => 'width:160px;'), $mcl_job->getJobID());
   $rows []= array('<b>Name</b>', $mcl_job->getName());
-  $rows []= array('<b>Status</b>', $mcl_job->getStatusLabel());
+  $rows []= array('<b>Status</b>', $status);
   $rows []= array('<b>Data Template File</b>', $link_template);
   $rows []= array('<b>Submit Date</b>', $mcl_job->getSubmitDate());
   $rows []= array('<b>Complete Date</b>', $complete_date);

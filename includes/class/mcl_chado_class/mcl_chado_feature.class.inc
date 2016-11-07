@@ -414,7 +414,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       $args = array(
         'synonym_id'  => $mcl_synonym->getSynonymID(),
         'feature_id'  => $this->feature_id,
-        '$pub_id'     => MCL_VAR::getValueByName('PUB_ID'),
+        'pub_id'      => MCL_VAR::getValueByName('PUB_ID'),
       );
       $chado_feature_synonym = CHADO_FEATURE_SYNONYM::byKey($args);
       if ($chado_feature_synonym) {
@@ -531,7 +531,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     $args = array(
       'feature_id'  => $this->feature_id,
       'genotype_id' => $genotype->getGenotypeID(),
-      '$cvterm_id'  => $cvterm_id,
+      'cvterm_id'   => $cvterm_id,
     );
     $chado_feature_genotype = CHADO_FEATURE_GENOTYPE::byKey($args);
     if ($chado_feature_genotype) {

@@ -127,9 +127,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
     // Checks SNP_chip_name.
-    $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
-    $type_id  = $this->cvterms['SITE_CV']['SNP_chip'];
-    MCL_CHADO_LIBRARY::checkLibrary($this, $line['snp_chip_name'], $type_id. $organism->getOrganismID());
+    MCL_CHADO_LIBRARY::checkLibrary($this, $line['snp_chip_name'], $this->cvterms['SITE_CV']['SNP_chip']);
 
     // Checks contacts.
     MCL_CHADO_CONTACT::checkContact($this, $line['contact'], '[;,]');
@@ -202,8 +200,8 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       $marker->addProp($this, 'sequence', 'three_prime_flanking_region', $line['three_prime_flanking_seq']);
 
       // Adds alleles.
-      $type = ($line['marker_type'] == 'snp') ? 'SNP' : 'allele';
-      $marker->addProp($this, 'SITE_CV', $type, $line['alleles']);
+      $type = (strtolower($line['marker_type']) == 'snp') ? 'SNP' : 'allele';
+      $marker->addProp($this, 'sequence', $type, $line['alleles']);
 
       // Adds aliases.
       $marker->addAlias($this, $this->cvterms['SITE_CV']['alias'], $line['alias'], "[;,]");

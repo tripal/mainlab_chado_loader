@@ -136,6 +136,16 @@ function mcl_drush_command() {
       'Standard example' => 'drush mcl-generate-class [module] [schema] [dump_file] [table_file] --working_dir=/yourpath',
     ),
   );
+  $items['mcl-fix-data'] = array(
+    'description' => t('Fix data.'),
+    'arguments' => array(
+      'input_file'   => t('The input filename.'),
+    ),
+    'options' => array(),
+    'examples' => array(
+      'Standard example' => 'drush mcl-fix-data [input_file]',
+    ),
+  );
   return $items;
 }
 
@@ -187,7 +197,7 @@ function drush_mcl_rerun_job($job_id, $filepath) {
 
   // Checks arguments.
   $args = array(
-    'job_id'    => $job_id,
+    'job_id' => $job_id,
   );
   if ($filepath) {
     $args['filepath'] = $filepath;
@@ -630,8 +640,7 @@ function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $
     else {
       throw new Exception("Fail to insert MCL_JOB.");
     }
-  }
-  catch (Exception $e) {
+  } catch (Exception $e) {
     $transaction->rollback();
     mcl_print("Error : " . $e->getMessage(), 1, 3);
     watchdog('mcl', $e->getMessage(), array(), WATCHDOG_ERROR);
@@ -648,7 +657,6 @@ function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $
  * @param string $dump_file
  * @param string $table_file
  * @param string $namespace
- *
  */
 function drush_mcl_generate_class($module, $schema, $dump_file, $table_file) {
 
@@ -725,6 +733,24 @@ function drush_mcl_generate_class($module, $schema, $dump_file, $table_file) {
   }
   else {
     mcl_print("Failed to generate class files", 1, 4);
+  }
+}
+
+/**
+ * Callback for fixing data.
+ *
+ * @param string $input_file.
+ */
+function drush_mcl_fix_data($input_file = NULL) {
+
+  $module_path = drupal_get_path('module', 'mcl');
+  $filepath = "$module_path/schema/mcl_fix_data.inc";
+  if (file_exists($filepath)) {
+    require_once($filepath);
+    mcl_fix_data($input_file);
+  }
+  else {
+    print "$filepath cannot found\n\n";
   }
 }
 

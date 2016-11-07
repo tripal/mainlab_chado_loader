@@ -42,8 +42,13 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    * @param integer $type_id
    * @param integer $organism_id
    */
-  public static function checkLibrary(MCL_TEMPLATE $mcl_tmpl, $uniquename, $type_id, $organism_id) {
+  public static function checkLibrary(MCL_TEMPLATE $mcl_tmpl, $uniquename, $type_id, $organism_id = NULL) {
     if ($uniquename && $type_id) {
+
+      // Updates the organism_id if not provided.
+      if (!$organism_id) {
+        $organism_id = MCL_VAR::getValueByName('ORGANISM_ID');
+      }
 
       // Gets the library.
       $mcl_library = MCL_CHADO_LIBRARY::getLibrary($uniquename, $type_id, $organism_id);
@@ -63,14 +68,20 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    *
    * @param string $uniquename
    * @param integer $type_id
+   * @param integer $organism_id
    *
    * @return MCL_CHADO_LIBRARY
    */
-  public static function getLibrary($uniquename, $type_id) {
+  public static function getLibrary($uniquename, $type_id, $organism_id = NULL) {
+
+    // Updates the organism_id if not provided.
+    if (!$organism_id) {
+      $organism_id = MCL_VAR::getValueByName('ORGANISM_ID');
+    }
     $keys = array(
       'uniquename'  => $uniquename,
       'type_id'     => $type_id,
-      'organism_id' => MCL_VAR::getValueByName('ORGANISM_ID'),
+      'organism_id' => $organism_id,
     );
     return  MCL_CHADO_LIBRARY::bykey($keys);
   }
@@ -84,12 +95,18 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    *
    * @return MCL_CHADO_LIBRARY
    */
-  public static function addLibrary(MCL_TEMPLATE $mcl_tmpl, $uniquename, $type_id) {
+  public static function addLibrary(MCL_TEMPLATE $mcl_tmpl, $uniquename, $type_id, $organism_id = NULL) {
+
+    // Updates the organism_id if not provided.
+    if (!$organism_id) {
+      $organism_id = MCL_VAR::getValueByName('ORGANISM_ID');
+    }
 
     // Sets the arguments.
     $args = array(
       'uniquename'  => $uniquename,
       'type_id'     => $type_id,
+      'organism_id' => $organism_id,
     );
 
     // Checks the arguments.
@@ -98,7 +115,6 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
     }
 
     // Checks for duplication.
-    $args['organism_id'] = MCL_VAR::getValueByName('ORGANISM_ID');
     $mcl_library = MCL_CHADO_LIBRARY::byKey($args);
     if ($mcl_library) {
       $mcl_tmpl->addMsg('D', 'library', $args);
@@ -145,7 +161,7 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
       $args = array(
           'synonym_id'  => $mcl_synonym->getSynonymID(),
           'library_id'  => $this->library_id,
-          '$pub_id'     => MCL_VAR::getValueByName('PUB_ID'),
+          'pub_id'      => MCL_VAR::getValueByName('PUB_ID'),
       );
       $chado_library_synonym = CHADO_LIBRARY_SYNONYM::byKey($args);
       if ($chado_library_synonym) {
