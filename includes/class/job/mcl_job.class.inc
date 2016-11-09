@@ -15,6 +15,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   protected $job_dir      = NULL;
   protected $log_dir      = NULL;
   protected $file_dir     = NULL;
+  protected $progress     = NULL;
 
   // Message types.
   protected $msg_types = array(
@@ -91,6 +92,10 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     if ($file_dir) {
       $this->file_dir = $file_dir;
     }
+    $progress = $this->getPropByKey('progress');
+    if ($progress) {
+      $this->progress = $progress;
+    }
   }
 
   /**
@@ -140,6 +145,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
       $this->setPropByKey('job_dir', $this->job_dir);
       $this->setPropByKey('log_dir', $this->log_dir);
       $this->setPropByKey('file_dir', $this->file_dir);
+      $this->setPropByKey('progress', $this->progress);
       $this->update();
 
       // Creates directories.
@@ -493,6 +499,29 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   public function setFileDir($file_dir) {
     $this->file_dir = $file_dir;
     $this->setPropByKey('file_dir', $file_dir);
+  }
+
+  /**
+   * Retrieves the progress of the job.
+   *
+   * @retrun string
+   */
+  public function getProgress() {
+    return $this->progress;
+  }
+
+  /**
+   * Updates the progress of the job.
+   *
+   * @param string $progress
+   * @param boolean $append
+   */
+  public function setProgress($progress, $append = FALSE) {
+    $new_progress = $progress;
+    if ($append) {
+      $new_progress = $this->progress . '<br />' . $progress;
+    }
+    $this->setPropByKey('progress', $new_progress);
   }
 
   /**

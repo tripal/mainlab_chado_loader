@@ -787,6 +787,11 @@ DESC;
       $this->updateMsg('E', "Error : Fail to open the input file : $infile.");
       return FALSE;
     }
+
+    // Gets the number of lines in the file.
+    $total_lines = count(file($infile)) - 1;
+
+    // Upload data by line.
     while(!feof($fh)) {
       $line_no++;
       $line = trim(fgets($fh));
@@ -836,6 +841,12 @@ DESC;
         }
         $this->setLineNo($line_no);
         $this->uploadDataLine($line_arr);
+      }
+
+      // Updates the progress of the job.
+      if ($line_no % 3 == 0) {
+        $progress = sprintf("%s : %d / %d = %.03f %%", $this->template, $line_no, $total_lines, $line_no / $total_lines * 100.0);
+        $this->job->setProgress($progress);
       }
     }
     fclose($fh);

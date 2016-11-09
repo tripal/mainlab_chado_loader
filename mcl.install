@@ -324,7 +324,7 @@ function mcl_populate_mcl_var() {
   $mcl_vars = array(
     'SITE_DB'               => array('type' => 'SITE',    'value' => 'MAIN',                             'desc' => 'The name of the site specific DB'),
     'SITE_CV'               => array('type' => 'SITE',    'value' => 'MAIN',                             'desc' => 'The name of the site specific CV'),
-    'SITE_TRAIT_ONTOLOGY'   => array('type' => 'SITE',    'value' => 'rosaceae_triat_ontology',          'desc' => 'CV.name for site specific trait ontology'),
+    'SITE_TRAIT_ONTOLOGY'   => array('type' => 'SITE',    'value' => 'rosaceae_trait_ontology',          'desc' => 'CV.name for site specific trait ontology'),
     'CVTERM_ID'             => array('type' => 'DEFAULT', 'value' => $null_cvterm->getCvtermID(),        'desc' => 'dummy cvterm ID. It is used for type_id of NULL pub.'),
     'PUB_ID'                => array('type' => 'DEFAULT', 'value' => $null_pub->getPubID(),              'desc' => 'dummy pub ID. It is used for chado.cvterm_feature.pub_id.'),
     'ORGANISM_ID'           => array('type' => 'DEFAULT', 'value' => $null_organism->getOrganismID(),    'desc' => 'dummy organism ID. It is used for organims ID of a linkage group.'),
@@ -421,6 +421,8 @@ function mcl_populate_mcl_template() {
     array('type' => 'PHENOTYPE',    'name' => 'qtl_trait_data'),
     array('type' => 'PHENOTYPE',    'name' => 'phenotype'),
     array('type' => 'GENOTYPE',     'name' => 'genotype'),
+    array('type' => 'GENOTYPE',     'name' => 'genotype_snp'),
+
   );
 
   // Adds templates.

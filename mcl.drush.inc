@@ -118,6 +118,15 @@ function mcl_drush_command() {
       'Standard example' => 'drush mcl-delete-job [job_id]',
     ),
   );
+  $items['mcl-delete-jobs'] = array(
+    'description' => t('Deletes jobs.'),
+    'arguments' => array(
+      'job_ids' => t('Specify Job ID by the range.'),
+    ),
+    'examples' => array(
+      'Standard example' => 'drush mcl-delete-jobs 4-20',
+    ),
+  );
   $items['mcl-generate-class'] = array(
     'description' => t('Generate class files.'),
     'arguments' => array(
@@ -208,7 +217,7 @@ function drush_mcl_rerun_job($job_id, $filepath) {
   }
 
   // Gets MCL_JOB_UPLOAD.
-  $mcl_job   = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
+  $mcl_job = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
 
   // Checks the status option.
   $status = drush_get_option('status');
@@ -254,11 +263,11 @@ function drush_mcl_rerun_job($job_id, $filepath) {
     $mcl_file = MCL_FILE::byKey(array('file_id' => $file_id));
     $mcl_file->setFilepath($new_filepath);
     $mcl_file->update();
+    $mcl_job->setUploadFile($mcl_file);
 
     // Copies it over.
     $cmd = ($move_input) ? "mv $filepath $new_filepath" : "cp $filepath $new_filepath";
     exec($cmd, $return_var);
-    print "$cmd\n";
     if (!empty($return_var)) {
       mcl_print("Fail to overwrite the file", 1, 2);
       mcl_print($cmd, 1, 3);
@@ -392,6 +401,40 @@ function drush_mcl_delete_job($job_id) {
     $msg = "Fail to delete the job";
   }
   mcl_print($msg, 1, 3);
+}
+
+
+/**
+ * Callback for delete jobs.
+ */
+function drush_mcl_delete_jobs($job_ids) {
+
+  // Checks arguments.
+  if (preg_match("/(\d+)-(\d+)/", $job_ids, $matches)) {
+    $start  = $matches[1];
+    $stop   = $matches[2];
+
+    // Deletes jobs.
+    for ($job_id = $start; $job_id <= $stop; $job_id++) {
+      $mcl_job = MCL_JOB::byKey(array('job_id' => $job_id));
+      if ($mcl_job) {
+        if ($mcl_job->delete()) {
+          $msg =  "Job ID ($job_id) has been deleted";
+        }
+        else {
+          $msg = "Fail to delete the job";
+        }
+        mcl_print($msg, 1, 3);
+      }
+      else {
+        mcl_print("Job ID ($job_id) not exist", 1, 3);
+      }
+    }
+  }
+  else {
+    mcl_print("Error : Please check arguments", 1, 3);
+    exit;
+  }
 }
 
 /**
@@ -747,7 +790,7 @@ function drush_mcl_fix_data($input_file = NULL) {
   $filepath = "$module_path/schema/mcl_fix_data.inc";
   if (file_exists($filepath)) {
     require_once($filepath);
-    mcl_fix_data($input_file);
+    mcl_fix_data_func($input_file);
   }
   else {
     print "$filepath cannot found\n\n";

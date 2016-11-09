@@ -43,7 +43,7 @@ class MCL_CHADO_GENOTYPE extends CHADO_GENOTYPE {
    * @param integer $type_id
    * @param string $description
    *
-   * @return MCL_CHADO_PHENOTYPE
+   * @return MCL_CHADO_GENOTYPE
    */
   public static function addGenotype(MCL_TEMPLATE $mcl_tmpl, $uniquename, $type_id, $description) {
 
@@ -76,5 +76,19 @@ class MCL_CHADO_GENOTYPE extends CHADO_GENOTYPE {
       }
     }
     return $mcl_genotype;
+  }
+
+  /**
+   * Adds a property.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $cv_name
+   * @param string $cvterm_name
+   * @param string $value
+   * @param string $separator
+   */
+  public function addProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name, $value, $separator = '') {
+    $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
+    $mcl_tmpl->addProperty('genotypeprop', 'genotype_id', $this->genotype_id, $type_id, $value, $separator);
   }
 }

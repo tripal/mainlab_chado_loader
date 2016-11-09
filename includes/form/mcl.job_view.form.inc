@@ -4,10 +4,10 @@
 */
 /**
  * MCL Job View form.
-*
-* @param $form
-* @param $form_state
-*/
+ *
+ * @param $form
+ * @param $form_state
+ */
 function mcl_job_view_form($form, &$form_state, $job_id = NULL) {
   global $user;
 
@@ -348,8 +348,14 @@ function _mcl_get_detail_table(MCL_JOB_UPLOAD $mcl_job) {
   $rows = array();
   $rows []= array(array('data' => '<b>Job ID</b>', 'style' => 'width:160px;'), $mcl_job->getJobID());
   $rows []= array('<b>Name</b>', $mcl_job->getName());
-  $rows []= array('<b>Status</b>', $status);
   $rows []= array('<b>Data Template File</b>', $link_template);
+  $rows []= array('<b>Status</b>', $status);
+
+  // Adds progress row if not empty.
+  $progress = $mcl_job->getProgress();
+  if ($progress) {
+    $rows []= array('<b>Progress</b>', $progress);
+  }
   $rows []= array('<b>Submit Date</b>', $mcl_job->getSubmitDate());
   $rows []= array('<b>Complete Date</b>', $complete_date);
   $rows []= array('<b>Log Files</b>', $link_log);
@@ -404,7 +410,7 @@ function mcl_job_view_form_submit($form, &$form_state) {
   // Moves the file to the user temp space.
   $dest_filepath    = "$user_dir/tmp/" . $drupal_file->filename;
   $target_filepath  = drupal_realpath($drupal_file->uri);
-  $cmd = "mv $target_filepath $dest_filepath";
+  $cmd              = "mv $target_filepath $dest_filepath";
   exec($cmd);
 
   // Removes file form manage_file table.
@@ -413,6 +419,9 @@ function mcl_job_view_form_submit($form, &$form_state) {
   ->execute();
 
   // Submits the re-uploading job.
-  $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input &";
+  $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null &";
   exec($cmd);
+
+  // Re-direct to "Data Uploading" page.
+  $form_state['redirect'] = "mcl/job_view/$job_id";
 }

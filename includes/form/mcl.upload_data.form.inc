@@ -239,15 +239,58 @@ function mcl_upload_data_form_submit($form, &$form_state) {
   $cmd              = "mv $target_filepath $dest_filepath";
   exec($cmd);
 
-  // Removes the uploaded file.
-  //file_delete($drupal_file);
+  // Removes from file_managed.
   db_delete('file_managed')
     ->condition('fid', $drupal_file->fid, '=')
     ->execute();
 
-  // Submits a job.
-  $cmd = "drush mcl-upload-data $user_name $dest_filepath " .
-    " --working_dir=" . $mcl_user->getUserDir() .
-    " --job_name=\"$job_name\"  --move_input &";
-  exec($cmd);
+  // Creates a MCL_JOB_UPLOAD and gets job ID.
+  $details = array(
+    'name'        => $job_name,
+    'type'        => 'upload',
+    'class_name'  => 'MCL_JOB_UPLOAD',
+    'status'      => 0,
+    'user_id'     => $user->uid,
+    'submit_date' => date("Y-m-d G:i:s"),
+    'prop'        => json_encode(array('working_dir' => $mcl_user->getUserDir())),
+  );
+  $mcl_job = new MCL_JOB_UPLOAD($details);
+  if ($mcl_job->insert()) {
+    $job_id = $mcl_job->getJobID();
+
+    // Creates a MCL_File.
+    $details = array(
+      'filename'    => basename($dest_filepath),
+      'filepath'    => $dest_filepath,
+      'uri'         => '',
+      'filesize'    => filesize($dest_filepath),
+      'user_id'     => $user->uid,
+      'job_id'      => $job_id,
+      'submit_date' => date("Y-m-d G:i:s"),
+    );
+    $upload_file = new MCL_FILE($details);
+    if ($upload_file->insert()) {
+
+      // Updates the job properties.
+      $mcl_job->setFileID($upload_file->getFileID());
+      if ($mcl_job->update()) {
+
+        // Runs the job.
+        $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null &";
+        exec($cmd);
+      }
+      else {
+        drupal_set_message("Failed to add a uploading job : Error on updating job property");
+      }
+    }
+    else {
+      drupal_set_message("Failed to add a uploading job : Error on adding a file");
+    }
+  }
+  else {
+    drupal_set_message("Failed to add a uploading job : Error on adding a job");
+  }
+
+  // Re-direct to "Data Uploading" page.
+  $form_state['redirect'] = 'mcl/upload_data';
 }

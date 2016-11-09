@@ -39,7 +39,6 @@ function mcl_template_form($form, &$form_state, $template_id = NULL) {
  */
 function _get_mcl_template_table(&$form, $template_id) {
 
-
   // $template_id is empty.
   if (!$template_id) {
     $form['template']['table'] = array(
@@ -61,7 +60,7 @@ function _get_mcl_template_table(&$form, $template_id) {
 
   // Gets the template information.
   $rows = array();
-  $rows []= array(array('data' => '<b>Template Type</b>', 'style' => 'width:90px;'), $mcl_template->getTemplateType());
+  $rows []= array(array('data' => '<b>Template Type</b>', 'style' => 'width:120px;'), $mcl_template->getTemplateType());
   $rows []= array('<b>Template</b>', $mcl_template->getTemplate());
   $rows []= array('&nbsp;', "<a href='/mcl/template/download/$template_id'>download</a>");
   $table_vars = array(
