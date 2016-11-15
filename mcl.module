@@ -238,6 +238,15 @@ function mcl_menu() {
     'access callback' => 'mcl_access',
     'type' => MENU_CALLBACK,
   );
+
+  // View logs.
+  $items['mcl/ajax_view_log/%/%'] = array(
+    'access arguments' => array('view_mcl'),
+    'page callback' => 'mcl_view_log',
+    'page arguments' => array(2, 3),
+    'access callback' => 'mcl_access',
+    'type' => MENU_CALLBACK,
+  );
   return $items;
 }
 

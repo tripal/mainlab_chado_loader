@@ -12,6 +12,7 @@ class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'MAP';
     parent::__construct($details);
   }
 
@@ -86,7 +87,7 @@ class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
     MCL_CHADO_FEATUREMAP::checkMapUnit($this, $line['map_unit']);
 
     // Checks contacts.
-    MCL_CHADO_CONTACT::checkContact($this, $line['contact'], '[;,]');
+    MCL_CHADO_CONTACT::checkContact($this, $line['contact'], '[;]');
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
@@ -118,7 +119,7 @@ class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
       $map->addStock($this, $line['population_name'], $line['genus'], $line['species'], "[,;]");
 
       // Adds contacts.
-      $map->addContact($this, $line['contact'], "[,;]");
+      $map->addContact($this, $line['contact'], "[;]");
 
       // Adds references.
       $map->addReference($this, $line['references'], "[,;]");

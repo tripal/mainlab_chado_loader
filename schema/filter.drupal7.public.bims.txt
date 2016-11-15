@@ -2,10 +2,7 @@ bims_crop
 bims_crop_organism
 bims_user
 bims_descriptor_group
-bims_descriptor
 bims_list
-bims_mview_type
-bims_mview
 bims_file
 bims_job
 bims_instruction
@@ -13,4 +10,5 @@ bims_node
 bims_node_relationship
 bims_location
 bims_node_location
-bims_dataset_stats
+bims_mview_phenotype_stats
+bims_mview_descriptor

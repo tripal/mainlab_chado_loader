@@ -95,7 +95,7 @@ function _mcl_get_uploading_job_table() {
     array('data' => 'Job ID', 'style' => 'width:80px'),
     array('data' => 'Status', 'style' => 'width:60px'),
     array('data' => 'Name', 'style' => ''),
-    array('data' => 'Submit Date', 'style' => 'width:120px'),
+    array('data' => 'Submit Date', 'style' => 'width:150px'),
     array('data' => 'Details', 'style' => 'width:40px'),
     array('data' => 'Action', 'style' => 'width:40px'),
   );
@@ -276,8 +276,11 @@ function mcl_upload_data_form_submit($form, &$form_state) {
       if ($mcl_job->update()) {
 
         // Runs the job.
-        $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null &";
-        exec($cmd);
+        $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null & echo $!";
+        $pid = exec($cmd);
+
+        // Saves the process ID.
+
       }
       else {
         drupal_set_message("Failed to add a uploading job : Error on updating job property");

@@ -18,6 +18,7 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'STOCK';
     parent::__construct($details);
   }
 
@@ -62,7 +63,6 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
       'origin'            => array('req' => FALSE, 'width' => 10, 'desc' => "The original country for the variety (especially for wild variety)."),
       'population_size'   => array('req' => FALSE, 'width' => 10, 'desc' => "Only for type 'population'."),
       'germplasm_center'  => array('req' => FALSE, 'width' => 10, 'desc' => "Stock center or lab where the stock is distributed.  Otherwise, provide the details of the contact person in contact column (from whom the material can be obtained) in the 'Contact' sheet."),
-//      'contact'           => array('req' => FALSE, 'width' => 10, 'desc' => "Contact person for the variety from whom the variety can be obtained. It should match 'contact_name' in 'Contact' sheet."),
       'description'       => array('req' => FALSE, 'width' => 10, 'desc' => "any description for the stock."),
       'comments'          => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments on the stock."),
       'image'             => array('req' => FALSE, 'width' => 10, 'desc' => "Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
@@ -80,31 +80,32 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
    */
   public function defineCvterms() {
     $cvterms = array();
-    $cvterms['SITE_CV']['alias']                       = -1;
-    $cvterms['SITE_CV']['germplasm_center']            = -1;
-    $cvterms['SITE_CV']['variety']                     = -1;
-    $cvterms['SITE_CV']['cultivar']                    = -1;
-    $cvterms['SITE_CV']['breeding_research_material']  = -1;
-    $cvterms['SITE_CV']['wild_unimproved']             = -1;
-    $cvterms['SITE_CV']['tbd']                         = -1;
-    $cvterms['SITE_CV']['landrace']                    = -1;
-    $cvterms['SITE_CV']['germplasm']                   = -1;
-    $cvterms['SITE_CV']['population']                  = -1;
-    $cvterms['SITE_CV']['species']                     = -1;
-    $cvterms['SITE_CV']['is_a_maternal_parent_of']     = -1;
-    $cvterms['SITE_CV']['is_a_paternal_parent_of']     = -1;
-    $cvterms['SITE_CV']['is_a_mutation_parent_of']     = -1;
-    $cvterms['SITE_CV']['is_a_selfing_parent_of']      = -1;
-    $cvterms['SITE_CV']['maternal_parent']             = -1;
-    $cvterms['SITE_CV']['paternal_parent']             = -1;
-    $cvterms['SITE_CV']['mutation_parent']             = -1;
-    $cvterms['SITE_CV']['selfing_parent']              = -1;
-    $cvterms['SITE_CV']['pedigree']                    = -1;
-    $cvterms['SITE_CV']['description']                 = -1;
-    $cvterms['SITE_CV']['origin']                      = -1;
-    $cvterms['SITE_CV']['comments']                    = -1;
-    $cvterms['SITE_CV']['population_size']             = -1;
-    $cvterms['SITE_CV']['subspecies']                  = -1;
+    $cvterms['SITE_CV']['alias']                      = -1;
+    $cvterms['SITE_CV']['secondary_id']               = -1;
+    $cvterms['SITE_CV']['germplasm_center']           = -1;
+    $cvterms['SITE_CV']['variety']                    = -1;
+    $cvterms['SITE_CV']['cultivar']                   = -1;
+    $cvterms['SITE_CV']['breeding_research_material'] = -1;
+    $cvterms['SITE_CV']['wild_unimproved']            = -1;
+    $cvterms['SITE_CV']['tbd']                        = -1;
+    $cvterms['SITE_CV']['landrace']                   = -1;
+    $cvterms['SITE_CV']['germplasm']                  = -1;
+    $cvterms['SITE_CV']['population']                 = -1;
+    $cvterms['SITE_CV']['species']                    = -1;
+    $cvterms['SITE_CV']['is_a_maternal_parent_of']    = -1;
+    $cvterms['SITE_CV']['is_a_paternal_parent_of']    = -1;
+    $cvterms['SITE_CV']['is_a_mutation_parent_of']    = -1;
+    $cvterms['SITE_CV']['is_a_selfing_parent_of']     = -1;
+    $cvterms['SITE_CV']['maternal_parent']            = -1;
+    $cvterms['SITE_CV']['paternal_parent']            = -1;
+    $cvterms['SITE_CV']['mutation_parent']            = -1;
+    $cvterms['SITE_CV']['selfing_parent']             = -1;
+    $cvterms['SITE_CV']['pedigree']                   = -1;
+    $cvterms['SITE_CV']['description']                = -1;
+    $cvterms['SITE_CV']['origin']                     = -1;
+    $cvterms['SITE_CV']['comments']                   = -1;
+    $cvterms['SITE_CV']['population_size']            = -1;
+    $cvterms['SITE_CV']['subspecies']                 = -1;
     return $cvterms;
   }
 
@@ -113,8 +114,8 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
    */
   public function runErrorCheckDataLine($line) {
 
-    // Checks DB for GRIN Taxonomy.
-    MCL_CHADO_DB::checkDB($this, 'GRIN Taxonomy');
+    // Checks DB for GRIN.
+    MCL_CHADO_DB::checkDB($this, 'GRIN');
 
     // Checks organism.
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
@@ -125,8 +126,11 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
     // Checks aliases.
     MCL_CHADO_STOCK::checkAlias($this, $line['alias'], '[;,]');
 
-    // Checks contacts.
-//    MCL_CHADO_CONTACT::checkContact($this, $line['contact'], '[;,]');
+    // Checks parents.
+    MCL_CHADO_STOCK::checkStock($this, $line['paternal_parent'], $line['genus'], $line['species']);
+    MCL_CHADO_STOCK::checkStock($this, $line['maternal_parent'], $line['genus'], $line['species']);
+    MCL_CHADO_STOCK::checkStock($this, $line['mutation_parent'], $line['genus'], $line['species']);
+    MCL_CHADO_STOCK::checkStock($this, $line['selfing_parent'],  $line['genus'], $line['species']);
 
     // Checks images.
     MCL_CHADO_IMAGE::checkImage($this, $line['image'], '[;,]');
@@ -151,11 +155,11 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
     $name = ($line['secondary_id']) ? $line['secondary_id'] : '';
 
     // Adds a stock.
-    $stock = MCL_CHADO_STOCK::addStock($this, $line['stock_name'], $name, $organism_id, $type_id, $name);
+    $stock = MCL_CHADO_STOCK::addStock($this, $line['stock_name'], $name, $organism_id, $type_id);
     if ($stock) {
 
       // Gets db.
-      $db = MCL_CHADO_DB::getDB('GRIN Taxonomy');
+      $db = MCL_CHADO_DB::getDB('GRIN');
 
       // Adds a dbxref.
       $dbxref = MCL_CHADO_DBXREF::addDBXref($this, $db->getDbID(), $line['grin_id']);
@@ -188,9 +192,6 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
       $stock->addParent($this, $line['maternal_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
       $stock->addParent($this, $line['mutation_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_mutation_parent_of']);
       $stock->addParent($this, $line['selfing_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_selfing_parent_of']);
-
-      //Adds contacts.
-//      $stock->addContact($this, $line['contact'], "[,;]");
 
       // Adds images.
       $stock->addImage($this, $line['image'], "[,;]");

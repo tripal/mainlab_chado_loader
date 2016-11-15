@@ -24,39 +24,7 @@ function mcl_admin_template_form($form, &$form_state) {
     '#markup' => t('Manage data templates for Mainlab Chado Loader') . '<br /><br />',
   );
 
-  // Form for addinga template.
-  $form['template_add'] = array(
-    '#type'         => 'fieldset',
-    '#collapsed'    => TRUE,
-    '#collapsible'  => TRUE,
-    '#title'        => 'Add Template',
-  );
-  $form['template_add']['template_type'] = array(
-    '#type'         => 'select',
-    '#title'        => 'Template Type',
-    '#options'      => _get_opt_mcl_template_type(),
-    '#description'  => 'Select a type of a template.',
-    '#attributes'   => array('style' => 'width: 250px;'),
-  );
-  $form['template_add']['template'] = array(
-    '#type'         => 'textfield',
-    '#title'        => 'Template Name',
-    '#description'  => 'Type name of a template.',
-    '#attributes'   => array('style' => 'width: 250px;'),
-  );
-  $form['template_add']['add_template_btn'] = array(
-    '#type'   => 'submit',
-    '#name'   => 'add_template_btn',
-    '#value'  => 'Add Template',
-    '#ajax'   => array(
-      'callback' => "mcl_admin_template_form_ajax_callback",
-      'wrapper'  => 'mcl-admin-template-form',
-      'effect'   => 'fade',
-      'method'   => 'replace',
-    ),
-  );
-
-  // Shows the list of MCL templates.
+  // MCL templates.
   $form['template_list'] = array(
     '#type'         => 'fieldset',
     '#collapsed'    => FALSE,
@@ -64,7 +32,22 @@ function mcl_admin_template_form($form, &$form_state) {
     '#title'        => 'MCL Data Templates',
   );
 
-  // Edits a new template.
+  // Adds new template.
+  $form['template_list']['add_template_btn'] = array(
+    '#type'       => 'submit',
+    '#name'       => 'add_template_btn',
+    '#value'      => 'Add New Templates',
+    '#attributes' => array('style' => 'margin:20px 0px 30px 0px;'),
+  );
+/*
+  $form['template_list']['update_template_btn'] = array(
+    '#type'   => 'submit',
+    '#name'   => 'update_template_btn',
+    '#value'  => 'Update Templates',
+    '#prefix' => '<br />Update templates<br />',
+  );
+*/
+  // Shows the list of MCL templates.
   $form['template_list']['table']= array(
     '#markup' => _get_mcl_template_list(),
   );
@@ -209,4 +192,18 @@ function mcl_admin_template_form_validate($form, &$form_state) {}
  *
  * @ingroup mcl_admin
  */
-function mcl_admin_template_form_submit($form, &$form_state) {}
+function mcl_admin_template_form_submit($form, &$form_state) {
+
+  // Gets the trigger element.
+  $trigger_elem = $form_state['triggering_element']['#name'];
+
+  // If "Add New Templates" button is clicked.
+  if ($trigger_elem == "add_template_btn") {
+    MCL_TEMPLATE::updateTemplates(TRUE);
+  }
+
+  // If "Update Templates" button is clicked.
+  else if ($trigger_elem == "update_template_btn") {
+    MCL_TEMPLATE::updateTemplates(FALSE);
+  }
+}

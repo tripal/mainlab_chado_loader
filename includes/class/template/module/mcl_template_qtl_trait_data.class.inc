@@ -12,6 +12,7 @@ class MCL_TEMPLATE_QTL_TRAIT_DATA extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'PHENOTYPE';
     parent::__construct($details);
   }
 
@@ -20,9 +21,9 @@ class MCL_TEMPLATE_QTL_TRAIT_DATA extends MCL_TEMPLATE {
    */
   public static function byKey($keys) {
     $parent = parent::byKey($keys);
-    if ($parent) {
-      return new self($parent->getMemberArr());
-    }
+      if ($parent) {
+        return new self($parent->getMemberArr());
+      }
     }
 
   /**
@@ -52,20 +53,20 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
       'genus'                     => array('req' => TRUE,  'width' => 10, 'desc' => "Genus to which the stock belongs to."),
       'species'                   => array('req' => TRUE,  'width' => 10, 'desc' => "Species name. Enter 'sp.' to represent one unknown species, 'spp.' to represent multiple unknown species."),
       'descriptor'                => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the trait. It should exist in 'trait_name' column of the 'Trait' sheet and 'QTL' sheet."),
-      'trait_descriptor_set'      => array('req' => TRUE,  'width' => 20, 'desc' => "The name of the crop trait ontology that is stored in cv table of chado (eg. 'rosaceae_trait_ontology' for GDR, 'cotton_trait_ontology' for cotton). In Main Lab, we develop crop trait ontology for Rosaceae, cool season food legumes, cotton and citrus, and map them to the Plant Trait Ontology."),
+      'trait_descriptor_set'      => array('req' => FALSE,  'width' => 20, 'desc' => "The name of the crop trait ontology that is stored in cv table of chado (eg. 'rosaceae_trait_ontology' for GDR, 'cotton_trait_ontology' for cotton). In Main Lab, we develop crop trait ontology for Rosaceae, cool season food legumes, cotton and citrus, and map them to the Plant Trait Ontology. If not provided, the site trait ontology will be used."),
       'site_name'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Location/environment where the plant was grown. Site_name should exist in 'site_name' column of the 'Site' sheet. If the phenotypic measurement has bee done in multiple years, create multiple site_code even if it is done in the same location."),
       'mean'                      => array('req' => TRUE,  'width' => 10, 'desc' => "Mean value of the traits for each parent and progeny."),
       'standard_deviation'        => array('req' => FALSE, 'width' => 10, 'desc' => ""),
       'coefficient_of_variation'  => array('req' => FALSE, 'width' => 10, 'desc' => ""),
       'skewness'                  => array('req' => FALSE, 'width' => 10, 'desc' => ""),
       'h2'                        => array('req' => FALSE, 'width' => 10, 'desc' => ""),
-      'cl_90'                     => array('req' => FALSE, 'width' => 10, 'desc' => ""),
+      'ci_90'                     => array('req' => FALSE, 'width' => 10, 'desc' => "Confidence Intervals"),
       'comments'                  => array('req' => FALSE, 'width' => 10, 'desc' => ""),
       'reference'                 => array('req' => FALSE, 'width' => 10, 'desc' => ""),
     );
 
     // Adds labels.
-    $headers['cl_90']['label'] = 'Cl_90';
+    $headers['ci_90']['label'] = 'CI_90';
     return $headers;
   }
 
@@ -80,7 +81,7 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
     $cvterms['SITE_CV']['coefficient_of_variation'] = -1;
     $cvterms['SITE_CV']['skewness']                 = -1;
     $cvterms['SITE_CV']['h2']                       = -1;
-    $cvterms['SITE_CV']['cl_90']                    = -1;
+    $cvterms['SITE_CV']['ci_90']                    = -1;
     $cvterms['SITE_CV']['comments']                 = -1;
     return $cvterms;
   }
@@ -93,8 +94,8 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
     // Checks dataset.
     MCL_CHADO_DATASET::checkDataset($this, $line['dataset_name']);
 
-    // Cehcks descriptor.
-    MCL_CHADO_CVTERM::checkCvterm($this, $line['trait_descriptor_set'], $line['descriptor']);
+    // Checks trait.
+    MCL_CHADO_TRAIT::checkTrait($this, $line['descriptor'], $line['trait_descriptor_set']);
 
     // Checks organism.
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
@@ -114,8 +115,8 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
    */
   public function uploadDataLine($line) {
 
-    // Gets the descriptor.
-    $descriptor = MCL_CHADO_CVTERM::getCvterm($line['trait_descriptor_set'], $line['descriptor']);
+    // Gets the trait.
+    $trait = MCL_CHADO_TRAIT::getTrait($line['descriptor'], $line['trait_descriptor_set']);
 
     // Gets the organims.
     $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
@@ -132,10 +133,10 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
 
     // Adds a phenotype (mean).
     $uniquename = $line['descriptor'] . '_' . $line['mean'];
-    $phenotype = MCL_CHADO_PHENOTYPE::addPhenotype($this, $uniquename, $descriptor->getCvtermID(), $line['mean']);
+    $phenotype = MCL_CHADO_PHENOTYPE::addPhenotype($this, $uniquename, $trait->getCvtermID(), $line['mean']);
 
     // Adds a nd_experiment.
-    $value = $line['dataset_name'] . '_' . $line['site_name'] . '_' . $line['stock_name'] . '_' . $descriptor->getCvtermID();
+    $value = $line['dataset_name'] . '_' . $line['site_name'] . '_' . $line['stock_name'] . '_' . $trait->getCvtermID();
     $nd_experiment = MCL_CHADO_ND_EXPERIMENT::addNdExperiment($this, $this->cvterms['SITE_CV']['statistical'], $nd_geolocation_id, $this->cvterms['SITE_CV']['statistical'], $value);
 
     // Adds properties.

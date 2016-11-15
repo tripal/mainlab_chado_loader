@@ -24,11 +24,16 @@ class MCL_TEMPLATE extends PUBLIC_MCL_TEMPLATE {
     $this->csv  = array_key_exists('csv', $details) ? $details['csv'] : NULL;
     $this->job  = array_key_exists('job', $details) ? $details['job'] : NULL;
 
+    // Updates the template type.
+    if (array_key_exists('template_type', $details)) {
+      $this->template_type =  MCL_TEMPLATE_TYPE::byKey(array('type' => $details['template_type']));
+    }
+    if (!$this->template_type && $this->template_type_id) {
+      $this->template_type = MCL_TEMPLATE_TYPE::byKey(array('template_type_id' => $this->template_type_id));
+    }
+
     // Initialize variables.
     $this->line_no = -1;
-
-    // Updates the template_type.
-    $this->template_type = MCL_TEMPLATE_TYPE::byKey(array('template_type_id' => $this->template_type_id));
 
     // Sets the headers.
     $this->headers = $this->defineHeaders();
@@ -183,6 +188,49 @@ DESC;
       }
     }
     return TRUE;
+  }
+
+  /**
+   * Updates templates.
+   *
+   * @param boolean $new_template_only
+   *
+   */
+  public static function updateTemplates($new_template_only = FALSE) {
+
+    // If $new_template_only is FALSE, removes all templates from the mcl_template table.
+    if (!$new_template_only) {
+      //$result = db_truncate('mcl_template')->execute();
+    }
+
+    // Gets the directory of the templates.
+    $module_path = drupal_get_path('module', 'mcl');
+    $files = file_scan_directory("$module_path/includes/class/template/module", "/\.inc$/");
+    foreach ($files as $filepath => $file) {
+      if (preg_match("/^mcl_template_(.*)\.class$/", $file->name, $matches)) {
+        $template   = $matches[1];
+        $class_name = 'MCL_TEMPLATE_' . strtoupper($template);
+        if (class_exists($class_name)) {
+
+          // Adds a template.
+          $mcl_template = new $class_name();
+          if ($mcl_template->getTemplateType(TRUE)) {
+            if (MCL_TEMPLATE::addTemplate($mcl_template->getTemplateType(), $template)) {
+              drupal_set_message("New template of $class_name has been added.");
+            }
+            else {
+              drupal_set_message("Failed to add the template of $class_name.");
+            }
+          }
+          else {
+            drupal_set_message("Template type of $class_name not found. Check the template type.");
+          }
+        }
+        else {
+          drupal_set_message("Skipped : $class is not defined.");
+        }
+      }
+    }
   }
 
   /**
@@ -385,21 +433,18 @@ DESC;
     foreach ($this->cvterms as $cv_name => $cvterms) {
       $tmp_cv_name = $cv_name;
 
-      // Updates $tmp_cv_name if it is SITE_CV.
+      // Updates the name if name is 'SITE_CV' or 'SITE_TRAIT_ONTOLOGY'.
       if ($cv_name == 'SITE_CV') {
-        $mcl_var = MCL_VAR::byKey(array('name' => $tmp_cv_name));
-        if (!$mcl_var) {
-          $this->updateMsg('E', "Error : SITE_CV not found");
-          $error = TRUE;
-          continue;
-        }
-        $tmp_cv_name = $mcl_var->getValue();
+        $tmp_cv_name = MCL_VAR::getValueByName('SITE_CV');
+      }
+      else if ($cv_name == 'SITE_TRAIT_ONTOLOGY') {
+        $tmp_cv_name = MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY');
       }
 
       // Gets CV.
       $cv = CHADO_CV::byKey(array('name' => $tmp_cv_name));
       if (!$cv) {
-        $this->updateMsg('E', "Error : Could not find cv_id for  $tmp_cv_name -$cv_name");
+        $this->updateMsg('E', "Error : Could not find cv_id for  $cv_name");
         $error = TRUE;
         continue;
       }
@@ -467,6 +512,9 @@ DESC;
     foreach ($this->cvterms as $cv_name => $cvterms) {
       if ($cv_name == 'SITE_CV') {
         $cv_name = MCL_VAR::getValueByName('SITE_CV');
+      }
+      else if ($cv_name == 'SITE_TRAIT_ONTOLOGY') {
+        $cv_name = MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY');
       }
       ksort($cvterms);
       foreach ($cvterms as $cvterm_name => $cvterm_id) {
@@ -1002,7 +1050,6 @@ DESC;
           $this->addMsg('N', $table_name, $args);
         }
         else {
-          print "here:$table_name\n";
           $this->addMsg('E', $table_name, $args);
         }
       }
@@ -1153,6 +1200,29 @@ DESC;
    * Defines getters and setters below.
    */
   /**
+   * Retrieves the template type.
+   *
+   * @param boolean $object
+   *
+   * @return string
+   */
+  public function getTemplateType($object = FALSE) {
+    if ($object) {
+      return $this->template_type;
+    }
+    return $this->template_type->getType();
+  }
+
+  /**
+   * Updates the template type.
+   *
+   * @param string $template_type
+   */
+  public function setTemplateType($template_type) {
+    $this->template_type = MCL_TEMPLATE_TYPE::byKey(array('type' => $template_type));
+  }
+
+  /**
    * Retrieves the headers.
    *
    * @return string
@@ -1204,24 +1274,6 @@ DESC;
    */
   public function setCSV($csv) {
     $this->csv = $csv;
-  }
-
-  /**
-   * Retrieves the template type.
-   *
-   * @return string
-   */
-  public function getTemplateType() {
-    return $this->template_type->getType();
-  }
-
-  /**
-   * Updates the template type.
-   *
-   * @param string $template_type
-   */
-  public function setTemplateType($template_type) {
-    $this->template_type->setType($template_type);
   }
 
   /**

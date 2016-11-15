@@ -12,6 +12,7 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
    * @see MCL_UPLOAD::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'CROSS';
     parent::__construct($details);
   }
 
@@ -76,7 +77,6 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
     // Gets genus and species from cross_number.
     $genus = '';
     $species = '';
-
 
     // Checks maternal parent.
     MCL_CHADO_STOCK::checkStock($this, $line['mother'], $genus, $species);

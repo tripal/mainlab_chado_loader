@@ -381,19 +381,6 @@ CREATE TABLE bims_dataset_stats (
 
 
 --
--- Name: bims_descriptor; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE bims_descriptor (
-    cv_id integer NOT NULL,
-    category character varying(255),
-    name character varying(255) NOT NULL,
-    cvterm_id integer NOT NULL,
-    definition text
-);
-
-
---
 -- Name: bims_descriptor_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -580,85 +567,28 @@ ALTER SEQUENCE bims_location_location_id_seq OWNED BY bims_location.location_id;
 
 
 --
--- Name: bims_mivew_24; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+-- Name: bims_mview_descriptor; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
-CREATE TABLE bims_mivew_24 (
-    stock_id integer NOT NULL,
-    name character varying(300) NOT NULL
-);
-
-
---
--- Name: bims_mivew_24_1; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE bims_mivew_24_1 (
-    stock_id integer NOT NULL,
-    name character varying(300) NOT NULL
-);
-
-
---
--- Name: bims_mview; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE bims_mview (
-    mview_id integer NOT NULL,
+CREATE TABLE bims_mview_descriptor (
+    cv_id integer NOT NULL,
+    category character varying(255),
     name character varying(255) NOT NULL,
-    type_id integer NOT NULL,
-    sql text NOT NULL,
-    description text
+    cvterm_id integer NOT NULL,
+    definition text
 );
 
 
 --
--- Name: bims_mview_mview_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: bims_mview_phenotype_stats; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
-CREATE SEQUENCE bims_mview_mview_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: bims_mview_mview_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE bims_mview_mview_id_seq OWNED BY bims_mview.mview_id;
-
-
---
--- Name: bims_mview_type; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE bims_mview_type (
-    mview_type_id integer NOT NULL,
-    type character varying(255) NOT NULL,
-    description text
+CREATE TABLE bims_mview_phenotype_stats (
+    project_id integer NOT NULL,
+    cvterm_id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    stats text
 );
-
-
---
--- Name: bims_mview_type_mview_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE bims_mview_type_mview_type_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: bims_mview_type_mview_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE bims_mview_type_mview_type_id_seq OWNED BY bims_mview_type.mview_type_id;
 
 
 --
@@ -7988,20 +7918,6 @@ ALTER TABLE ONLY bims_location ALTER COLUMN location_id SET DEFAULT nextval('bim
 
 
 --
--- Name: mview_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY bims_mview ALTER COLUMN mview_id SET DEFAULT nextval('bims_mview_mview_id_seq'::regclass);
-
-
---
--- Name: mview_type_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY bims_mview_type ALTER COLUMN mview_type_id SET DEFAULT nextval('bims_mview_type_mview_type_id_seq'::regclass);
-
-
---
 -- Name: node_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -8475,7 +8391,7 @@ ALTER TABLE ONLY bims_descriptor_group
 -- Name: bims_descriptor_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
-ALTER TABLE ONLY bims_descriptor
+ALTER TABLE ONLY bims_mview_descriptor
     ADD CONSTRAINT bims_descriptor_pkey PRIMARY KEY (cvterm_id);
 
 
@@ -8520,35 +8436,11 @@ ALTER TABLE ONLY bims_location
 
 
 --
--- Name: bims_mview_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+-- Name: bims_mview_phenotype_stats_project_id_cvterm_id_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
-ALTER TABLE ONLY bims_mview
-    ADD CONSTRAINT bims_mview_pkey PRIMARY KEY (mview_id);
-
-
---
--- Name: bims_mview_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY bims_mview_type
-    ADD CONSTRAINT bims_mview_type_pkey PRIMARY KEY (mview_type_id);
-
-
---
--- Name: bims_mview_type_ukey_bims_mview_name_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY bims_mview_type
-    ADD CONSTRAINT bims_mview_type_ukey_bims_mview_name_key UNIQUE (type);
-
-
---
--- Name: bims_mview_ukey_bims_mview_name_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY bims_mview
-    ADD CONSTRAINT bims_mview_ukey_bims_mview_name_key UNIQUE (name);
+ALTER TABLE ONLY bims_mview_phenotype_stats
+    ADD CONSTRAINT bims_mview_phenotype_stats_project_id_cvterm_id_key UNIQUE (project_id, cvterm_id);
 
 
 --

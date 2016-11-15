@@ -61,9 +61,12 @@ class MCL_CHADO_CV extends CHADO_CV {
    */
   public static function getCV($name) {
 
-    // Updates the name if name is 'SITE_CV'.
+    // Updates the name if name is 'SITE_CV' or 'SITE_TRAIT_ONTOLOGY'.
     if ($name == 'SITE_CV') {
       $name = MCL_VAR::getValueByName($name);
+    }
+    else if ($cv_name == 'SITE_TRAIT_ONTOLOGY') {
+      $name = MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY');
     }
     return MCL_CHADO_CV::bykey(array('name' => $name));
   }

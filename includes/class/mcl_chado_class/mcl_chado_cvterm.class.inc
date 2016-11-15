@@ -180,7 +180,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
 
       // Sets the accession.
       if (!$accession) {
-        $accession = strtoupper($mcl_db->getName()) . ":$cvterm_name";
+        $accession = strtoupper($mcl_db->getName()) . ":$cv_name:$cvterm_name";
       }
 
       // Gets dbxref.

@@ -102,9 +102,27 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
         $uniquenames = preg_split($mcl_tmpl->getSepRegex($separator), $stock, NULL, PREG_SPLIT_NO_EMPTY);
         foreach ($uniquenames as $uniquename) {
           $uniquename = trim($uniquename);
+          $organism_id = $mcl_organism->getOrganismID();
+
+          // If '::' found in uniquename, update uniquename and organism_id.
+          if (preg_match("/^(.*?)\s+(.*?)::(.*?)$/", $uniquename, $matches)) {
+            $genus          = trim($matches[1]);
+            $species        = trim($matches[2]);
+            $uniquename     = trim($matches[3]);
+            $diff_organism  = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+            if ($diff_organism) {
+              $organism_id = $diff_organism->getOrganismID();
+            }
+            else {
+              $mcl_tmpl->updateMsg('E', "$genus $species not found in organism");
+              return;
+            }
+          }
+
+          // Checks the stock.
           $args = array(
-            'uniquename' => $uniquename,
-            'organism_id' => $mcl_organism->getOrganismID(),
+            'uniquename'  => $uniquename,
+            'organism_id' => $organism_id,
           );
           $mcl_stock = MCL_CHADO_STOCK::byKey($args);
           if (!$mcl_stock) {
@@ -279,8 +297,21 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    */
   public function addParent(MCL_TEMPLATE $mcl_tmpl, $uniquename, $organism_id, $type_id_relationship) {
     if ($uniquename && $organism_id && $type_id_relationship) {
+
+      // If '::' found in uniquename, update uniquename and organism_id.
+      if (preg_match("/^(.*?)\s+(.*?)::(.*?)$/", $uniquename, $matches)) {
+        $genus          = trim($matches[1]);
+        $species        = trim($matches[2]);
+        $uniquename     = trim($matches[3]);
+        $diff_organism  = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+        if ($diff_organism) {
+          $organism_id = $diff_organism->getOrganismID();
+        }
+      }
+
+      // Adds a parent.
       $args = array(
-        'uniquename' => $uniquename,
+        'uniquename'  => $uniquename,
         'organism_id' => $organism_id
       );
       $parent = MCL_CHADO_STOCK::byKey($args);

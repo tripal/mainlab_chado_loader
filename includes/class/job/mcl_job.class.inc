@@ -522,16 +522,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
       $new_progress = $this->progress . '<br />' . $progress;
     }
     $this->setPropByKey('progress', $new_progress);
-  }
-
-  /**
-   * Updates the param.
-   *
-   * @param array
-   */
-  public function setParam($param) {
-    parent::setParam($param);
-    $this->param_arr = json_decode($param, TRUE);
+    $this->update();
   }
 
   /**

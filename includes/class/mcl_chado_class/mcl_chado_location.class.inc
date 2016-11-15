@@ -106,7 +106,7 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       );
       $bim_location = MCL_CHADO_LOCATION::byKey($args);
       if (!$bim_location) {
-        $mcl_tmpl->addMsg('E', 'nd_geolocation', $args);
+        $mcl_tmpl->updateMsg('E', "(description) = ($site_name) not found in nd_geolocation");
       }
     }
   }

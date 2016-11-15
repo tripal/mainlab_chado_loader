@@ -29,6 +29,9 @@ function mcl_drush_command() {
     'examples' => array(
       'Standard example' => 'drush mcl-dump-schema [schema]',
     ),
+    'options' => array(
+      'working_dir' => t('Specifies the working directory.'),
+    ),
     'aliases' => array('mcl-dump'),
   );
   $items['mcl-run'] = array(
@@ -132,8 +135,8 @@ function mcl_drush_command() {
     'arguments' => array(
       'module'      => t('The target module.'),
       'schema'      => t('The schema name.'),
-      'dump_file'   => t('Postgresql dump file.'),
-      'table_file'  => t('The list of tables.'),
+      'dump_file'   => t('The filename of the Postgresql dump file.'),
+      'table_file'  => t('The filename of the list of tables.'),
     ),
     'options' => array(
       'namespace'   => t('Specifies the namespace.'),
@@ -144,6 +147,7 @@ function mcl_drush_command() {
     'examples' => array(
       'Standard example' => 'drush mcl-generate-class [module] [schema] [dump_file] [table_file] --working_dir=/yourpath',
     ),
+    'aliases' => array('mcl-class'),
   );
   $items['mcl-fix-data'] = array(
     'description' => t('Fix data.'),
@@ -172,7 +176,7 @@ function drush_mcl_dump_schema($schema) {
   }
 
   // Sets the target file.
-  $target_file = drupal_get_path('module', 'mcl') . "/drupal7.$schema.sql";
+  $target_file = drupal_get_path('module', 'mcl') . "/schema/drupal7.$schema.sql";
 
   // Sets the command line.
   $cmd = "pg_dump -U postgres -h localhost --no-owner --schema=$schema --schema-only drupal7 > $target_file";
@@ -238,7 +242,7 @@ function drush_mcl_rerun_job($job_id, $filepath) {
   $force = ($force) ? TRUE : FALSE;
   $mcl_job->setForce($force);
 
-  // Check the move_input option.
+  // Checks the move_input option.
   $move_input = drush_get_option('move_input');
   $move_input = ($move_input) ? TRUE : FALSE;
 
@@ -703,7 +707,7 @@ function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $
  */
 function drush_mcl_generate_class($module, $schema, $dump_file, $table_file) {
 
-  // Checks the working directory option.
+  // Checks the working directory option. This option is required.
   $working_dir = drush_get_option('working_dir');
   if ($working_dir) {
     if (!file_exists($working_dir)) {
@@ -720,7 +724,8 @@ function drush_mcl_generate_class($module, $schema, $dump_file, $table_file) {
     exit;
   }
 
-  // Checks the class path directory option.
+  // Sets the class path directory if provided. Otherwise, sets the
+  // default class path.
   $class_dir = drush_get_option('class_dir');
   if (!$class_dir) {
 

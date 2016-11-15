@@ -7559,6 +7559,39 @@ typically derived from the features making up the genotype.';
 
 
 --
+-- Name: genotype_call; Type: TABLE; Schema: chado; Owner: -; Tablespace: 
+--
+
+CREATE TABLE genotype_call (
+    genotype_call_id integer NOT NULL,
+    project_id integer NOT NULL,
+    feature_id integer NOT NULL,
+    stock_id integer NOT NULL,
+    genotype_id integer NOT NULL,
+    meta_data text
+);
+
+
+--
+-- Name: genotype_call_genotype_call_id_seq; Type: SEQUENCE; Schema: chado; Owner: -
+--
+
+CREATE SEQUENCE genotype_call_genotype_call_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: genotype_call_genotype_call_id_seq; Type: SEQUENCE OWNED BY; Schema: chado; Owner: -
+--
+
+ALTER SEQUENCE genotype_call_genotype_call_id_seq OWNED BY genotype_call.genotype_call_id;
+
+
+--
 -- Name: genotype_genotype_id_seq; Type: SEQUENCE; Schema: chado; Owner: -
 --
 
@@ -12755,6 +12788,13 @@ ALTER TABLE ONLY featurerange ALTER COLUMN featurerange_id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY genotype ALTER COLUMN genotype_id SET DEFAULT nextval('genotype_genotype_id_seq'::regclass);
+
+
+--
+-- Name: genotype_call_id; Type: DEFAULT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY genotype_call ALTER COLUMN genotype_call_id SET DEFAULT nextval('genotype_call_genotype_call_id_seq'::regclass);
 
 
 --
@@ -21162,6 +21202,38 @@ ALTER TABLE ONLY featurerange
 
 ALTER TABLE ONLY featurerange
     ADD CONSTRAINT featurerange_rightstartf_id_fkey FOREIGN KEY (rightstartf_id) REFERENCES feature(feature_id) ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: genotype_call_feature_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY genotype_call
+    ADD CONSTRAINT genotype_call_feature_id_fkey FOREIGN KEY (feature_id) REFERENCES feature(feature_id) ON DELETE CASCADE;
+
+
+--
+-- Name: genotype_call_genotype_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY genotype_call
+    ADD CONSTRAINT genotype_call_genotype_id_fkey FOREIGN KEY (genotype_id) REFERENCES genotype(genotype_id) ON DELETE CASCADE;
+
+
+--
+-- Name: genotype_call_project_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY genotype_call
+    ADD CONSTRAINT genotype_call_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(project_id) ON DELETE CASCADE;
+
+
+--
+-- Name: genotype_call_stock_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY genotype_call
+    ADD CONSTRAINT genotype_call_stock_id_fkey FOREIGN KEY (stock_id) REFERENCES stock(stock_id) ON DELETE CASCADE;
 
 
 --

@@ -12,6 +12,7 @@ class MCL_TEMPLATE_LIBRARY extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'LIBRARY';
     parent::__construct($details);
   }
   /**

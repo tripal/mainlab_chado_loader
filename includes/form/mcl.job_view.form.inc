@@ -143,9 +143,9 @@ function _mcl_get_all_logs(MCL_JOB_UPLOAD $mcl_job) {
         preg_match("/-([A-Za-z\_]+)\.log$/", $filepath, $matches2);
         $key = $matches2[1];
         $log_files []= array(
-          'key'       => $key,
-          'filepath'  => $filepath,
-          'url'       => "$public_url/" . str_replace($public_path, '', $filepath),
+          'key'      => $key,
+          'filepath' => $filepath,
+          'log_file' => "recent:$object:" . basename($filepath),
         );
       }
 
@@ -176,10 +176,9 @@ function _mcl_get_all_logs(MCL_JOB_UPLOAD $mcl_job) {
       'key'       => $key,
       'date'      => "$date $time",
       'filepath'  => $filepath,
-      'url'       => "$public_url/" . str_replace($public_path, '', $filepath),
+      'log_file'  => 'new_data:' . basename($filepath),
     );
   }
-
 
   // Adds log files.
   if (!empty($log_files)) {
@@ -212,11 +211,12 @@ function _mcl_cmp_log($a, $b) {
  * @param array $logs
  */
 function _mcl_add_logs(&$form, MCL_JOB $mcl_job, $log_type, $logs) {
+  $job_id     = $mcl_job->getJobID();
+  $title      = $mcl_job->getMessageType($log_type) . ' Logs';
   $id_form    = 'log_' . $log_type;
   $id_viewer  = 'id_log_viewer_' . $log_type;
   $id_table   = 'id_table_' . $log_type;
   $id_anchor  = 'anchor_' . $log_type;
-  $title      = $mcl_job->getMessageType($log_type) . ' Logs';
 
   // Adds the anchor.
   $form[$id_anchor] = array(
@@ -241,18 +241,18 @@ function _mcl_add_logs(&$form, MCL_JOB $mcl_job, $log_type, $logs) {
     $rows = array();
     foreach ($log_files as $log_file) {
       $total_row++;
-      $url = $log_file['url'];
+      $url = "/mcl/ajax_view_log/$job_id/" . $log_file['log_file'];
 
       // Adds the link to view if the size of the log file is less than
       // 15 MB (15000000 B).
       $filepath = $log_file['filepath'];
       $link_view = '<em>N/A</em>';
       if (file_exists($filepath) && filesize($filepath) < 15000000) {
-        $link_view = "<a href='#$id_anchor' class='mcl_log' viewer-id='$id_viewer' log-file='$url'>view</a>";
+        $tmp_name = $log_file['key'];
+        $link_view = "<a href='#$id_anchor' class='mcl_log' viewer-id='$id_viewer' tmp-name='[$tmp_name]' log-file='$url'>view</a>";
       }
       $row = array(
         $log_file['key'],
-        l('download', $url, array('query' => array('downlaod' => 1))),
         $link_view,
       );
       if ($log_type == 'N') {
@@ -270,7 +270,6 @@ function _mcl_add_logs(&$form, MCL_JOB $mcl_job, $log_type, $logs) {
     // Adds headers.
     $headers = array(
       $column_name,
-      array('data' => 'Download', 'style' => 'width:30px;'),
       array('data' => 'View', 'style' => 'width:28px;'),
     );
     if ($log_type == 'N') {
@@ -292,7 +291,7 @@ function _mcl_add_logs(&$form, MCL_JOB $mcl_job, $log_type, $logs) {
     );
 
     // Adds the caption.
-    $caption = "Status = $status_int (" . $mcl_job->trStatusIntToLabel($status_int) . ')';
+    $caption = ucwords($mcl_job->trStatusIntToLabel($status_int));
     if (!preg_match("/[ND]/", $log_type)) {
       $table_vars['caption'] = "<b>$caption</b>";
     }
@@ -418,9 +417,17 @@ function mcl_job_view_form_submit($form, &$form_state) {
   ->condition('fid', $drupal_file->fid, '=')
   ->execute();
 
+  // Updates job status.
+  $mcl_job = MCL_JOB::byKey(array('job_id' => $job_id));
+  $mcl_job->setStatus(0);
+  $mcl_job->setProgress('');
+  $mcl_job->update();
+
   // Submits the re-uploading job.
-  $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null &";
-  exec($cmd);
+  $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null & echo $!";
+  $pid = exec($cmd);
+
+  // Saves the process ID.
 
   // Re-direct to "Data Uploading" page.
   $form_state['redirect'] = "mcl/job_view/$job_id";

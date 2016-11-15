@@ -16,6 +16,7 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'PHENOTYPE';
     parent::__construct($details);
   }
 
@@ -115,7 +116,7 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
     MCL_CHADO_STOCK::checkStock($this, $line['rootstock'], $line['genus'], $line['species']);
 
     // Checks evaluator for contact.
-    MCL_CHADO_CONTACT::checkContact($this, $line['evaluator'], '[;,]');
+    MCL_CHADO_CONTACT::checkContact($this, $line['evaluator'], '[;]');
 
     // Checks site.
     MCL_CHADO_LOCATION::checkSite($this, $line['site_name']);

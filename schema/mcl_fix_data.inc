@@ -13,6 +13,11 @@ function mcl_fix_data_func($input_file = NULL) {
   if (!$cvterm) {
     throw new Exception("SNP_chip not found in cvterm\n");
   }
+  $cvterm_gm = MCL_CHADO_CVTERM::getCvterm('sequence', 'genetic_marker');
+  if (!$cvterm_gm) {
+    throw new Exception("genetic_marker\n");
+  }
+
 
   // Opens the files for reading and writing.
   $fdr = fopen($input_file, "r");
@@ -29,7 +34,7 @@ function mcl_fix_data_func($input_file = NULL) {
       $chip_name  = trim($tmp[1]);
       $chip_id    = $uniquename;
 
-      $feature = MCL_CHADO_FEATURE::byKey(array('uniquename' => $uniquename));
+      $feature = MCL_CHADO_FEATURE::byKey(array('uniquename' => $uniquename, 'type_id' => $cvterm_gm->getCvtermID()));
       if (!$feature) {
         throw new Exception("$uniquename not found in feature\n");
       }
@@ -41,12 +46,15 @@ function mcl_fix_data_func($input_file = NULL) {
         'name' => $chip_id,
         'type_id' => $cvterm->getCvtermID(),
       );
+      fputs($fdw, "-- $uniquename\n");
       $synonym = new MCL_CHADO_SYNONYM($details);
       if ($synonym->insert()) {
         $synonym_id = $synonym->getSynonymID();
-        $sql = "INSERT INTO feature_synonym(feature_id, synonym_id) VALUES($feature->getFeatureID(), $synonym_id);";
+        $feature_id = $feature->getFeatureID();
+        $library_id = $library->getLibraryID();
+        $sql = "INSERT INTO chado.feature_synonym(feature_id, synonym_id) VALUES($feature_id, $synonym_id);";
         fputs($fdw, "$sql\n");
-        $sql = "INSERT INTO library_synonym(library_id, synonym_id) VALUES($library->getLibraryID(), $synonym_id);";
+        $sql = "INSERT INTO chado.library_synonym(library_id, synonym_id) VALUES($library_id, $synonym_id);";
         fputs($fdw, "$sql\n");
       }
       else {

@@ -136,6 +136,7 @@ function mcl_get_rel_filepath($filepath) {
 /**
  * Returns the all files under the provided directory.
  *
+ * @param string $target_dir
  * @param string $pattern
  *
  * @return array of string
@@ -153,6 +154,8 @@ function mcl_retrive_files($target_dir, $pattern) {
 
 /**
  * Download all log files.
+ *
+ * @param integer $job_id
  */
 function mcl_download_log($job_id) {
 
@@ -207,4 +210,28 @@ function mcl_download_file($file_id) {
     readfile($filepath);
     exit();
   }
+}
+
+/**
+ * Views log file.
+ *
+ * @param integer $job_id
+ * @param string $filepath_str
+ */
+function mcl_view_log($job_id, $filepath_str) {
+
+  // Gets MCL_UPLOAD_JOB.
+  $mcl_job = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
+
+  $filepath = $mcl_job->getLogDir() . '/' . str_replace(':', '/', $filepath_str);
+
+   // Open the log file.
+  $contents = "Log file not found [$filepath].";
+  if (file_exists($filepath)) {
+    $contents = file_get_contents($filepath);
+  }
+  //drupal_json_output($contents);
+  header("Content-Type: text/plain");
+  echo $contents;
+  exit();
 }

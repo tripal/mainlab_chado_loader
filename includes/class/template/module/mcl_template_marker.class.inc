@@ -12,6 +12,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'MARKER';
     parent::__construct($details);
   }
 
@@ -130,7 +131,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     MCL_CHADO_LIBRARY::checkLibrary($this, $line['snp_chip_name'], $this->cvterms['SITE_CV']['SNP_chip']);
 
     // Checks contacts.
-    MCL_CHADO_CONTACT::checkContact($this, $line['contact'], '[;,]');
+    MCL_CHADO_CONTACT::checkContact($this, $line['contact'], '[;]');
 
     // Checks images.
     MCL_CHADO_IMAGE::checkImage($this, $line['image'], '[;,]');
@@ -218,7 +219,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       $marker->addStock($this, $line['variety'], $line['genus'], $line['species'], "[;,]");
 
       // Adds contacts.
-      $marker->addContact($this, $line['contact'], "[;,]");
+      $marker->addContact($this, $line['contact'], "[;]");
 
       // Adds images.
       $marker->addImage($this, $line['image'], "[;,]");

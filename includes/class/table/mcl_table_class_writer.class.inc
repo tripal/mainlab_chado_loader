@@ -292,17 +292,17 @@ $namespace
  */
 class $class_name $base_class {
 
- /**
-  *  Data members for $class_name.
-  */
+  /**
+   *  Data members for $class_name.
+   */
 $data_members
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members..
+   */
 $data_types
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param \$details

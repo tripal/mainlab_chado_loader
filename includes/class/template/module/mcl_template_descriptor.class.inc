@@ -20,6 +20,7 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'DESCRIPTOR';
     parent::__construct($details);
   }
 

@@ -17,11 +17,12 @@
       // Loads the log file on the viewer.
       $(".mcl_log").click(function() {
         var id_viewer = '#' + $(this).attr("viewer-id");
+        var name = $(this).attr("tmp-name");
         $.ajax({
           url : $(this).attr("log-file"),
           dataType: "text",
           success : function (data) {
-            $(id_viewer).html(data.replace(/\n/g, '<br />'));
+            $(id_viewer).html(name + data.replace(/\n/g, '<br />'));
           }
         });
       });

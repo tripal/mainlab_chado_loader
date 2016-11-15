@@ -12,6 +12,7 @@ class MCL_TEMPLATE_GENOTYPE extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'GENOTYPE';
     parent::__construct($details);
   }
 
@@ -116,7 +117,7 @@ class MCL_TEMPLATE_GENOTYPE extends MCL_TEMPLATE {
     MCL_CHADO_FEATURE::checkFeature($this, $line['marker'], $line['marker_genus'], $line['marker_species'], $this->cvterms['sequence']['genetic_marker']);
 
     // Checks experimenter for contacts.
-    MCL_CHADO_CONTACT::checkContact($this, $line['experimenter'], '[;,]');
+    MCL_CHADO_CONTACT::checkContact($this, $line['experimenter'], '[;]');
   }
 
   /**

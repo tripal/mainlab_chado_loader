@@ -12,6 +12,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'MAP_POSITION';
     parent::__construct($details);
   }
 
@@ -40,8 +41,6 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     $headers = array(
       'marker_qtl_mtl'      => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the marker, QTL or MTL. Please provide the detailr data in 'Marker', 'QTL', or 'MTL' sheet."),
       'locus_name'          => array('req' => FALSE, 'width' => 10, 'desc' => "When a RFLP (eg. AA07) corresponds to more than one locus, the marker name (eg. AA07) is recorded in marker/qtl/mtl column and the specific name for each map position (eg. AA07A, AA07B) is recorded in this 'locus_name' column. Use AA07 as a marker name and the loci names as aliases for the marker name in 'Marker' Sheet. When a MTL is mapped to multiple locations, use the MTL_name in 'MTL' sheet in 'marker/qtl/mtl' column and the locus name of the specific map position in 'locus_name'' colum."),
-      'genus'               => array('req' => TRUE,  'width' => 10, 'desc' => "The genus name of the organism from which the marker was developed."),
-      'species'             => array('req' => TRUE,  'width' => 10, 'desc' => "The species name of the organism from which the marker was developed. Enter 'sp.' to represent one unknown species, 'spp.' to represent multiple unknown species."),
       'map_name'            => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the genetic map."),
       'linkage_group'       => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the linkage group."),
       'linkage_group_order' => array('req' => FALSE, 'width' => 10, 'desc' => "The order of linkage groups for display. Some maps have linkage groups orders of which are not obvious such as G1V, G1G, G2V, etc."),
@@ -85,18 +84,13 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
    */
   public function runErrorCheckDataLine($line) {
 
-    // Checks organisms.
-    MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
-
     // Checks map.
     MCL_CHADO_FEATUREMAP::checkMap($this, $line['map_name']);
 
     // Checks marker_qtl_mtl. It must be generic marker, MTL or QTL.
-    $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
     $marker_qtl_mtl = $line['marker_qtl_mtl'];
     $args = array(
       'uniquename'  => $marker_qtl_mtl,
-      'organism_id' => $organism->getOrganismID(),
       'type_id'     => $this->cvterms['sequence']['genetic_marker'],
     );
     $feature = MCL_CHADO_FEATURE::byKey($args);
@@ -120,16 +114,11 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
    */
   public function uploadDataLine($line) {
 
-    // Gets the organism_id.
-    $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
-    $organism_id = $organism->getorganismID();
-
     // Gets the feature. It must be marker, QTL or MTL.
     $marker_qtl_mtl = $line['marker_qtl_mtl'];
     $args = array(
       'uniquename'  => $marker_qtl_mtl,
-      'organism_id' => $organism_id,
-      'type_id'     => $marker,
+      'type_id'     => $this->cvterms['sequence']['genetic_marker'],
     );
     $feature = MCL_CHADO_FEATURE::byKey($args);
     if (!$feature) {
@@ -140,6 +129,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
         $feature = MCL_CHADO_FEATURE::byKey($args);
       }
     }
+    $organism_id = $feature->getOrganismID();
 
     // Adds a locus if this is a genetic marker. If locus name is empty,
     // use $marker_qtl_mtl.
@@ -149,7 +139,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
       if ($locus) {
 
         // Adds a relationship.
-        $bin->addRelatedFeature($this, $feature, $this->cvterms['relationship']['instance_of']);
+        $locus->addRelatedFeature($this, $feature, $this->cvterms['relationship']['instance_of']);
       }
     }
 
@@ -164,7 +154,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
 
     // Adds a linkage group.
     $uniquename = $map->getName() . '.' . $linkage_group;
-    $linkage_group = MCL_CHADO_FEATURE::addFeature($this, $uniquename, $linkage_group, $this->cvterms['sequence']['linkage_group'], $organism_id);
+    $linkage_group = MCL_CHADO_FEATURE::addFeature($this, $uniquename, $linkage_group, $this->cvterms['sequence']['linkage_group'], $organism_id_lg);
 
     // Adds properties.
     $linkage_group->addProp($this, 'SITE_CV', 'chr_name', $line['chr_name']);

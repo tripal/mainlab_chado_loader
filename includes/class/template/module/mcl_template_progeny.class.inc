@@ -12,6 +12,7 @@ class MCL_TEMPLATE_PROGENY extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'PROGENY';
     parent::__construct($details);
   }
 
@@ -57,10 +58,11 @@ class MCL_TEMPLATE_PROGENY extends MCL_TEMPLATE {
    */
   public function defineCvterms() {
     $cvterms = array();
-    $cvterms['SITE_CV']['progeny']                  = -1;
-    $cvterms['SITE_CV']['cross_number']             = -1;
-    $cvterms['SITE_CV']['is_a_maternal_parent_of']  = -1;
-    $cvterms['SITE_CV']['is_a_paternal_parent_of']  = -1;
+    $cvterms['SITE_CV']['progeny']                    = -1;
+    $cvterms['SITE_CV']['breeding_research_material'] = -1;
+    $cvterms['SITE_CV']['cross_number']               = -1;
+    $cvterms['SITE_CV']['is_a_maternal_parent_of']    = -1;
+    $cvterms['SITE_CV']['is_a_paternal_parent_of']    = -1;
     return $cvterms;
   }
 
@@ -81,11 +83,20 @@ class MCL_TEMPLATE_PROGENY extends MCL_TEMPLATE {
    */
   public function uploadDataLine($line) {
 
-    // Gets the stock.
-    $stock = NULL;
-    if ($stock) {
-      // Adds a progeny.
-      $stock->addProgeny($this, $line['dataset_name'], $line['cross_number']);
+    // Gets the organism.
+    $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
+    $organism_id = $organism->getOrganismID();
+
+    // Gets type_id.
+    $type_id = $this->cvterms['SITE_CV']['breeding_research_material'];
+
+    // Adds a progeny.
+    $progeny = MCL_CHADO_STOCK::addStock($this, $line['progeny_name'], '', $organism_id, $type_id);
+    if ($progeny) {
+
+
+      // Adds parents.
+      //$stock->addProgeny($this, $line['dataset_name'], $line['cross_number']);
     }
   }
 }

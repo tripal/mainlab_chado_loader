@@ -12,6 +12,7 @@ class MCL_TEMPLATE_CONTACT extends MCL_TEMPLATE {
    * @see MCL_UPLOAD::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'CONTACT';
     parent::__construct($details);
   }
 

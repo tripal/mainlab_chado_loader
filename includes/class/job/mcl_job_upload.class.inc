@@ -126,7 +126,10 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
    * @see MCL_JOB::noError()
    */
   public function noError() {
-    return !array_key_exists('E', $this->msgs);
+    if (array_key_exists('E', $this->msgs)) {
+      return FALSE;
+    }
+    return TRUE;
   }
 
   /**
@@ -307,6 +310,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         $this->setProgress("Copying CSV files ...");
         if ($this->_copyCSV()) {
           mcl_print("CSV file created", 1, 2);
+          $this->setProgress("Done copying CSV files");
           $this->setStatus(30);
           $this->update();
         }
@@ -322,8 +326,10 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         mcl_print("==================================", 1, 1, FALSE);
         mcl_print("Phase II : Running syntax error check", 1);
         mcl_print("----------------------------------", 1, 1, FALSE);
+        $this->setProgress("Started running syntax error check");
         if ($this->_runErrorCheckSyntax()) {
           mcl_print("Syntax error check completed without error", 1, 2);
+          $this->setProgress("Done syntax error check");
           $this->setStatus(40);
           $this->update();
         }
@@ -340,6 +346,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         mcl_print("==================================", 1, 1, FALSE);
         mcl_print("Phase III : Uploading data files", 1);
         mcl_print("----------------------------------", 1, 1, FALSE);
+        $this->setProgress("Started uploading data template files");
         if ($this->_upload_csv()) {
           mcl_print("Data uploading completed without error", 1, 2);
           $this->setStatus(60);
@@ -712,6 +719,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       if ($tmpl_obj->runErrorCheckSyntax()) {
         $csv_file->setPassed($this->status_int['syntax error'], TRUE);
       }
+      $this->setProgress("Done syntax error check for " . $tmpl_obj->getTemplate());
 
       // Writes the log files.
       $this->writeLog();
@@ -771,6 +779,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
           $csv_file->setPassed($this->status_int['data error'], TRUE);
           mcl_print("Data error check passed", 3, 2);
         }
+        $this->setProgress("Done data error check for " . $tmpl_obj->getTemplate());
 
         // Check if an error occured. If error found, write a log file
         // and return FALSE.
@@ -798,6 +807,8 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         mcl_print("Data has been uploaded for $template", 3, 2);
       }
       else {
+        $this->setProgress("Failed to upload data for " . $tmpl_obj->getTemplate());
+
         // If error occurs, rollbacks transaction for this CSV file.
         $transaction->rollback();
 

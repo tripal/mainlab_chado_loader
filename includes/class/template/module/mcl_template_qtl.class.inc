@@ -12,6 +12,7 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'QTL';
     parent::__construct($details);
   }
 
@@ -44,7 +45,7 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
       'genus'                       => array('req' => TRUE,  'width' => 10, 'desc' => "The genus of the phenotyping material."),
       'species'                     => array('req' => TRUE,  'width' => 10, 'desc' => "The species of the phenotyping material."),
       'trait_name'                  => array('req' => TRUE,  'width' => 10, 'desc' => "Descriptive name for trait, it should be one of the crop trait ontology and should match a term in 'Trait' sheet."),
-      'trait_descriptor_set'        => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the crop trait ontology (entered by the curator who loads the data into the database)."),
+      'trait_descriptor_set'        => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the crop trait ontology (entered by the curator who loads the data into the database). If not provided, the site trait ontology will be used."),
       'alias'                       => array('req' => FALSE, 'width' => 10, 'desc' => "Other names for the trait, multiple aliases, separated by a semicolon (;) can be added."),
       'r2'                          => array('req' => FALSE, 'width' => 10, 'desc' => "Fraction of the total variation explained by the QTLs."),
       'lod'                         => array('req' => FALSE, 'width' => 10, 'desc' => "QTL Likelihood of odds."),
@@ -113,14 +114,14 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
     // Checks organism.
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
-    // Checks trait_descriptor_set and trait_name.
-    MCL_CHADO_CVTERM::checkCvterm($this, $line['trait_descriptor_set'], $line['trait_name']);
+    // Checks trait.
+    MCL_CHADO_TRAIT::checkTrait($this, $line['trait_name'], $line['trait_descriptor_set']);
 
     // Checks colocalized_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['genetic_marker'], '[;,]');
+    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], '', '', $this->cvterms['sequence']['genetic_marker'], '[;,]');
 
     // Checks neighboring_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['genetic_marker'], '[;,]');
+    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], '', '', $this->cvterms['sequence']['genetic_marker'], '[;,]');
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
@@ -156,8 +157,11 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
       $qtl->addProp($this, 'SITE_CV', 'population_low_value', $line['population_low_value']);
       $qtl->addProp($this, 'SITE_CV', 'population_high_value', $line['population_high_value']);
 
+      // Gets trait.
+      $trait = MCL_CHADO_TRAIT::getTrait($line['trait_name'], $line['trait_descriptor_set']);
+
       /// Adds trait.
-      $qtl->addTrait($this, $line['trait_descriptor_set'], $line['trait_name']);
+      $qtl->addTrait($this, $trait);
 
       // Adds alias.
       $qtl->addAlias($this, $this->cvterms['SITE_CV']['alias'], $line['alias'], "[,;]");
@@ -166,10 +170,10 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
       $qtl->addDataset($this, $line['dataset_name']);
 
       // Adds colocalized_markers.
-      $qtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['adjacent_to'], "[,;]");
+      $qtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['adjacent_to'], FALSE, "[,;]");
 
       // Adds neighboring_markers.
-      $qtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['located_in'], "[,;]");
+      $qtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['located_in'], FALSE, "[,;]");
 
       // Adds stocks.
       $qtl->addStock($this, $line['source'], $line['genus'], $line['species'], "[,;]");

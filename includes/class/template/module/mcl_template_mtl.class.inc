@@ -12,6 +12,7 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::__construct()
    */
   public function __construct($details = array()) {
+    $details['template_type'] = 'MTL';
     parent::__construct($details);
   }
 
@@ -42,7 +43,7 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
       'genus'                 => array('req' => TRUE,  'width' => 10, 'desc' => "The genus of the phenotyping material."),
       'species'               => array('req' => TRUE,  'width' => 10, 'desc' => "The species of the phenotyping material."),
       'trait_name'            => array('req' => FALSE, 'width' => 10, 'desc' => "Descriptive name for trait, it should be one of the crop trait ontology and should match a term in 'Trait' sheet."),
-      'trait_descriptor_set'  => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the crop trait ontology. A site-wide crop trait ontology can be specified in the loader."),
+      'trait_descriptor_set'  => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the crop trait ontology. A site-wide crop trait ontology can be specified in the loader. If not provided, the site trait ontology will be used."),
       'gb_id'                 => array('req' => FALSE, 'width' => 10, 'label' => 'GB_ID', 'desc' => "Associated genbank ID if available."),
       'alias'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Other names used for the trait. Multiple aliases, separated by comma, can be added."),
       'screening_method'      => array('req' => FALSE, 'width' => 10, 'desc' => "Any specific method for the phenotypic inspection."),
@@ -84,8 +85,8 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
     // Checks organism.
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
-    // Checks trait_descriptor_set and trait_name.
-    MCL_CHADO_CVTERM::checkCvterm($this, $line['trait_descriptor_set'], $line['trait_name']);
+    // Checks trait.
+    MCL_CHADO_TRAIT::checkTrait($this, $line['trait_name'], $line['trait_descriptor_set']);
 
     // Checks colocalized_markers.
     MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['genetic_marker'], '[;,]');
@@ -119,20 +120,23 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
       $mtl->addProp($this, 'SITE_CV', 'published_symbol', $line['published_symbol']);
 
       // Adds colocalized_markers.
-      $mtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['adjacent_to'], "[,;]");
+      $mtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['adjacent_to'], FALSE, "[,;]");
 
       // Adds neighboring_markers.
-      $mtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['located_in'], "[,;]");
+      $mtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['located_in'], FALSE, "[,;]");
 
       // Adds dbxref.
       $db = MCL_CHADO_DB::getDB('DB:genbank');
       $mtl->addDBXref($this, $db->getDbID(), $line['gb_id'], "[,;]");
 
+      // Gets trait.
+      $trait = MCL_CHADO_TRAIT::getTrait($line['trait_name'], $line['trait_descriptor_set']);
+
       /// Adds a trait.
-      $mtl->addTrait($this, $line['trait_descriptor_set'], $line['trait_name']);
+      $mtl->addTrait($this, $trait);
 
       // Adds contacts.
-      $mtl->addContact($this, $line['contact'], "[,;]");
+      $mtl->addContact($this, $line['contact'], "[;]");
 
       // Adds images.
       $mtl->addImage($this, $line['image'], "[,;]");

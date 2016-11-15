@@ -11,6 +11,7 @@ dbxrefprop
 eimage
 eimageprop
 feature
+feature_contact
 feature_cvterm
 feature_dbxref
 feature_genotype
@@ -29,6 +30,8 @@ featurepos
 featureposprop
 featureprop
 genotype
+genotypeprop
+genotype_call
 library
 library_contact
 library_pub
