@@ -9,9 +9,9 @@
  */
 class CHADO_PHENOTYPE  {
 
- /**
-  *  Data members for CHADO_PHENOTYPE.
-  */
+  /**
+   *  Data members for CHADO_PHENOTYPE.
+   */
   protected $member_arr    = NULL;
   protected $phenotype_id  = NULL;
   protected $uniquename    = NULL;
@@ -22,9 +22,9 @@ class CHADO_PHENOTYPE  {
   protected $assay_id      = NULL;
   protected $name          = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'phenotype_id'  => 'serial',
     'uniquename'    => 'text',
@@ -36,7 +36,7 @@ class CHADO_PHENOTYPE  {
     'name'          => 'text',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

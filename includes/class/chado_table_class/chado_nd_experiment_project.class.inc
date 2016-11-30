@@ -9,24 +9,24 @@
  */
 class CHADO_ND_EXPERIMENT_PROJECT  {
 
- /**
-  *  Data members for CHADO_ND_EXPERIMENT_PROJECT.
-  */
+  /**
+   *  Data members for CHADO_ND_EXPERIMENT_PROJECT.
+   */
   protected $member_arr               = NULL;
   protected $nd_experiment_project_id = NULL;
   protected $project_id               = NULL;
   protected $nd_experiment_id         = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'nd_experiment_project_id' => 'serial',
     'project_id'               => 'integer',
     'nd_experiment_id'         => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

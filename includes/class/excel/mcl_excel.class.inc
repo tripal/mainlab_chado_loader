@@ -145,7 +145,7 @@ class MCL_EXCEL {
             $row_no = ($header_flag) ? $idx + 2 : $idx + 1;
             $loc = $cell['col'] . $row_no;
 
-            // Add a cell.
+            // Adds a cell.
             $this->_addCell($loc, $cell);
           }
         }

@@ -151,6 +151,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     $status       = $this->status;
     $dir_recent   = $this->getRecentLogDir();
     $dir_new_data = $this->getNewDataLogDir();
+    $file_type    = $this->upload_file->getType();
 
     // Iterates through log messages and adds a line no.
     $messages_tmp = array();
@@ -174,7 +175,8 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
           $messages_tmp[$type] .= ">Required cvterms\n$msg\n";
         }
         else {
-          $messages_tmp[$type] .= ">ln. $line_no --------------\n$msg\n";
+          $ln = ($file_type == 'excel') ? 'row ' . ($line_no - 1) : "ln. $line_no";
+          $messages_tmp[$type] .= ">$ln --------------\n$msg\n";
         }
       }
     }
@@ -517,7 +519,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       $csv_file = $this->_createMCL_FILE_CSV($destination, $template);
       if ($csv_file || $csv_file->insert()) {
 
-        // Add a new CSV file.
+        // Adds a new CSV file.
         if (!$this->_addCSVFile($csv_file)) {
           $this->updateMsg('E', "Failed to add CSV file.");
         }
@@ -596,7 +598,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         $writer->setSheetIndex($i);
         $writer->save($csv_filepath);
 
-        // Add the template name at begining of the file.
+        // Adds the template name at begining of the file.
         $file_contents = file_get_contents($csv_filepath);
         file_put_contents($csv_filepath, "#$template\n" . $file_contents);
 
@@ -605,7 +607,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
           $csv_file = $this->_createMCL_FILE_CSV($csv_filepath, $template);
           if ($csv_file && $csv_file->insert()) {
 
-            // Add a new CSV file.
+            // Adds a new CSV file.
             if (!$this->_addCSVFile($csv_file)) {
               $this->updateMsg('E', "Failed to add CSV file.");
               return FALSE;
@@ -800,17 +802,23 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       }*/
 
       // Upload the data file.
-      $transaction = db_transaction();
+      $trans = $this->getTransaction();
+      if ($trans) {
+        $transaction = db_transaction();
+      }
       $this->setProgress("Uploading data for " . $tmpl_obj->getTemplate());
       if ($tmpl_obj->uploadData()) {
         //$csv_file->setPassed($this->status_int['uploading'], TRUE);
         mcl_print("Data has been uploaded for $template", 3, 2);
+        $this->setProgress("Done uploading data for " . $tmpl_obj->getTemplate());
       }
       else {
         $this->setProgress("Failed to upload data for " . $tmpl_obj->getTemplate());
 
         // If error occurs, rollbacks transaction for this CSV file.
-        $transaction->rollback();
+        if ($trans) {
+          $transaction->rollback();
+        }
 
         // Detetes the log for new data.
         $this->deleteMsg('N');
@@ -989,6 +997,15 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       return MCL_FILE::byKey(array('file_id' => $file_id));
     }
     return NULL;
+  }
+
+  /**
+   * Retrieves the force flag.
+   *
+   * @retrun boolean
+   */
+  public function getTransaction() {
+    return $this->getPropByKey('transaction');
   }
 
   /*

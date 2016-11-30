@@ -9,9 +9,9 @@
  */
 class CHADO_PROJECTPROP  {
 
- /**
-  *  Data members for CHADO_PROJECTPROP.
-  */
+  /**
+   *  Data members for CHADO_PROJECTPROP.
+   */
   protected $member_arr     = NULL;
   protected $projectprop_id = NULL;
   protected $project_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_PROJECTPROP  {
   protected $value          = NULL;
   protected $rank           = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'projectprop_id' => 'serial',
     'project_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_PROJECTPROP  {
     'rank'           => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

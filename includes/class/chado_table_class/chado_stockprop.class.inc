@@ -9,9 +9,9 @@
  */
 class CHADO_STOCKPROP  {
 
- /**
-  *  Data members for CHADO_STOCKPROP.
-  */
+  /**
+   *  Data members for CHADO_STOCKPROP.
+   */
   protected $member_arr   = NULL;
   protected $stockprop_id = NULL;
   protected $stock_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_STOCKPROP  {
   protected $value        = NULL;
   protected $rank         = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'stockprop_id' => 'serial',
     'stock_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_STOCKPROP  {
     'rank'         => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

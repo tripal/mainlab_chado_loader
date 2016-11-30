@@ -9,9 +9,9 @@
  */
 class CHADO_FEATURE_GENOTYPE  {
 
- /**
-  *  Data members for CHADO_FEATURE_GENOTYPE.
-  */
+  /**
+   *  Data members for CHADO_FEATURE_GENOTYPE.
+   */
   protected $member_arr          = NULL;
   protected $feature_genotype_id = NULL;
   protected $feature_id          = NULL;
@@ -21,9 +21,9 @@ class CHADO_FEATURE_GENOTYPE  {
   protected $cgroup              = NULL;
   protected $cvterm_id           = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'feature_genotype_id' => 'serial',
     'feature_id'          => 'integer',
@@ -34,7 +34,7 @@ class CHADO_FEATURE_GENOTYPE  {
     'cvterm_id'           => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

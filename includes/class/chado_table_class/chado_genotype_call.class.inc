@@ -9,9 +9,9 @@
  */
 class CHADO_GENOTYPE_CALL  {
 
- /**
-  *  Data members for CHADO_GENOTYPE_CALL.
-  */
+  /**
+   *  Data members for CHADO_GENOTYPE_CALL.
+   */
   protected $member_arr       = NULL;
   protected $genotype_call_id = NULL;
   protected $project_id       = NULL;
@@ -20,9 +20,9 @@ class CHADO_GENOTYPE_CALL  {
   protected $genotype_id      = NULL;
   protected $meta_data        = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'genotype_call_id' => 'serial',
     'project_id'       => 'integer',
@@ -32,7 +32,7 @@ class CHADO_GENOTYPE_CALL  {
     'meta_data'        => 'text',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

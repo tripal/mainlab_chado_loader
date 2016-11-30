@@ -47,9 +47,10 @@ function mcl_drush_command() {
       'filepath'  => t('The filename of the uploading file with path.'),
     ),
     'options' => array(
-      'working_dir' => t('Specifies the working directory.'),
-      'job_name'    => t('Specifies the name of a job.'),
-      'move_input'  => t('Moves the input file to the file folder in the job directory.'),
+      'working_dir'     => t('Specifies the working directory.'),
+      'no_transaction'  => t('No transaction.'),
+      'job_name'        => t('Specifies the name of a job.'),
+      'move_input'      => t('Moves the input file to the file folder in the job directory.'),
     ),
     'examples' => array(
       'Standard example' => 'drush mcl-upload-data [username] [filepath] --working_dir=/yourpath',
@@ -62,10 +63,11 @@ function mcl_drush_command() {
       'filepath'  => t('The filename of the uploading file with path.'),
     ),
     'options' => array(
-      'force'       => t('Forces to re-run the passed steps.'),
-      'move_input'  => t('Moves the input file to the file folder in the job directory.'),
-      'status'      => t('The status to start with.'),
-      'working_dir' => t('Specifies the working directory.'),
+      'force'           => t('Forces to re-run the passed steps.'),
+      'move_input'      => t('Moves the input file to the file folder in the job directory.'),
+      'no_transaction'  => t('No transaction.'),
+      'status'          => t('The status to start with.'),
+      'working_dir'     => t('Specifies the working directory.'),
     ),
     'examples' => array(
       'Standard example' => 'drush mcl-rerun-job [job_id] [filepath] --status=0 --force --working_dir=/yourpath',
@@ -223,6 +225,11 @@ function drush_mcl_rerun_job($job_id, $filepath) {
   // Gets MCL_JOB_UPLOAD.
   $mcl_job = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
 
+  // Gets process ID.
+  $pid = getmypid();
+  $mcl_job->setPID($pid);
+  $mcl_job->update();
+
   // Checks the status option.
   $status = drush_get_option('status');
   if ($status) {
@@ -245,6 +252,11 @@ function drush_mcl_rerun_job($job_id, $filepath) {
   // Checks the move_input option.
   $move_input = drush_get_option('move_input');
   $move_input = ($move_input) ? TRUE : FALSE;
+
+  // Checks the transaction option.
+  $no_transaction = drush_get_option('no_transaction');
+  $transaction = ($no_transaction) ? FALSE : TRUE;
+  $mcl_job->setPropByKey('transaction', $transaction);
 
   // Checks the working_dir option.
   $working_dir = drush_get_option('working_dir');
@@ -557,6 +569,10 @@ function drush_mcl_upload_data($username, $filepath) {
   // Gets the job_name option.
   $job_name = drush_get_option('job_name');
 
+  // Gets the transaction option.
+  $no_transaction = drush_get_option('no_transaction');
+  $transaction = ($no_transaction) ? FALSE : TRUE;
+
   // Check the move_input option.
   $move_input = drush_get_option('move_input');
   $move_input = ($move_input) ? TRUE : FALSE;
@@ -570,6 +586,11 @@ function drush_mcl_upload_data($username, $filepath) {
     mcl_print("Error : Failed to prepare a uploading job", 1, 3);
     exit;
   }
+
+  // Gets process ID.
+  $pid = getmypid();
+  $mcl_job->setPID($pid);
+  $mcl_job->update();
 
   // Uploads the file.
   $job_id   = $mcl_job->getJobID();
@@ -591,11 +612,13 @@ function drush_mcl_upload_data($username, $filepath) {
     $job_id = $mcl_job->getJobID();
     $opt_working_dir  = ($working_dir) ? "--working_dir=$working_dir" : '';
     $opt_move_input   = ($move_input) ? '--move_input' : '';
+    $opt_transaction  = ($transaction) ? '' : '--no_transaction';
+
     mcl_print("DONE : The job (Job ID = $job_id) was completed with some errors", 1);
     mcl_print("Please fix the errors and re-run this job ", 2, 2);
 
     // Shows re-run command on screen.
-    $rerun_cmd = "drush mcl-rerun-job $job_id $filepath $opt_working_dir $opt_move_input";
+    $rerun_cmd = "drush mcl-rerun-job $job_id $filepath $opt_working_dir $opt_move_input $opt_trans";
     mcl_print(">$rerun_cmd", 2, 4, FALSE);
 
     // Saves the re-run command as job property.
@@ -611,7 +634,7 @@ function drush_mcl_upload_data($username, $filepath) {
  * 2. Copies an input file to job folder.
  *
  * @param MCL_USER $mcl_user
- * @param string $filepath
+ * @param string $filepath *
  * @param boolean $move_input
  * @param string $working_dir
  * @param string $job_name

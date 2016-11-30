@@ -9,9 +9,9 @@
  */
 class CHADO_CONTACTPROP  {
 
- /**
-  *  Data members for CHADO_CONTACTPROP.
-  */
+  /**
+   *  Data members for CHADO_CONTACTPROP.
+   */
   protected $member_arr     = NULL;
   protected $contactprop_id = NULL;
   protected $contact_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_CONTACTPROP  {
   protected $value          = NULL;
   protected $rank           = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'contactprop_id' => 'serial',
     'contact_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_CONTACTPROP  {
     'rank'           => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

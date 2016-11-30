@@ -9,24 +9,24 @@
  */
 class CHADO_FEATUREMAP_ORGANISM  {
 
- /**
-  *  Data members for CHADO_FEATUREMAP_ORGANISM.
-  */
+  /**
+   *  Data members for CHADO_FEATUREMAP_ORGANISM.
+   */
   protected $member_arr             = NULL;
   protected $featuremap_organism_id = NULL;
   protected $featuremap_id          = NULL;
   protected $organism_id            = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'featuremap_organism_id' => 'serial',
     'featuremap_id'          => 'integer',
     'organism_id'            => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

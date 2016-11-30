@@ -91,47 +91,47 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param string $species
    * @param string $separator
    */
-  public static function checkStock(MCL_TEMPLATE $mcl_tmpl, $stock, $genus, $species, $separator = '') {
+  public static function checkStock(MCL_TEMPLATE $mcl_tmpl, $stock, $genus = '', $species = '', $separator = '') {
     if ($stock) {
 
-      // Gets the organism.
-      $mcl_organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
-      if ($mcl_organism) {
+      // Gets the organism_id.
+      $organism_id = NULL;
+      if ($genus && $species) {
+        $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+        $organism_id = $organism->getOrganismID();
+      }
 
-        // Gets the uniquenames.
-        $uniquenames = preg_split($mcl_tmpl->getSepRegex($separator), $stock, NULL, PREG_SPLIT_NO_EMPTY);
-        foreach ($uniquenames as $uniquename) {
-          $uniquename = trim($uniquename);
-          $organism_id = $mcl_organism->getOrganismID();
+      // Gets the uniquenames.
+      $uniquenames = preg_split($mcl_tmpl->getSepRegex($separator), $stock, NULL, PREG_SPLIT_NO_EMPTY);
+      foreach ($uniquenames as $uniquename) {
+        $uniquename = trim($uniquename);
 
-          // If '::' found in uniquename, update uniquename and organism_id.
-          if (preg_match("/^(.*?)\s+(.*?)::(.*?)$/", $uniquename, $matches)) {
-            $genus          = trim($matches[1]);
-            $species        = trim($matches[2]);
-            $uniquename     = trim($matches[3]);
-            $diff_organism  = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
-            if ($diff_organism) {
-              $organism_id = $diff_organism->getOrganismID();
-            }
-            else {
-              $mcl_tmpl->updateMsg('E', "$genus $species not found in organism");
-              return;
-            }
+        // Sets the arguments.
+        $args = array('uniquename' => $uniquename);
+        if ($organism_id) {
+          $args['organism_id'] = $organism_id;
+        }
+
+        // If '::' found in uniquename, update uniquename and organism_id.
+        if (preg_match("/^(.*?)\s+(.*?)::(.*?)$/", $uniquename, $matches)) {
+          $genus          = trim($matches[1]);
+          $species        = trim($matches[2]);
+          $uniquename     = trim($matches[3]);
+          $diff_organism  = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+          if ($diff_organism) {
+            $args['organism_id'] = $diff_organism->getOrganismID();
           }
-
-          // Checks the stock.
-          $args = array(
-            'uniquename'  => $uniquename,
-            'organism_id' => $organism_id,
-          );
-          $mcl_stock = MCL_CHADO_STOCK::byKey($args);
-          if (!$mcl_stock) {
-            $mcl_tmpl->updateMsg('E', $mcl_tmpl->arrStr($args) . " not found in stock");
+          else {
+            $mcl_tmpl->updateMsg('E', "$genus $species not found in organism");
+            return;
           }
         }
-      }
-      else {
-        $mcl_tmpl->updateMsg('E', "(genus, species) = ($genus, $species) not found in organism");
+
+        // Checks the stock.
+        $mcl_stock = MCL_CHADO_STOCK::byKey($args);
+        if (!$mcl_stock) {
+          $mcl_tmpl->updateMsg('E', $mcl_tmpl->arrStr($args) . " not found in stock");
+        }
       }
     }
   }
@@ -167,13 +167,19 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    *
    * @return MCL_CHADO_STOCK
    */
-  public static function getStock($uniquename, $genus, $species) {
-    $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+  public static function getStock($uniquename, $genus = '', $species = '') {
+
+    // Sets the args.
     $args = array(
-      'uniquename'  => $uniquename,
-      'organism_id' => $organism->getOrganismID(),
+      'uniquename' => $uniquename,
     );
-    return MCL_CHADO_STOCK::bykey($argsas);
+
+    // Adds the organism.
+    if ($genus && $species) {
+      $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+      $args['organism_id'] = $organism->getOrganismID();
+    }
+    return MCL_CHADO_STOCK::bykey($args);
   }
 
   /**
@@ -249,41 +255,17 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
   }
 
   /**
-   * Adds a progeny.
+   * Adds parents by dataset name and cross numbe.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $cross_number
+   * @param MCL_CHADO_ND_EXPERIMENT $cross
+   * @param integer $type_id
    */
-  public function addProgeny(MCL_TEMPLATE $mcl_tmpl, $project_id, $cross_number) {
-    if ($project_id && $cross_number) {
+  public function addCross(MCL_TEMPLATE $mcl_tmpl, $cross, $type_id) {
+    if ($cross) {
 
-      // Gets the maternal parent.
-      $maternal_parent = MCL_CHADO_ND_EXPERIMENT::getParentByCrossNumber($mcl_tmpl, $mcl_tmpl->cvterms['SITE_CV']['maternal_parent'], $project_id, $cross_number);
-      $this->addRelatedStock($mcl_tmpl, $maternal_parent, $mcl_tmpl->cvterms['SITE_CV']['is_a_maternal_parent_of']);
-
-      // Gets the paternal parent.
-      $paternal_parent = MCL_CHADO_ND_EXPERIMENT::getParentByCrossNumber($htis, $mcl_tmpl->cvterms['SITE_CV']['paternal_parent'], $project_id, $cross_number);
-      $this->addRelatedStock($mcl_tmpl, $paternal_parent, $mcl_tmpl->cvterms['SITE_CV']['is_a_paternal_parent_of']);
-
-      // Gets nd_experiment_id.
-      $sql = "
-        SELECT NEP.nd_experiment_id
-        FROM nd_experimentprop NEP
-          INNER JOIN nd_experiment_project NEPR on NEPR.nd_experiment_id = NEP.nd_experiment_id
-        WHERE LOWER(NEP.value) = LOWER(:value)
-          AND NEP.type_id = :type_id
-          AND NEP.project_id = :project_id
-      ";
-      $args = array(
-        ':value'      => $cross_number,
-        ':type_id'    => $mcl_tmpl->cvterms['SITE_CV']['cross_number'],
-        ':project_id' => $project_id,
-      );
-      $results = db_query($sql, $args);
-      $nd_experiment_id = $results->fetchField();
-
-      // Adds a progeny.
-      $mcl_tmpl->addLink('nd_experiment_stock', 'stock_id', $this->stock_id, 'nd_experiment_id', $nd_experiment_id, $mcl_tmpl->cvterms['SITE_CV']['progeny']);
+      // Links this progeny and dataset cross_number.
+      $mcl_tmpl->addLink('nd_experiment_stock', 'stock_id', $this->stock_id, 'nd_experiment_id', $cross->getNdExperimentID(), $type_id);
     }
   }
 
@@ -296,7 +278,7 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param integer $type_id_relationship
    */
   public function addParent(MCL_TEMPLATE $mcl_tmpl, $uniquename, $organism_id, $type_id_relationship) {
-    if ($uniquename && $organism_id && $type_id_relationship) {
+    if ($uniquename && $type_id_relationship) {
 
       // If '::' found in uniquename, update uniquename and organism_id.
       if (preg_match("/^(.*?)\s+(.*?)::(.*?)$/", $uniquename, $matches)) {
@@ -310,14 +292,12 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
       }
 
       // Adds a parent.
-      $args = array(
-        'uniquename'  => $uniquename,
-        'organism_id' => $organism_id
-      );
+      $args = array('uniquename' => $uniquename);
+      if ($organism_id) {
+        $args['organism_id'] = $organism_id;
+      }
       $parent = MCL_CHADO_STOCK::byKey($args);
       if ($parent) {
-
-        // Adds a relationship.
         $parent->addRelatedStock($mcl_tmpl, $this, $type_id_relationship);
       }
       else {
@@ -415,6 +395,28 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
         if ($mcl_pub) {
           $mcl_tmpl->addLink('stock_pub', 'stock_id', $this->stock_id, 'pub_id', $pub_id);
         }
+      }
+    }
+  }
+
+  /**
+   * Adds reference to stock_pub.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $previous_entry
+   */
+  public function addPreviousEntry(MCL_TEMPLATE $mcl_tmpl, $previous_entry) {
+    if ($previous_entry) {
+
+      // Checks the sample.
+      $sample = MCL_CHADO_STOCK::byKey(array('uniquename' => $previous_entry));
+      if ($sample) {
+
+        // Adds the sample_id in stockprop.
+        $this->addProp($mcl_tmpl, 'SITE_CV', 'previous_entry', $sample->getStockID());
+      }
+      else {
+        $mcl_tmpl->updateMsg('E', "Error - sample : '$previous_entry' does not exist");
       }
     }
   }

@@ -105,6 +105,31 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   }
 
   /**
+   * Returns the cvtermprop.
+
+   * @param string $cv_name
+   * @param string $cvterm_name
+   *
+   * @return string
+   */
+  public function getCvtermprop($cv_name, $cvterm_name) {
+
+    // Gets Updates cv.name
+    $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
+    if ($cvterm) {
+      $args = array(
+        'cvterm_id' => $this->cvterm_id,
+        'type_id'   => $cvterm->getCvtermID(),
+      );
+      $prop = CHADO_CVTERMPROP::byKey($args);
+      if ($prop) {
+        return $prop->getValue();
+      }
+    }
+    return '';
+  }
+
+  /**
    * Adds null cvterm.
    *
    * @return MCL_CHADO_CVTERM

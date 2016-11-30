@@ -9,9 +9,9 @@
  */
 class CHADO_LIBRARYPROP  {
 
- /**
-  *  Data members for CHADO_LIBRARYPROP.
-  */
+  /**
+   *  Data members for CHADO_LIBRARYPROP.
+   */
   protected $member_arr     = NULL;
   protected $libraryprop_id = NULL;
   protected $library_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_LIBRARYPROP  {
   protected $value          = NULL;
   protected $rank           = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'libraryprop_id' => 'serial',
     'library_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_LIBRARYPROP  {
     'rank'           => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

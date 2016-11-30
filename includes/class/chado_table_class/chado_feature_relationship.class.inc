@@ -9,9 +9,9 @@
  */
 class CHADO_FEATURE_RELATIONSHIP  {
 
- /**
-  *  Data members for CHADO_FEATURE_RELATIONSHIP.
-  */
+  /**
+   *  Data members for CHADO_FEATURE_RELATIONSHIP.
+   */
   protected $member_arr              = NULL;
   protected $feature_relationship_id = NULL;
   protected $subject_id              = NULL;
@@ -20,9 +20,9 @@ class CHADO_FEATURE_RELATIONSHIP  {
   protected $value                   = NULL;
   protected $rank                    = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'feature_relationship_id' => 'serial',
     'subject_id'              => 'integer',
@@ -32,7 +32,7 @@ class CHADO_FEATURE_RELATIONSHIP  {
     'rank'                    => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

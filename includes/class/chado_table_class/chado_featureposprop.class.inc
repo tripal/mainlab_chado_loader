@@ -9,9 +9,9 @@
  */
 class CHADO_FEATUREPOSPROP  {
 
- /**
-  *  Data members for CHADO_FEATUREPOSPROP.
-  */
+  /**
+   *  Data members for CHADO_FEATUREPOSPROP.
+   */
   protected $member_arr        = NULL;
   protected $featureposprop_id = NULL;
   protected $featurepos_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_FEATUREPOSPROP  {
   protected $value             = NULL;
   protected $rank              = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'featureposprop_id' => 'serial',
     'featurepos_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_FEATUREPOSPROP  {
     'rank'              => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

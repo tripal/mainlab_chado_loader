@@ -9,9 +9,9 @@
  */
 class CHADO_ND_EXPERIMENTPROP  {
 
- /**
-  *  Data members for CHADO_ND_EXPERIMENTPROP.
-  */
+  /**
+   *  Data members for CHADO_ND_EXPERIMENTPROP.
+   */
   protected $member_arr           = NULL;
   protected $nd_experimentprop_id = NULL;
   protected $nd_experiment_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_ND_EXPERIMENTPROP  {
   protected $value                = NULL;
   protected $rank                 = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'nd_experimentprop_id' => 'serial',
     'nd_experiment_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_ND_EXPERIMENTPROP  {
     'rank'                 => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

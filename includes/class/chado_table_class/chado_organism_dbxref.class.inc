@@ -9,24 +9,24 @@
  */
 class CHADO_ORGANISM_DBXREF  {
 
- /**
-  *  Data members for CHADO_ORGANISM_DBXREF.
-  */
+  /**
+   *  Data members for CHADO_ORGANISM_DBXREF.
+   */
   protected $member_arr         = NULL;
   protected $organism_dbxref_id = NULL;
   protected $organism_id        = NULL;
   protected $dbxref_id          = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'organism_dbxref_id' => 'serial',
     'organism_id'        => 'integer',
     'dbxref_id'          => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

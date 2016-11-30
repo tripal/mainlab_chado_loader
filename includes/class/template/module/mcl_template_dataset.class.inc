@@ -48,6 +48,7 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
       'crop'                  => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the crop for the dataset."),
       'comments'              => array('req' => FALSE, 'width' => 15, 'desc' => "Any comments for the dataset."),
       'reference'             => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id for any reference if the dataset is from publication."),
+      'permission'            => array('req' => FALSE, 'width' => 10, 'desc' => "Permission of the dataset. '0' or empty indicates public. Other positive integer indicates private."),
       'description'           => array('req' => FALSE, 'width' => 90, 'desc' => "General description of the dataset (purpose, target, how many crosses, etc)."),
     );
 
@@ -68,6 +69,7 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['comments']           = -1;
     $cvterms['SITE_CV']['crop']               = -1;
     $cvterms['SITE_CV']['is_a_subproject_of'] = -1;
+    $cvterms['SITE_CV']['permission']         = -1;
     return $cvterms;
   }
 
@@ -108,6 +110,7 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
       $dataset->addProp($this, 'SITE_CV', 'description', $line['description']);
       $dataset->addProp($this, 'SITE_CV', 'crop', $line['crop']);
       $dataset->addProp($this, 'SITE_CV', 'comments', $line['comments']);
+      $dataset->addProp($this, 'SITE_CV', 'permission', $line['permission']);
 
       // Adds PI.
       $dataset->addContact($this, $line['pi']);

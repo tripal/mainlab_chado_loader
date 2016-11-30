@@ -298,7 +298,7 @@ class $class_name $base_class {
 $data_members
 
   /**
-   *  Data types for the data members..
+   *  Data types for the data members.
    */
 $data_types
 

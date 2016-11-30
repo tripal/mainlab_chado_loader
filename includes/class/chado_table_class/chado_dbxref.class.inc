@@ -9,9 +9,9 @@
  */
 class CHADO_DBXREF  {
 
- /**
-  *  Data members for CHADO_DBXREF.
-  */
+  /**
+   *  Data members for CHADO_DBXREF.
+   */
   protected $member_arr  = NULL;
   protected $dbxref_id   = NULL;
   protected $db_id       = NULL;
@@ -19,9 +19,9 @@ class CHADO_DBXREF  {
   protected $version     = NULL;
   protected $description = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'dbxref_id'   => 'serial',
     'db_id'       => 'integer',
@@ -30,7 +30,7 @@ class CHADO_DBXREF  {
     'description' => 'text',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

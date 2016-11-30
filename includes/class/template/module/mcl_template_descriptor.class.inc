@@ -104,7 +104,11 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
     $db = MCL_CHADO_DB::getDB(MCL_VAR::getValueByName('SITE_DB'));
 
     // Gets cv.
-    $cv = MCL_CHADO_CV::getCV($line['trait_descriptor_set']);
+    $name = $line['trait_descriptor_set'];
+    if (!$name) {
+      $name = 'SITE_TRAIT_ONTOLOGY';
+    }
+    $cv = MCL_CHADO_CV::getCV($name);
 
     // Adds a descriptor.
     $descriptor = MCL_CHADO_CVTERM::addCvterm($this, $db->getName(), $cv->getName(), $line['descriptor_name'], $line['definition']);

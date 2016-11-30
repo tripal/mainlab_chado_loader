@@ -9,24 +9,24 @@
  */
 class CHADO_LIBRARY_CONTACT  {
 
- /**
-  *  Data members for CHADO_LIBRARY_CONTACT.
-  */
+  /**
+   *  Data members for CHADO_LIBRARY_CONTACT.
+   */
   protected $member_arr         = NULL;
   protected $library_contact_id = NULL;
   protected $library_id         = NULL;
   protected $contact_id         = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'library_contact_id' => 'serial',
     'library_id'         => 'integer',
     'contact_id'         => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

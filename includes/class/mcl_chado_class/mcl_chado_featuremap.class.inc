@@ -185,6 +185,7 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
       // Gets orgaims_id.
       $mcl_organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
       if ($mcl_organism) {
+        $organism_id = $mcl_organism->getOrganismID();
 
         // Adds a stock.
         $uniquenames = preg_split($mcl_tmpl->getSepRegex($separator), $stock, NULL, PREG_SPLIT_NO_EMPTY);
@@ -193,6 +194,9 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
           $mcl_stock = MCL_CHADO_STOCK::byKey(array('uniquename' => $uniquename, 'organism_id' => $organism_id));
           if ($mcl_stock) {
             $mcl_tmpl->addLink('featuremap_stock', 'featuremap_id', $this->featuremap_id, 'stock_id', $mcl_stock->getStockID());
+          }
+          else {
+            $this->updateMsg('E', "(uniquename, organism_id) = ($uniquename, $organism_id) not found in stock");
           }
         }
       }

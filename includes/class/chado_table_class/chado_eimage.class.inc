@@ -9,18 +9,18 @@
  */
 class CHADO_EIMAGE  {
 
- /**
-  *  Data members for CHADO_EIMAGE.
-  */
+  /**
+   *  Data members for CHADO_EIMAGE.
+   */
   protected $member_arr  = NULL;
   protected $eimage_id   = NULL;
   protected $eimage_data = NULL;
   protected $eimage_type = NULL;
   protected $image_uri   = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'eimage_id'   => 'serial',
     'eimage_data' => 'text',
@@ -28,7 +28,7 @@ class CHADO_EIMAGE  {
     'image_uri'   => 'character_varying(255)',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

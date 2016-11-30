@@ -9,18 +9,18 @@
  */
 class CHADO_CVTERM_RELATIONSHIP  {
 
- /**
-  *  Data members for CHADO_CVTERM_RELATIONSHIP.
-  */
+  /**
+   *  Data members for CHADO_CVTERM_RELATIONSHIP.
+   */
   protected $member_arr             = NULL;
   protected $cvterm_relationship_id = NULL;
   protected $type_id                = NULL;
   protected $subject_id             = NULL;
   protected $object_id              = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'cvterm_relationship_id' => 'serial',
     'type_id'                => 'integer',
@@ -28,7 +28,7 @@ class CHADO_CVTERM_RELATIONSHIP  {
     'object_id'              => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

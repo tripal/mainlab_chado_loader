@@ -9,18 +9,18 @@
  */
 class CHADO_STOCK_DBXREF  {
 
- /**
-  *  Data members for CHADO_STOCK_DBXREF.
-  */
+  /**
+   *  Data members for CHADO_STOCK_DBXREF.
+   */
   protected $member_arr      = NULL;
   protected $stock_dbxref_id = NULL;
   protected $stock_id        = NULL;
   protected $dbxref_id       = NULL;
   protected $is_current      = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'stock_dbxref_id' => 'serial',
     'stock_id'        => 'integer',
@@ -28,7 +28,7 @@ class CHADO_STOCK_DBXREF  {
     'is_current'      => 'boolean',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

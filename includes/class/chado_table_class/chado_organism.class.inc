@@ -9,9 +9,9 @@
  */
 class CHADO_ORGANISM  {
 
- /**
-  *  Data members for CHADO_ORGANISM.
-  */
+  /**
+   *  Data members for CHADO_ORGANISM.
+   */
   protected $member_arr   = NULL;
   protected $organism_id  = NULL;
   protected $abbreviation = NULL;
@@ -20,9 +20,9 @@ class CHADO_ORGANISM  {
   protected $common_name  = NULL;
   protected $comment      = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'organism_id'  => 'serial',
     'abbreviation' => 'character_varying(255)',
@@ -32,7 +32,7 @@ class CHADO_ORGANISM  {
     'comment'      => 'text',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

@@ -9,9 +9,9 @@
  */
 class PUBLIC_MCL_USER  {
 
- /**
-  *  Data members for PUBLIC_MCL_USER.
-  */
+  /**
+   *  Data members for PUBLIC_MCL_USER.
+   */
   protected $member_arr = NULL;
   protected $user_id    = NULL;
   protected $name       = NULL;
@@ -19,9 +19,9 @@ class PUBLIC_MCL_USER  {
   protected $mail       = NULL;
   protected $prop       = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'user_id' => 'integer',
     'name'    => 'character_varying(255)',
@@ -30,7 +30,7 @@ class PUBLIC_MCL_USER  {
     'prop'    => 'text',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

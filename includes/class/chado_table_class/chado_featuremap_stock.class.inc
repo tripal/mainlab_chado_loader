@@ -9,24 +9,24 @@
  */
 class CHADO_FEATUREMAP_STOCK  {
 
- /**
-  *  Data members for CHADO_FEATUREMAP_STOCK.
-  */
+  /**
+   *  Data members for CHADO_FEATUREMAP_STOCK.
+   */
   protected $member_arr          = NULL;
   protected $featuremap_stock_id = NULL;
   protected $featuremap_id       = NULL;
   protected $stock_id            = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'featuremap_stock_id' => 'serial',
     'featuremap_id'       => 'integer',
     'stock_id'            => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

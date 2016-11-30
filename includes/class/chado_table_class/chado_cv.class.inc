@@ -9,24 +9,24 @@
  */
 class CHADO_CV  {
 
- /**
-  *  Data members for CHADO_CV.
-  */
+  /**
+   *  Data members for CHADO_CV.
+   */
   protected $member_arr = NULL;
   protected $cv_id      = NULL;
   protected $name       = NULL;
   protected $definition = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'cv_id'      => 'serial',
     'name'       => 'character_varying(255)',
     'definition' => 'text',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

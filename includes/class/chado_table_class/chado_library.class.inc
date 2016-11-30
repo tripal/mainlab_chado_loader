@@ -9,9 +9,9 @@
  */
 class CHADO_LIBRARY  {
 
- /**
-  *  Data members for CHADO_LIBRARY.
-  */
+  /**
+   *  Data members for CHADO_LIBRARY.
+   */
   protected $member_arr       = NULL;
   protected $library_id       = NULL;
   protected $organism_id      = NULL;
@@ -22,9 +22,9 @@ class CHADO_LIBRARY  {
   protected $timeaccessioned  = NULL;
   protected $timelastmodified = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'library_id'       => 'serial',
     'organism_id'      => 'integer',
@@ -36,7 +36,7 @@ class CHADO_LIBRARY  {
     'timelastmodified' => 'timestamp_without_time_zone',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

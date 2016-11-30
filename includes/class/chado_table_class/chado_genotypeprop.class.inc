@@ -9,9 +9,9 @@
  */
 class CHADO_GENOTYPEPROP  {
 
- /**
-  *  Data members for CHADO_GENOTYPEPROP.
-  */
+  /**
+   *  Data members for CHADO_GENOTYPEPROP.
+   */
   protected $member_arr      = NULL;
   protected $genotypeprop_id = NULL;
   protected $genotype_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_GENOTYPEPROP  {
   protected $value           = NULL;
   protected $rank            = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'genotypeprop_id' => 'serial',
     'genotype_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_GENOTYPEPROP  {
     'rank'            => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

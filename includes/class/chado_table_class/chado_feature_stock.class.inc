@@ -4,26 +4,28 @@
  */
 
 /**
- * The declaration of CHADO_FEATUREMAP_PUB class.
+ * The declaration of CHADO_FEATURE_STOCK class.
  *
  */
-class CHADO_FEATUREMAP_PUB  {
+class CHADO_FEATURE_STOCK  {
 
   /**
-   *  Data members for CHADO_FEATUREMAP_PUB.
+   *  Data members for CHADO_FEATURE_STOCK.
    */
-  protected $member_arr        = NULL;
-  protected $featuremap_pub_id = NULL;
-  protected $featuremap_id     = NULL;
-  protected $pub_id            = NULL;
+  protected $member_arr       = NULL;
+  protected $feature_stock_id = NULL;
+  protected $feature_id       = NULL;
+  protected $stock_id         = NULL;
+  protected $type_id          = NULL;
 
   /**
    *  Data types for the data members.
    */
   protected static $data_types = array(
-    'featuremap_pub_id' => 'serial',
-    'featuremap_id'     => 'integer',
-    'pub_id'            => 'integer',
+    'feature_stock_id' => 'serial',
+    'feature_id'       => 'integer',
+    'stock_id'         => 'integer',
+    'type_id'          => 'integer',
   );
 
   /**
@@ -33,10 +35,11 @@ class CHADO_FEATUREMAP_PUB  {
    */
   public function __construct($details = array()) {
     // Initializes data members.
-    $this->member_arr        = $details;
-    $this->featuremap_pub_id = array_key_exists('featuremap_pub_id', $details) ? $details['featuremap_pub_id'] : '';
-    $this->featuremap_id     = array_key_exists('featuremap_id', $details)     ? $details['featuremap_id']     : '';
-    $this->pub_id            = array_key_exists('pub_id', $details)            ? $details['pub_id']            : '';
+    $this->member_arr       = $details;
+    $this->feature_stock_id = array_key_exists('feature_stock_id', $details) ? $details['feature_stock_id'] : '';
+    $this->feature_id       = array_key_exists('feature_id', $details)       ? $details['feature_id']       : '';
+    $this->stock_id         = array_key_exists('stock_id', $details)         ? $details['stock_id']         : '';
+    $this->type_id          = array_key_exists('type_id', $details)          ? $details['type_id']          : '';
   }
 
   /**
@@ -46,7 +49,7 @@ class CHADO_FEATUREMAP_PUB  {
   }
 
   /**
-   * Generate CHADO_FEATUREMAP_PUB by key(s).
+   * Generate CHADO_FEATURE_STOCK by key(s).
    */
   public static function byKey($keys) {
 
@@ -82,7 +85,7 @@ class CHADO_FEATUREMAP_PUB  {
     }
 
     // Gets the table properties.
-    $sql = "SELECT * FROM chado.featuremap_pub WHERE " . implode(" AND " , $where_arr);
+    $sql = "SELECT * FROM chado.feature_stock WHERE " . implode(" AND " , $where_arr);
     $details = db_query($sql, $args)->fetch(PDO::FETCH_ASSOC);
     if ($details) {
       return new self($details);
@@ -107,12 +110,12 @@ class CHADO_FEATUREMAP_PUB  {
         // Populates all fields. The attribute with 'NOT NULL' would be skipped
         // if the value is empty.
         $fields = array();
-        $fields['featuremap_id'] = $this->featuremap_id;
-        $fields['pub_id']        = $this->pub_id;
-
+        $fields['feature_id'] = $this->feature_id;
+        $fields['stock_id']   = $this->stock_id;
+        if (is_numeric($this->type_id)) { $fields['type_id'] = $this->type_id; }
 
         // Inserts the record.
-        $this->featuremap_pub_id = db_insert('chado.featuremap_pub')
+        $this->feature_stock_id = db_insert('chado.feature_stock')
           ->fields($fields)
           ->execute();
       }
@@ -136,14 +139,14 @@ class CHADO_FEATUREMAP_PUB  {
       // Populates all fields. The attribute with 'NOT NULL' would be skipped
       // if the value is empty.
       $fields = array();
-      $fields['featuremap_id'] = $this->featuremap_id;
-      $fields['pub_id']        = $this->pub_id;
-
+      $fields['feature_id'] = $this->feature_id;
+      $fields['stock_id']   = $this->stock_id;
+      if (is_numeric($this->type_id)) { $fields['type_id'] = $this->type_id; }
 
       // Updates the record.
-      db_update('chado.featuremap_pub')
+      db_update('chado.feature_stock')
         ->fields($fields)
-        ->condition('featuremap_pub_id', $this->featuremap_pub_id, '=')
+        ->condition('feature_stock_id', $this->feature_stock_id, '=')
         ->execute();
     }
     catch (Exception $e) {
@@ -162,8 +165,8 @@ class CHADO_FEATUREMAP_PUB  {
     $transaction = db_transaction();
     try {
 
-      db_delete('chado.featuremap_pub')
-        ->condition('featuremap_pub_id', $this->featuremap_pub_id, '=')
+      db_delete('chado.feature_stock')
+        ->condition('feature_stock_id', $this->feature_stock_id, '=')
         ->execute();
     }
     catch (Exception $e) {
@@ -205,56 +208,74 @@ class CHADO_FEATUREMAP_PUB  {
   }
 
   /**
-   * Retrieves the featuremap_pub_id.
+   * Retrieves the feature_stock_id.
    *
    * @retrun serial
    */
-  public function getFeaturemapPubID() {
-    return $this->featuremap_pub_id;
+  public function getFeatureStockID() {
+    return $this->feature_stock_id;
   }
 
   /**
-   * Updates the featuremap_pub_id.
+   * Updates the feature_stock_id.
    *
-   * @param serial $featuremap_pub_id
+   * @param serial $feature_stock_id
    */
-  public function setFeaturemapPubID($featuremap_pub_id) {
-    $this->featuremap_pub_id = $featuremap_pub_id;
+  public function setFeatureStockID($feature_stock_id) {
+    $this->feature_stock_id = $feature_stock_id;
   }
 
   /**
-   * Retrieves the featuremap_id.
-   *
-   * @retrun integer
-   */
-  public function getFeaturemapID() {
-    return $this->featuremap_id;
-  }
-
-  /**
-   * Updates the featuremap_id.
-   *
-   * @param integer $featuremap_id
-   */
-  public function setFeaturemapID($featuremap_id) {
-    $this->featuremap_id = $featuremap_id;
-  }
-
-  /**
-   * Retrieves the pub_id.
+   * Retrieves the feature_id.
    *
    * @retrun integer
    */
-  public function getPubID() {
-    return $this->pub_id;
+  public function getFeatureID() {
+    return $this->feature_id;
   }
 
   /**
-   * Updates the pub_id.
+   * Updates the feature_id.
    *
-   * @param integer $pub_id
+   * @param integer $feature_id
    */
-  public function setPubID($pub_id) {
-    $this->pub_id = $pub_id;
+  public function setFeatureID($feature_id) {
+    $this->feature_id = $feature_id;
+  }
+
+  /**
+   * Retrieves the stock_id.
+   *
+   * @retrun integer
+   */
+  public function getStockID() {
+    return $this->stock_id;
+  }
+
+  /**
+   * Updates the stock_id.
+   *
+   * @param integer $stock_id
+   */
+  public function setStockID($stock_id) {
+    $this->stock_id = $stock_id;
+  }
+
+  /**
+   * Retrieves the type_id.
+   *
+   * @retrun integer
+   */
+  public function getTypeID() {
+    return $this->type_id;
+  }
+
+  /**
+   * Updates the type_id.
+   *
+   * @param integer $type_id
+   */
+  public function setTypeID($type_id) {
+    $this->type_id = $type_id;
   }
 }

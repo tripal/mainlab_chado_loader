@@ -9,9 +9,9 @@
  */
 class CHADO_PUB  {
 
- /**
-  *  Data members for CHADO_PUB.
-  */
+  /**
+   *  Data members for CHADO_PUB.
+   */
   protected $member_arr  = NULL;
   protected $pub_id      = NULL;
   protected $title       = NULL;
@@ -28,9 +28,9 @@ class CHADO_PUB  {
   protected $publisher   = NULL;
   protected $pubplace    = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'pub_id'      => 'serial',
     'title'       => 'text',
@@ -48,7 +48,7 @@ class CHADO_PUB  {
     'pubplace'    => 'character_varying(255)',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

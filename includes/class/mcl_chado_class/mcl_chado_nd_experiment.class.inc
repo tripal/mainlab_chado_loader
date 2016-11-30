@@ -41,102 +41,69 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $contact
    * @param string $separator
+   * @param integer $ne_type_id
+   * @param integer $nep_type_id
    */
-  public static function checkCrossNumber(MCL_TEMPLATE $mcl_tmpl, $dataset_name, $cross_number) {
-    if ($cross_number) {
+  public static function checkCrossNumber(MCL_TEMPLATE $mcl_tmpl, $dataset_name, $cross_number, $ne_type_id, $nep_type_id) {
 
-      // Checks for dataset_name.
-      if ($dataset_name) {
-        $dataset = MCL_CHADO_DATASET::getDataset($dataset_name);
-        if ($dataset) {
-
-          // Checks cross_number.
-          $sql = "
-            SELECT NEP.nd_experiment_id
-            FROM {chado.nd_experimentprop} NEP
-              INNER JOIN {chado.nd_experiment_project} NEPR on NEPR.nd_experiment_id = NEP.nd_experiment_id
-            WHERE NEPR.project_id = :project_id
-              AND NEP.type_id = :type_id
-              AND LOWER(NEP.value) = LOWER(:value)
-          ";
-          $args = array(
-            ':project_id' => $dataset->getProjectID(),
-            ':value'      => $cross_number,
-            ':type_id'    => $mcl_tmpl->cvterms['SITE_CV']['cross_number'],
-          );
-          $results = db_query($sql, $args);
-          $nd_experiment_id = $results->fetchField();
-          if ($nd_experiment_id) {
-
-            // Checks maternal parent.
-            $args = array(
-              'nd_experiment_id'  => $nd_experiment_id,
-              'type_id'           => $mcl_tmpl->cvterms['SITE_CV']['maternal_parent'],
-            );
-            $nd_experiment_stock = CHADO_ND_EXPERIMENT_STOCK::byKey($args);
-
-            if (!$nd_experiment_stock) {
-              $mcl_tmpl->updateMsg('E', "The maternal parent of the cross ($cross_number) does not found");
-            }
-
-            // Checks paternal parent.
-            $args = array(
-              'nd_experiment_id'  => $nd_experiment_id,
-              'type_id'           => $mcl_tmpl->cvterms['SITE_CV']['paternal_parent'],
-            );
-            $nd_experiment_stock = CHADO_ND_EXPERIMENT_STOCK::byKey($args);
-            if (!$nd_experiment_stock) {
-              $mcl_tmpl->updateMsg('E', "The paternal parent of the cross ($cross_number) does not found");
-            }
-          }
-        }
-        else {
-          $mcl_tmpl->updateMsg('E', "dataset_name ($dataset_name) not found in project");
-        }
-      }
-      else {
-        $mcl_tmpl->updateMsg('E', "Since cross_number is not empty, dataset_name must be specified");
-      }
+    // Gets the cross.
+    $cross = MCL_CHADO_ND_EXPERIMENT::byCrossNumber($dataset_name, $cross_number, $ne_type_id, $nep_type_id);
+    if (!$cross) {
+      $mcl_tmpl->updateMsg('E', "cross ($dataset_name, $cross_number) not found in nd_experiment");
     }
+  }
+
+  /**
+   * Returns the related stock.
+   *
+   * @param integer $nes_type_id
+   */
+  public function getRelatedStock($nes_type_id) {
+
+    // Gets nd_experiment.
+    $args = array(
+      'nd_experiment_id'  => $this->nd_experiment_id,
+      'type_id'           => $nes_type_id,
+    );
+    $nd_experiment_stock = CHADO_ND_EXPERIMENT_STOCK::byKey($args);
+    if ($nd_experiment_stock) {
+      return MCL_CHADO_STOCK::byKey(array('stock_id' => $nd_experiment_stock->getStockID()));
+    }
+    return NULL;
   }
 
   /**
    * Returns parent by cross number.
    *
-   * @param MCL_TEMPLATE $mcl_tmpl
-   * @param integer $cvterm_id_parent
    * @param string $dataset_name
-   * @param string cross_number
+   * @param string $cross_number
+   * @param integer $ne_type_id
+   * @param integer $nep_type_id
    *
-   * @return MCL_CHADO_STOCK
+   * @return MCL_CHADO_ND_EXPERIMENT
    */
-  public static function getParentByCrossNumber(MCL_TEMPLATE $mcl_tmpl, $cvterm_id_parent, $dataset_name, $cross_number) {
+  public static function byCrossNumber($dataset_name, $cross_number, $ne_type_id, $nep_type_id) {
 
-    // Gets project_id.
-    $dataset = MCL_CHADO_DATASET::getDataset($dataset_name);
-    if ($dataset) {
+    if ($dataset_name && $cross_number) {
 
       // Gets the stock_id of the specified parent.
       $sql= "
-        SELECT NES.stock_id
-        FROM {chado.nd_experiment_stock} NES
-          INNER JOIN {chado.nd_experimentprop} NEP on NEP.nd_experiment_id = NES.nd_experiment_id
-          INNER JOIN {chado.nd_experiment_project} NEPR on NEPR.nd_experiment_id = NES.nd_experiment_id
-        WHERE NES.type_id = :type_id_nes
-          AND NEP.type_id = :type_id_nep
-          AND NEPR.project_id = :project_id
+        SELECT NE.nd_experiment_id
+        FROM {chado.nd_experiment} NE
+          INNER JOIN {chado.nd_experimentprop} NEP on NEP.nd_experiment_id = NE.nd_experiment_id
+        WHERE NE.type_id = :ne_type_id
+          AND NEP.type_id = :nep_type_id
           AND LOWER(NEP.value) = LOWER(:cross_number)
       ";
       $args = array(
-        ':type_id_nes'  => $cvterm_id_parent,
-        ':type_id_nep'  => $mcl_tmpl->getCvtermID('SITE_CV', 'cross_number'),
-        ':project_id'   => $dataset->getProjectID(),
-        ':cross_number' => $cross_number,
+        ':cross_number' => $dataset_name . '_' . $cross_number,
+        ':ne_type_id'   => $ne_type_id,
+        ':nep_type_id'  => $nep_type_id,
       );
-      $results = db_qery($sql, $args);
-      $stock_id = $results->fetchField();
-      if ($stock_id) {
-        return MCL_CHADO_STOCK::byKey(array('stock_id' => $stock_id));
+      $results = db_query($sql, $args);
+      $nd_experiment_id = $results->fetchField();
+      if ($nd_experiment_id) {
+        return MCL_CHADO_ND_EXPERIMENT::byKey(array('nd_experiment_id' => $nd_experiment_id));
       }
     }
     return NULL;
@@ -220,33 +187,7 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name, $value, $separator = '') {
     $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
-    $mcl_tmpl->addProperty('featuremapprop', 'featuremap_id', $this->featuremap_id, $type_id, $value, $separator);
-  }
-
-  /**
-   * Adds stock to featuremap_organism.
-   *
-   * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $genus
-   * @param integer $species
-   * @param string $separator
-   */
-  public function addOrganism(MCL_TEMPLATE $mcl_tmpl, $genus, $species, $separator = '') {
-    if ($genus && $species) {
-      $sps = preg_split($mcl_tmpl->getSepRegex($separator), $species, NULL, PREG_SPLIT_NO_EMPTY);
-      foreach ($sps as $sp) {
-        $sp = trim($sp);
-
-        // Gets the organism.
-        $mcl_organism = MCL_CHADO_ORGANISM::getOrganism($genus, $sp);
-        if ($mcl_organism) {
-          $mcl_tmpl->addLink('featuremap_organism', 'featuremap_id', $this->featuremap_id, 'organism_id', $mcl_organism->getOrganismID());
-        }
-        else {
-          $mcl_tmpl->updateMsg('E', "(genus, species) = ($genus, $sp) not found in organism");
-        }
-      }
-    }
+    $mcl_tmpl->addProperty('nd_experimentprop', 'nd_experiment_id', $this->nd_experiment_id, $type_id, $value, $separator);
   }
 
   /**
@@ -332,7 +273,7 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
         $pub_id = trim($pub_id);
         $mcl_pub = MCL_CHADO_PUB::getPub($pub_id);
         if ($mcl_pub) {
-          $mcl_tmpl->addLink('fnd_experiment__pub', 'nd_experiment_id', $this->nd_experiment_id, 'pub_id', $pub_id);
+          $mcl_tmpl->addLink('nd_experiment_pub', 'nd_experiment_id', $this->nd_experiment_id, 'pub_id', $pub_id);
         }
       }
     }

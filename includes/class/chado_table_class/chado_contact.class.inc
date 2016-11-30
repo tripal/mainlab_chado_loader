@@ -9,18 +9,18 @@
  */
 class CHADO_CONTACT  {
 
- /**
-  *  Data members for CHADO_CONTACT.
-  */
+  /**
+   *  Data members for CHADO_CONTACT.
+   */
   protected $member_arr  = NULL;
   protected $contact_id  = NULL;
   protected $type_id     = NULL;
   protected $name        = NULL;
   protected $description = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'contact_id'  => 'serial',
     'type_id'     => 'integer',
@@ -28,7 +28,7 @@ class CHADO_CONTACT  {
     'description' => 'character_varying(255)',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

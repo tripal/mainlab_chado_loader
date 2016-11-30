@@ -9,9 +9,9 @@
  */
 class CHADO_EIMAGEPROP  {
 
- /**
-  *  Data members for CHADO_EIMAGEPROP.
-  */
+  /**
+   *  Data members for CHADO_EIMAGEPROP.
+   */
   protected $member_arr    = NULL;
   protected $eimageprop_id = NULL;
   protected $eimage_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_EIMAGEPROP  {
   protected $value         = NULL;
   protected $rank          = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'eimageprop_id' => 'serial',
     'eimage_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_EIMAGEPROP  {
     'rank'          => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

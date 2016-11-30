@@ -9,9 +9,9 @@
  */
 class CHADO_FEATURE  {
 
- /**
-  *  Data members for CHADO_FEATURE.
-  */
+  /**
+   *  Data members for CHADO_FEATURE.
+   */
   protected $member_arr       = NULL;
   protected $feature_id       = NULL;
   protected $dbxref_id        = NULL;
@@ -27,9 +27,9 @@ class CHADO_FEATURE  {
   protected $timeaccessioned  = NULL;
   protected $timelastmodified = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'feature_id'       => 'serial',
     'dbxref_id'        => 'integer',
@@ -46,7 +46,7 @@ class CHADO_FEATURE  {
     'timelastmodified' => 'timestamp_without_time_zone',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

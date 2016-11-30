@@ -95,21 +95,18 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
   }
 
   /**
-   * Adds null organism.
+   * Adds N/A organism.
    *
    * @return MCL_CHADO_ORGANISM
    */
-  public static function addNull() {
-
-    // Gets null cvterm.
-    $mcl_cvterm = MCL_CHADO_CVTERM::addNull();
+  public static function addNA() {
 
     // Checks if it has already exists.
-    $mcl_organism = MCL_CHADO_ORGANISM::getOrganism('null', 'null');
+    $mcl_organism = MCL_CHADO_ORGANISM::getOrganism('N/A', 'N/A');
     if (!$mcl_organism) {
       $details = array(
-        'genus'   => 'null',
-        'species' => 'null',
+        'genus'   => 'N/A',
+        'species' => 'N/A',
       );
       $mcl_organism = new MCL_CHADO_ORGANISM($details);
       if (!$mcl_organism->insert()) {

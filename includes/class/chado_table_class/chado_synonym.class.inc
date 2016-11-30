@@ -9,18 +9,18 @@
  */
 class CHADO_SYNONYM  {
 
- /**
-  *  Data members for CHADO_SYNONYM.
-  */
+  /**
+   *  Data members for CHADO_SYNONYM.
+   */
   protected $member_arr   = NULL;
   protected $synonym_id   = NULL;
   protected $name         = NULL;
   protected $type_id      = NULL;
   protected $synonym_sgml = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'synonym_id'   => 'serial',
     'name'         => 'character_varying(255)',
@@ -28,7 +28,7 @@ class CHADO_SYNONYM  {
     'synonym_sgml' => 'character_varying(255)',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

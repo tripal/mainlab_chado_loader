@@ -4,26 +4,26 @@
  */
 
 /**
- * The declaration of CHADO_FEATUREMAP_PUB class.
+ * The declaration of CHADO_ND_EXPERIMENT_PUB class.
  *
  */
-class CHADO_FEATUREMAP_PUB  {
+class CHADO_ND_EXPERIMENT_PUB  {
 
   /**
-   *  Data members for CHADO_FEATUREMAP_PUB.
+   *  Data members for CHADO_ND_EXPERIMENT_PUB.
    */
-  protected $member_arr        = NULL;
-  protected $featuremap_pub_id = NULL;
-  protected $featuremap_id     = NULL;
-  protected $pub_id            = NULL;
+  protected $member_arr           = NULL;
+  protected $nd_experiment_pub_id = NULL;
+  protected $nd_experiment_id     = NULL;
+  protected $pub_id               = NULL;
 
   /**
    *  Data types for the data members.
    */
   protected static $data_types = array(
-    'featuremap_pub_id' => 'serial',
-    'featuremap_id'     => 'integer',
-    'pub_id'            => 'integer',
+    'nd_experiment_pub_id' => 'serial',
+    'nd_experiment_id'     => 'integer',
+    'pub_id'               => 'integer',
   );
 
   /**
@@ -33,10 +33,10 @@ class CHADO_FEATUREMAP_PUB  {
    */
   public function __construct($details = array()) {
     // Initializes data members.
-    $this->member_arr        = $details;
-    $this->featuremap_pub_id = array_key_exists('featuremap_pub_id', $details) ? $details['featuremap_pub_id'] : '';
-    $this->featuremap_id     = array_key_exists('featuremap_id', $details)     ? $details['featuremap_id']     : '';
-    $this->pub_id            = array_key_exists('pub_id', $details)            ? $details['pub_id']            : '';
+    $this->member_arr           = $details;
+    $this->nd_experiment_pub_id = array_key_exists('nd_experiment_pub_id', $details) ? $details['nd_experiment_pub_id'] : '';
+    $this->nd_experiment_id     = array_key_exists('nd_experiment_id', $details)     ? $details['nd_experiment_id']     : '';
+    $this->pub_id               = array_key_exists('pub_id', $details)               ? $details['pub_id']               : '';
   }
 
   /**
@@ -46,7 +46,7 @@ class CHADO_FEATUREMAP_PUB  {
   }
 
   /**
-   * Generate CHADO_FEATUREMAP_PUB by key(s).
+   * Generate CHADO_ND_EXPERIMENT_PUB by key(s).
    */
   public static function byKey($keys) {
 
@@ -82,7 +82,7 @@ class CHADO_FEATUREMAP_PUB  {
     }
 
     // Gets the table properties.
-    $sql = "SELECT * FROM chado.featuremap_pub WHERE " . implode(" AND " , $where_arr);
+    $sql = "SELECT * FROM chado.nd_experiment_pub WHERE " . implode(" AND " , $where_arr);
     $details = db_query($sql, $args)->fetch(PDO::FETCH_ASSOC);
     if ($details) {
       return new self($details);
@@ -107,12 +107,12 @@ class CHADO_FEATUREMAP_PUB  {
         // Populates all fields. The attribute with 'NOT NULL' would be skipped
         // if the value is empty.
         $fields = array();
-        $fields['featuremap_id'] = $this->featuremap_id;
-        $fields['pub_id']        = $this->pub_id;
+        $fields['nd_experiment_id'] = $this->nd_experiment_id;
+        $fields['pub_id']           = $this->pub_id;
 
 
         // Inserts the record.
-        $this->featuremap_pub_id = db_insert('chado.featuremap_pub')
+        $this->nd_experiment_pub_id = db_insert('chado.nd_experiment_pub')
           ->fields($fields)
           ->execute();
       }
@@ -136,14 +136,14 @@ class CHADO_FEATUREMAP_PUB  {
       // Populates all fields. The attribute with 'NOT NULL' would be skipped
       // if the value is empty.
       $fields = array();
-      $fields['featuremap_id'] = $this->featuremap_id;
-      $fields['pub_id']        = $this->pub_id;
+      $fields['nd_experiment_id'] = $this->nd_experiment_id;
+      $fields['pub_id']           = $this->pub_id;
 
 
       // Updates the record.
-      db_update('chado.featuremap_pub')
+      db_update('chado.nd_experiment_pub')
         ->fields($fields)
-        ->condition('featuremap_pub_id', $this->featuremap_pub_id, '=')
+        ->condition('nd_experiment_pub_id', $this->nd_experiment_pub_id, '=')
         ->execute();
     }
     catch (Exception $e) {
@@ -162,8 +162,8 @@ class CHADO_FEATUREMAP_PUB  {
     $transaction = db_transaction();
     try {
 
-      db_delete('chado.featuremap_pub')
-        ->condition('featuremap_pub_id', $this->featuremap_pub_id, '=')
+      db_delete('chado.nd_experiment_pub')
+        ->condition('nd_experiment_pub_id', $this->nd_experiment_pub_id, '=')
         ->execute();
     }
     catch (Exception $e) {
@@ -205,39 +205,39 @@ class CHADO_FEATUREMAP_PUB  {
   }
 
   /**
-   * Retrieves the featuremap_pub_id.
+   * Retrieves the nd_experiment_pub_id.
    *
    * @retrun serial
    */
-  public function getFeaturemapPubID() {
-    return $this->featuremap_pub_id;
+  public function getNdExperimentPubID() {
+    return $this->nd_experiment_pub_id;
   }
 
   /**
-   * Updates the featuremap_pub_id.
+   * Updates the nd_experiment_pub_id.
    *
-   * @param serial $featuremap_pub_id
+   * @param serial $nd_experiment_pub_id
    */
-  public function setFeaturemapPubID($featuremap_pub_id) {
-    $this->featuremap_pub_id = $featuremap_pub_id;
+  public function setNdExperimentPubID($nd_experiment_pub_id) {
+    $this->nd_experiment_pub_id = $nd_experiment_pub_id;
   }
 
   /**
-   * Retrieves the featuremap_id.
+   * Retrieves the nd_experiment_id.
    *
    * @retrun integer
    */
-  public function getFeaturemapID() {
-    return $this->featuremap_id;
+  public function getNdExperimentID() {
+    return $this->nd_experiment_id;
   }
 
   /**
-   * Updates the featuremap_id.
+   * Updates the nd_experiment_id.
    *
-   * @param integer $featuremap_id
+   * @param integer $nd_experiment_id
    */
-  public function setFeaturemapID($featuremap_id) {
-    $this->featuremap_id = $featuremap_id;
+  public function setNdExperimentID($nd_experiment_id) {
+    $this->nd_experiment_id = $nd_experiment_id;
   }
 
   /**

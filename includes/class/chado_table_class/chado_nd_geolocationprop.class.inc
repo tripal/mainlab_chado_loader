@@ -9,9 +9,9 @@
  */
 class CHADO_ND_GEOLOCATIONPROP  {
 
- /**
-  *  Data members for CHADO_ND_GEOLOCATIONPROP.
-  */
+  /**
+   *  Data members for CHADO_ND_GEOLOCATIONPROP.
+   */
   protected $member_arr            = NULL;
   protected $nd_geolocationprop_id = NULL;
   protected $nd_geolocation_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_ND_GEOLOCATIONPROP  {
   protected $value                 = NULL;
   protected $rank                  = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'nd_geolocationprop_id' => 'serial',
     'nd_geolocation_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_ND_GEOLOCATIONPROP  {
     'rank'                  => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

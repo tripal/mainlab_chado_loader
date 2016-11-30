@@ -9,24 +9,24 @@
  */
 class CHADO_ND_EXPERIMENT_PHENOTYPE  {
 
- /**
-  *  Data members for CHADO_ND_EXPERIMENT_PHENOTYPE.
-  */
+  /**
+   *  Data members for CHADO_ND_EXPERIMENT_PHENOTYPE.
+   */
   protected $member_arr                 = NULL;
   protected $nd_experiment_phenotype_id = NULL;
   protected $nd_experiment_id           = NULL;
   protected $phenotype_id               = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'nd_experiment_phenotype_id' => 'serial',
     'nd_experiment_id'           => 'integer',
     'phenotype_id'               => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

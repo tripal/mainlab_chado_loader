@@ -276,11 +276,11 @@ function mcl_upload_data_form_submit($form, &$form_state) {
       if ($mcl_job->update()) {
 
         // Runs the job.
-        $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null & echo $!";
-        $pid = exec($cmd);
-
-        // Saves the process ID.
-
+        $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null  & ";
+        $pid = exec($cmd, $output, $return_var);
+        if ($return_var) {
+          drupal_set_message("Failed to add a uploading job");
+        }
       }
       else {
         drupal_set_message("Failed to add a uploading job : Error on updating job property");

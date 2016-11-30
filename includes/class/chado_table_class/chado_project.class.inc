@@ -9,24 +9,24 @@
  */
 class CHADO_PROJECT  {
 
- /**
-  *  Data members for CHADO_PROJECT.
-  */
+  /**
+   *  Data members for CHADO_PROJECT.
+   */
   protected $member_arr  = NULL;
   protected $project_id  = NULL;
   protected $name        = NULL;
   protected $description = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'project_id'  => 'serial',
     'name'        => 'character_varying(255)',
     'description' => 'character_varying(255)',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

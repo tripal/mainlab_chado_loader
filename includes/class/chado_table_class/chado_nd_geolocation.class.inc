@@ -9,9 +9,9 @@
  */
 class CHADO_ND_GEOLOCATION  {
 
- /**
-  *  Data members for CHADO_ND_GEOLOCATION.
-  */
+  /**
+   *  Data members for CHADO_ND_GEOLOCATION.
+   */
   protected $member_arr        = NULL;
   protected $nd_geolocation_id = NULL;
   protected $description       = NULL;
@@ -20,9 +20,9 @@ class CHADO_ND_GEOLOCATION  {
   protected $geodetic_datum    = NULL;
   protected $altitude          = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'nd_geolocation_id' => 'serial',
     'description'       => 'character_varying(255)',
@@ -32,7 +32,7 @@ class CHADO_ND_GEOLOCATION  {
     'altitude'          => 'real',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

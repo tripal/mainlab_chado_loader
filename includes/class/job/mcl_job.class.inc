@@ -16,6 +16,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   protected $log_dir      = NULL;
   protected $file_dir     = NULL;
   protected $progress     = NULL;
+  protected $pid          = NULL;
 
   // Message types.
   protected $msg_types = array(
@@ -96,6 +97,10 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     if ($progress) {
       $this->progress = $progress;
     }
+    $pid = $this->getPropByKey('pid');
+    if ($pid) {
+      $this->pid = $pid;
+    }
   }
 
   /**
@@ -146,6 +151,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
       $this->setPropByKey('log_dir', $this->log_dir);
       $this->setPropByKey('file_dir', $this->file_dir);
       $this->setPropByKey('progress', $this->progress);
+      $this->setPropByKey('pid', $this->pid);
       $this->update();
 
       // Creates directories.
@@ -499,6 +505,26 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   public function setFileDir($file_dir) {
     $this->file_dir = $file_dir;
     $this->setPropByKey('file_dir', $file_dir);
+  }
+
+  /**
+   * Retrieves the progress ID.
+   *
+   * @retrun integer
+   */
+  public function getPID() {
+    return $this->pid;
+  }
+
+  /**
+   * Updates the progress ID.
+   *
+   * @param integer $pid
+   */
+  public function setPID($pid) {
+    $this->pid = $pid;
+    $this->setPropByKey('pid', $pid);
+    $this->update();
   }
 
   /**

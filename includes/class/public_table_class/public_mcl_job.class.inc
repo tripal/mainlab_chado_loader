@@ -9,9 +9,9 @@
  */
 class PUBLIC_MCL_JOB  {
 
- /**
-  *  Data members for PUBLIC_MCL_JOB.
-  */
+  /**
+   *  Data members for PUBLIC_MCL_JOB.
+   */
   protected $member_arr    = NULL;
   protected $job_id        = NULL;
   protected $name          = NULL;
@@ -21,13 +21,12 @@ class PUBLIC_MCL_JOB  {
   protected $param         = NULL;
   protected $prop          = NULL;
   protected $user_id       = NULL;
-  protected $program_id    = NULL;
   protected $submit_date   = NULL;
   protected $complete_date = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'job_id'        => 'serial',
     'name'          => 'character_varying(255)',
@@ -37,12 +36,11 @@ class PUBLIC_MCL_JOB  {
     'param'         => 'text',
     'prop'          => 'text',
     'user_id'       => 'integer',
-    'program_id'    => 'integer',
     'submit_date'   => 'timestamp_without_time_zone',
     'complete_date' => 'timestamp_without_time_zone',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details
@@ -58,7 +56,6 @@ class PUBLIC_MCL_JOB  {
     $this->param         = array_key_exists('param', $details)         ? $details['param']         : '';
     $this->prop          = array_key_exists('prop', $details)          ? $details['prop']          : '';
     $this->user_id       = array_key_exists('user_id', $details)       ? $details['user_id']       : '';
-    $this->program_id    = array_key_exists('program_id', $details)    ? $details['program_id']    : '';
     $this->submit_date   = array_key_exists('submit_date', $details)   ? $details['submit_date']   : NULL;
     $this->complete_date = array_key_exists('complete_date', $details) ? $details['complete_date'] : NULL;
   }
@@ -138,9 +135,8 @@ class PUBLIC_MCL_JOB  {
         $fields['prop']        = $this->prop;
         $fields['user_id']     = $this->user_id;
         $fields['submit_date'] = $this->submit_date;
-        if (is_numeric($this->status))     { $fields['status']        = $this->status; }
-        if (is_numeric($this->program_id)) { $fields['program_id']    = $this->program_id; }
-        if (!empty($this->complete_date))  { $fields['complete_date'] = $this->complete_date; }
+        if (is_numeric($this->status))    { $fields['status']        = $this->status; }
+        if (!empty($this->complete_date)) { $fields['complete_date'] = $this->complete_date; }
 
         // Inserts the record.
         $this->job_id = db_insert('mcl_job')
@@ -174,9 +170,8 @@ class PUBLIC_MCL_JOB  {
       $fields['prop']        = $this->prop;
       $fields['user_id']     = $this->user_id;
       $fields['submit_date'] = $this->submit_date;
-      if (is_numeric($this->status))     { $fields['status']        = $this->status; }
-      if (is_numeric($this->program_id)) { $fields['program_id']    = $this->program_id; }
-      if (!empty($this->complete_date))  { $fields['complete_date'] = $this->complete_date; }
+      if (is_numeric($this->status))    { $fields['status']        = $this->status; }
+      if (!empty($this->complete_date)) { $fields['complete_date'] = $this->complete_date; }
 
       // Updates the record.
       db_update('mcl_job')
@@ -384,24 +379,6 @@ class PUBLIC_MCL_JOB  {
    */
   public function setUserID($user_id) {
     $this->user_id = $user_id;
-  }
-
-  /**
-   * Retrieves the program_id.
-   *
-   * @retrun integer
-   */
-  public function getProgramID() {
-    return $this->program_id;
-  }
-
-  /**
-   * Updates the program_id.
-   *
-   * @param integer $program_id
-   */
-  public function setProgramID($program_id) {
-    $this->program_id = $program_id;
   }
 
   /**

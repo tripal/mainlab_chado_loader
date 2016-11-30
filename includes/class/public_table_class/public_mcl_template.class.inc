@@ -9,24 +9,26 @@
  */
 class PUBLIC_MCL_TEMPLATE  {
 
- /**
-  *  Data members for PUBLIC_MCL_TEMPLATE.
-  */
+  /**
+   *  Data members for PUBLIC_MCL_TEMPLATE.
+   */
   protected $member_arr       = NULL;
   protected $template_id      = NULL;
   protected $template         = NULL;
   protected $template_type_id = NULL;
+  protected $public           = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'template_id'      => 'serial',
     'template'         => 'character_varying(255)',
     'template_type_id' => 'integer',
+    'public'           => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details
@@ -37,6 +39,7 @@ class PUBLIC_MCL_TEMPLATE  {
     $this->template_id      = array_key_exists('template_id', $details)      ? $details['template_id']      : '';
     $this->template         = array_key_exists('template', $details)         ? $details['template']         : '';
     $this->template_type_id = array_key_exists('template_type_id', $details) ? $details['template_type_id'] : '';
+    $this->public           = array_key_exists('public', $details)           ? $details['public']           : '';
   }
 
   /**
@@ -109,7 +112,7 @@ class PUBLIC_MCL_TEMPLATE  {
         $fields = array();
         $fields['template']         = $this->template;
         $fields['template_type_id'] = $this->template_type_id;
-
+        if (is_numeric($this->public)) { $fields['public'] = $this->public; }
 
         // Inserts the record.
         $this->template_id = db_insert('mcl_template')
@@ -138,7 +141,7 @@ class PUBLIC_MCL_TEMPLATE  {
       $fields = array();
       $fields['template']         = $this->template;
       $fields['template_type_id'] = $this->template_type_id;
-
+      if (is_numeric($this->public)) { $fields['public'] = $this->public; }
 
       // Updates the record.
       db_update('mcl_template')
@@ -256,5 +259,23 @@ class PUBLIC_MCL_TEMPLATE  {
    */
   public function setTemplateTypeID($template_type_id) {
     $this->template_type_id = $template_type_id;
+  }
+
+  /**
+   * Retrieves the public.
+   *
+   * @retrun integer
+   */
+  public function getPublic() {
+    return $this->public;
+  }
+
+  /**
+   * Updates the public.
+   *
+   * @param integer $public
+   */
+  public function setPublic($public) {
+    $this->public = $public;
   }
 }

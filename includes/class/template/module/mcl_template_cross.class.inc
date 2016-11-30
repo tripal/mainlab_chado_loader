@@ -74,15 +74,14 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
     // Checks dataset.
     MCL_CHADO_DATASET::checkDataset($this, $line['dataset_name']);
 
-    // Gets genus and species from cross_number.
-    $genus = '';
-    $species = '';
+    // Checks site.
+    MCL_CHADO_LOCATION::checkSite($this, $line['site_name']);
 
     // Checks maternal parent.
-    MCL_CHADO_STOCK::checkStock($this, $line['mother'], $genus, $species);
+    MCL_CHADO_STOCK::checkStock($this, $line['mother']);
 
     // Checks paternal parent.
-    MCL_CHADO_STOCK::checkStock($this, $line['father'], $genus, $species);
+    MCL_CHADO_STOCK::checkStock($this, $line['father']);
   }
 
   /**
@@ -90,12 +89,10 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
    */
   public function uploadDataLine($line) {
 
-    // Gets genus and species from cross_number.
+    // Gets nd_geolocation_id.
+    $nd_geolocation_id = MCL_CHADO_LOCATION::getLocationIDBySite($line['site_name']);
 
-
-
-
-    // Adds a nd_eperiment.
+    // Adds a nd_experiment.
     $dup_key = $line['dataset_name'] . '_' . $line['cross_number'];
     $nd_experiment = MCL_CHADO_ND_EXPERIMENT::addNdExperiment($this, $this->cvterms['SITE_CV']['cross_experiment'], $nd_geolocation_id, $this->cvterms['SITE_CV']['cross_number'], $dup_key);
     if ($nd_experiment) {
@@ -110,11 +107,11 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
       $nd_experiment->addDataset($this, $line['dataset_name']);
 
       // Adds a maternal parent.
-      $maternal_parent = MCL_CHADO_STOCK::getStock($line['mother'], $line['mother_genus'], $line['mother_species']);
+      $maternal_parent = MCL_CHADO_STOCK::getStock($line['mother']);
       $nd_experiment->addStock($this, $maternal_parent, $this->cvterms['SITE_CV']['maternal_parent']);
 
       // Adds a paternal parent.
-      $paternal_parent = MCL_CHADO_STOCK::getStock($line['father'], $line['father_genus'], $line['father_species']);
+      $paternal_parent = MCL_CHADO_STOCK::getStock($line['father']);
       $nd_experiment->addStock($this, $maternal_parent, $this->cvterms['SITE_CV']['paternal_parent']);;
     }
   }

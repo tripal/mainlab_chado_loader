@@ -9,24 +9,24 @@
  */
 class CHADO_ORGANISM_PUB  {
 
- /**
-  *  Data members for CHADO_ORGANISM_PUB.
-  */
+  /**
+   *  Data members for CHADO_ORGANISM_PUB.
+   */
   protected $member_arr      = NULL;
   protected $organism_pub_id = NULL;
   protected $organism_id     = NULL;
   protected $pub_id          = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'organism_pub_id' => 'serial',
     'organism_id'     => 'integer',
     'pub_id'          => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

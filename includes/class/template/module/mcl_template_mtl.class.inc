@@ -39,12 +39,12 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $headers = array(
-      'mtl_name'              => array('req' => TRUE,  'width' => 10, 'label' => 'MTL_name', 'desc' => "Trait locus name given by curators."),
+      'mtl_name'              => array('req' => TRUE,  'width' => 10, 'desc' => "Trait locus name given by curators."),
       'genus'                 => array('req' => TRUE,  'width' => 10, 'desc' => "The genus of the phenotyping material."),
       'species'               => array('req' => TRUE,  'width' => 10, 'desc' => "The species of the phenotyping material."),
       'trait_name'            => array('req' => FALSE, 'width' => 10, 'desc' => "Descriptive name for trait, it should be one of the crop trait ontology and should match a term in 'Trait' sheet."),
       'trait_descriptor_set'  => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the crop trait ontology. A site-wide crop trait ontology can be specified in the loader. If not provided, the site trait ontology will be used."),
-      'gb_id'                 => array('req' => FALSE, 'width' => 10, 'label' => 'GB_ID', 'desc' => "Associated genbank ID if available."),
+      'gb_id'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Associated genbank ID if available."),
       'alias'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Other names used for the trait. Multiple aliases, separated by comma, can be added."),
       'screening_method'      => array('req' => FALSE, 'width' => 10, 'desc' => "Any specific method for the phenotypic inspection."),
       'description'           => array('req' => FALSE, 'width' => 10, 'desc' => "Desctiption for the trait. The more detail, the better. You can describe the phenotype of the various cultivar and provide the pictures."),
@@ -55,6 +55,10 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
       'image'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
       'reference'             => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id for the reference that describes MTL. Multiple references, separated by comma, can be added."),
     );
+
+    // Adds labels.
+    $headers['mtl_name']['label'] = 'MTL_name';
+    $headers['gb_id']['label']    = 'GB_ID';
     return $headers;
   }
 
@@ -120,10 +124,10 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
       $mtl->addProp($this, 'SITE_CV', 'published_symbol', $line['published_symbol']);
 
       // Adds colocalized_markers.
-      $mtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['adjacent_to'], FALSE, "[,;]");
+      $mtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]");
 
       // Adds neighboring_markers.
-      $mtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['located_in'], FALSE, "[,;]");
+      $mtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]");
 
       // Adds dbxref.
       $db = MCL_CHADO_DB::getDB('DB:genbank');

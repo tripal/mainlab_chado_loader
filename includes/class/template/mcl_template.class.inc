@@ -10,6 +10,7 @@ class MCL_TEMPLATE extends PUBLIC_MCL_TEMPLATE {
   */
   protected $template_type  = NULL;
   protected $headers        = NULL;
+  protected $headers_sp     = NULL;
   protected $cvterms        = NULL;
   protected $csv            = NULL;
   protected $job            = NULL;
@@ -162,10 +163,11 @@ DESC;
    *
    * @return boolean
    */
-  public static function addTemplate($template_type, $template, $headers = '', $cverms = '', $description = '') {
+  public static function addTemplate($template_type, $template) {
 
     // Gets the template type.
     $mcl_template_type = MCL_TEMPLATE_TYPE::byKey(array('type' => $template_type));
+
     if (!$mcl_template_type) {
       return FALSE;
     }
@@ -177,9 +179,6 @@ DESC;
       // Adds a new template.
       $details = array(
         'template'          => $template,
-        'headers'           => $headers,
-        'cverms'            => $cverms,
-        'description'       => $description,
         'template_type_id'  => $mcl_template_type->getTemplateTypeID(),
       );
       $mcl_template = new MCL_TEMPLATE($details);

@@ -9,9 +9,9 @@
  */
 class CHADO_FEATURE_SYNONYM  {
 
- /**
-  *  Data members for CHADO_FEATURE_SYNONYM.
-  */
+  /**
+   *  Data members for CHADO_FEATURE_SYNONYM.
+   */
   protected $member_arr         = NULL;
   protected $feature_synonym_id = NULL;
   protected $synonym_id         = NULL;
@@ -20,9 +20,9 @@ class CHADO_FEATURE_SYNONYM  {
   protected $is_current         = NULL;
   protected $is_internal        = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'feature_synonym_id' => 'serial',
     'synonym_id'         => 'integer',
@@ -32,7 +32,7 @@ class CHADO_FEATURE_SYNONYM  {
     'is_internal'        => 'boolean',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

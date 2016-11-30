@@ -11,7 +11,7 @@ class MCL_TEMPLATE_TRAIT extends MCL_TEMPLATE {
   public $valid_trait_categories = array(
     'biochemical trait', 'growth and development trait',
     'anatomy and morphology trait', 'quality trait', 'stature or vigor trait',
-    'sterility or fertility trait', 'stress trait', 'yield trait',
+    'sterility or fertility trait', 'stress trait', 'yield trait', 'physiological trait',
   );
 
   /**

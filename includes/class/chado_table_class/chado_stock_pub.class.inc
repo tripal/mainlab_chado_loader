@@ -9,24 +9,24 @@
  */
 class CHADO_STOCK_PUB  {
 
- /**
-  *  Data members for CHADO_STOCK_PUB.
-  */
+  /**
+   *  Data members for CHADO_STOCK_PUB.
+   */
   protected $member_arr   = NULL;
   protected $stock_pub_id = NULL;
   protected $stock_id     = NULL;
   protected $pub_id       = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'stock_pub_id' => 'serial',
     'stock_id'     => 'integer',
     'pub_id'       => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

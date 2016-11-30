@@ -46,7 +46,7 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
   public function defineHeaders() {
     $headers = array(
       'stock_name'        => array('req' => TRUE,  'width' => 10, 'desc' => "Primary ID or name of stock. The most important ID or name (unique and stable at least within the breeding program) should be in this column. For mapping population, follow the naming convention of each database."),
-      'germplasm_type'    => array('req' => TRUE,  'width' => 10, 'desc' => "Select from the three choices (cultivar, breeding/research material, or wild/unimproved) for an individual germplasm or 'population' for a group of individual."),
+      'germplasm_type'    => array('req' => TRUE,  'width' => 10, 'desc' => "Select from the three choices (cultivar, breeding_research_material, or wild_unimproved) for an individual germplasm or 'population' for a group of individual."),
       'genus'             => array('req' => TRUE,  'width' => 10, 'desc' => "Genus to which the stock belongs to."),
       'species'           => array('req' => TRUE,  'width' => 10, 'desc' => "Species name. Enter 'sp.' to represent one unknown species, 'spp.' to represent multiple unknown species."),
       'grin_id'           => array('req' => FALSE, 'width' => 10, 'desc' => "Accession ID (ACID) in the GRIN database, if it is known."),
@@ -126,12 +126,6 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
     // Checks aliases.
     MCL_CHADO_STOCK::checkAlias($this, $line['alias'], '[;,]');
 
-    // Checks parents.
-    MCL_CHADO_STOCK::checkStock($this, $line['paternal_parent'], $line['genus'], $line['species']);
-    MCL_CHADO_STOCK::checkStock($this, $line['maternal_parent'], $line['genus'], $line['species']);
-    MCL_CHADO_STOCK::checkStock($this, $line['mutation_parent'], $line['genus'], $line['species']);
-    MCL_CHADO_STOCK::checkStock($this, $line['selfing_parent'],  $line['genus'], $line['species']);
-
     // Checks images.
     MCL_CHADO_IMAGE::checkImage($this, $line['image'], '[;,]');
 
@@ -188,10 +182,10 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
       $stock->addAlias($this, $line['alias'], "[,;]");
 
       // Adds parents.
-      $stock->addParent($this, $line['paternal_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
-      $stock->addParent($this, $line['maternal_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
-      $stock->addParent($this, $line['mutation_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_mutation_parent_of']);
-      $stock->addParent($this, $line['selfing_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_selfing_parent_of']);
+      $stock->addParent($this, $line['paternal_parent'], '', $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
+      $stock->addParent($this, $line['maternal_parent'], '', $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
+      $stock->addParent($this, $line['mutation_parent'], '', $this->cvterms['SITE_CV']['is_a_mutation_parent_of']);
+      $stock->addParent($this, $line['selfing_parent'], '', $this->cvterms['SITE_CV']['is_a_selfing_parent_of']);
 
       // Adds images.
       $stock->addImage($this, $line['image'], "[,;]");

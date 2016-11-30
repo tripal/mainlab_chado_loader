@@ -9,9 +9,9 @@
  */
 class CHADO_FEATURE_CVTERM  {
 
- /**
-  *  Data members for CHADO_FEATURE_CVTERM.
-  */
+  /**
+   *  Data members for CHADO_FEATURE_CVTERM.
+   */
   protected $member_arr        = NULL;
   protected $feature_cvterm_id = NULL;
   protected $feature_id        = NULL;
@@ -20,9 +20,9 @@ class CHADO_FEATURE_CVTERM  {
   protected $is_not            = NULL;
   protected $rank              = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'feature_cvterm_id' => 'serial',
     'feature_id'        => 'integer',
@@ -32,7 +32,7 @@ class CHADO_FEATURE_CVTERM  {
     'rank'              => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

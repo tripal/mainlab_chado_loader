@@ -9,9 +9,9 @@
  */
 class CHADO_DB  {
 
- /**
-  *  Data members for CHADO_DB.
-  */
+  /**
+   *  Data members for CHADO_DB.
+   */
   protected $member_arr  = NULL;
   protected $db_id       = NULL;
   protected $name        = NULL;
@@ -19,9 +19,9 @@ class CHADO_DB  {
   protected $urlprefix   = NULL;
   protected $url         = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'db_id'       => 'serial',
     'name'        => 'character_varying(255)',
@@ -30,7 +30,7 @@ class CHADO_DB  {
     'url'         => 'character_varying(255)',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

@@ -9,24 +9,24 @@
  */
 class CHADO_LIBRARY_PUB  {
 
- /**
-  *  Data members for CHADO_LIBRARY_PUB.
-  */
+  /**
+   *  Data members for CHADO_LIBRARY_PUB.
+   */
   protected $member_arr     = NULL;
   protected $library_pub_id = NULL;
   protected $library_id     = NULL;
   protected $pub_id         = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'library_pub_id' => 'serial',
     'library_id'     => 'integer',
     'pub_id'         => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

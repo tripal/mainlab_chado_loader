@@ -9,24 +9,24 @@
  */
 class CHADO_PROJECT_PUB  {
 
- /**
-  *  Data members for CHADO_PROJECT_PUB.
-  */
+  /**
+   *  Data members for CHADO_PROJECT_PUB.
+   */
   protected $member_arr     = NULL;
   protected $project_pub_id = NULL;
   protected $project_id     = NULL;
   protected $pub_id         = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'project_pub_id' => 'serial',
     'project_id'     => 'integer',
     'pub_id'         => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

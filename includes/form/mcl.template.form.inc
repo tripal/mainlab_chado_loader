@@ -42,7 +42,7 @@ function _get_mcl_template_table(&$form, $template_id) {
   // $template_id is empty.
   if (!$template_id) {
     $form['template']['table'] = array(
-      '#markup' => "<div>Plese select template in <a href='/mcl'><b>this page</b></a></div>",
+      '#markup' => "<div>Please select template in <a href='/mcl'><b>this page</b></a></div>",
     );
     return;
   }

@@ -11,6 +11,7 @@
             return true;
           }
           xmlhttprequest.abort();
+          location.reload();
         }
       });
 
@@ -29,4 +30,14 @@
 
     } // End of attach.
   }; // End of Drupal.behaviors.mcl
+
+  // Reloads the page.
+  $.fn.reload_page = function() {
+    location.reload();
+   };
+
+  // Re-directs to the page.
+  $.fn.redirect_page = function(url) {
+    location.href = url;
+  };
 })(jQuery);

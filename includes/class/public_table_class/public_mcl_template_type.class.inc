@@ -9,24 +9,24 @@
  */
 class PUBLIC_MCL_TEMPLATE_TYPE  {
 
- /**
-  *  Data members for PUBLIC_MCL_TEMPLATE_TYPE.
-  */
+  /**
+   *  Data members for PUBLIC_MCL_TEMPLATE_TYPE.
+   */
   protected $member_arr       = NULL;
   protected $template_type_id = NULL;
   protected $type             = NULL;
   protected $rank             = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'template_type_id' => 'serial',
     'type'             => 'character_varying(255)',
     'rank'             => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

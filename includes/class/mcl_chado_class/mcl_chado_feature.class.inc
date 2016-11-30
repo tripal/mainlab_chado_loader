@@ -65,6 +65,15 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     foreach ($uniquenames as $uniquename) {
       $uniquename   = trim($uniquename);
 
+      // Sets the arguments.
+      $args = array(
+        'uniquename'  => $uniquename,
+        'type_id'     => $type_id,
+      );
+      if ($organism_id) {
+        $args['organism_id'] = $organism_id;
+      }
+
       // If '::' found in uniquename, update uniquename and organism_id.
       if (preg_match("/^(.*?)\s+(.*?)::(.*?)$/", $uniquename, $matches)) {
         $genus          = trim($matches[1]);
@@ -72,7 +81,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
         $uniquename     = trim($matches[3]);
         $diff_organism  = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
         if ($diff_organism) {
-          $organism_id = $diff_organism->getOrganismID();
+          $args['organism_id'] = $diff_organism->getOrganismID();
         }
         else {
           $mcl_tmpl->updateMsg('E', "$genus $species not found in organism");
@@ -81,13 +90,6 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       }
 
       // Checks the feature.
-      $args = array(
-        'uniquename'  => $uniquename,
-        'type_id'     => $type_id,
-      );
-      if ($organism_id) {
-        $args['organism_id'] = $organism_id;
-      }
       $mcl_feature = MCL_CHADO_FEATURE::byKey($args);
       if (!$mcl_feature) {
         $mcl_tmpl->updateMsg('E', $mcl_tmpl->arrStr($args) . " not found in feature");
@@ -217,7 +219,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       foreach ($uniquenames as $uniquename) {
         $uniquename = trim($uniquename);
 
-        // Adds a feature.
+        // Sets the arguments.
         $args = array(
           'uniquename'  => $uniquename,
           'type_id'     => $feature_type_id,
@@ -235,6 +237,8 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
           }
           $args['organism_id'] = $organism_id;
         }
+
+        // Adds a feature.
         $mcl_feature = MCL_CHADO_FEATURE::byKey($args);
         if ($mcl_feature) {
           $mcl_tmpl->addRelationship('feature_relationship', 'subject_id', $this->feature_id, 'object_id', $mcl_feature->getFeatureID(), $relationship_type_id);
@@ -269,20 +273,37 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       }
     }
 
-    // Removes unmatched sequences.
+    // Skips the unmatched sequences.
     $matched_seqs = array();
     foreach ($sequences as $num => $info) {
       $name = $prefix . $num;
-      if (!array_key_exists('seq', $info) ||  !array_key_exists('name', $info)) {
-        $mcl_tmpl->updateMsg('W', "$name does not have both name and seq. So it will be skipped");
+      $col_name = $name . '_name';
+      $col_seq = $name . '_seq';
+
+      // Checks the matching columns.
+      if (!array_key_exists('seq', $info) || !array_key_exists('name', $info)) {
+        if (array_key_exists('seq', $info) && $info['seq']) {
+          $mcl_tmpl->updateMsg('W', "$col_name columns is missing. So it will be skipped");
+        }
+        else if (array_key_exists('name', $info) && $info['name']) {
+          $mcl_tmpl->updateMsg('W', "$col_seq columns is missing. So it will be skipped");
+        }
       }
       else {
-        $seq_name = $info['name'];
-        if (empty($info['seq'])) {
-          $mcl_tmpl->updateMsg('W', "sequence for $seq_name is empty. So it will be skipped");
+
+        // If both matching columns are empty, just skip without warning.
+        if (empty($info['seq']) && empty($info['name']))  {
+          continue;
         }
+
+        // If one of matching columns is empty, adds warning.
+        else if (empty($info['seq']) || empty($info['name'])) {
+          $mcl_tmpl->updateMsg('W', "Either $col_name or $col_seq are missing. So it will be skipped");
+        }
+
+        // Adds the matching columns.
         else {
-          $matched_seqs[$seq_name] = $info['seq'];
+          $matched_seqs[$info['name']] = $info['seq'];
         }
       }
     }
@@ -390,7 +411,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     );
 
     // Checks arguements.
-    if ($mcl_tmpl->checkReqArgs($args)) {
+    if (!$mcl_tmpl->checkReqArgs($args)) {
       return NULL;
     }
 
@@ -530,7 +551,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
    * @param string $species
    * @param string $separator
    */
-  public function addStock(MCL_TEMPLATE $mcl_tmpl, $stock, $genus, $species, $separator = '') {
+  public function addStock(MCL_TEMPLATE $mcl_tmpl, $stock, $genus, $species, $type_id, $separator = '') {
     if ($stock) {
 
       // Gets orgaims_id.
@@ -554,7 +575,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
           // Adds a stock.
           $mcl_stock = MCL_CHADO_STOCK::byKey(array('uniquename' => $uniquename, 'organism_id' => $organism_id));
           if ($mcl_stock) {
-            $mcl_tmpl->addLink('feature_stock', 'feature_id', $this->feature_id, 'stock_id', $mcl_stock->getStockID());
+            $mcl_tmpl->addLink('feature_stock', 'feature_id', $this->feature_id, 'stock_id', $mcl_stock->getStockID(), $type_id);
           }
         }
       }

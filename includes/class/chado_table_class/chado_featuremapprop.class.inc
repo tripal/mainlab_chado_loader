@@ -9,9 +9,9 @@
  */
 class CHADO_FEATUREMAPPROP  {
 
- /**
-  *  Data members for CHADO_FEATUREMAPPROP.
-  */
+  /**
+   *  Data members for CHADO_FEATUREMAPPROP.
+   */
   protected $member_arr        = NULL;
   protected $featuremapprop_id = NULL;
   protected $featuremap_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_FEATUREMAPPROP  {
   protected $value             = NULL;
   protected $rank              = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'featuremapprop_id' => 'serial',
     'featuremap_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_FEATUREMAPPROP  {
     'rank'              => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

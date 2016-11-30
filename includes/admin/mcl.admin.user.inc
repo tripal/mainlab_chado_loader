@@ -13,7 +13,7 @@ function mcl_admin_user_form($form, &$form_state) {
   $form = array();
   $form['#tree'] = TRUE;
 
-  // Add the instruction for managing users in MCL.
+  // Adds the instruction for managing users in MCL.
   $form['manage_user'] = array(
     '#type'         => 'fieldset',
     '#collapsed'    => FALSE,

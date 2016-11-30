@@ -39,15 +39,15 @@ class MCL_CHADO_CV extends CHADO_CV {
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $cv
+   * @param string $name
    */
-  public static function checkCV(MCL_TEMPLATE $mcl_tmpl, $cv) {
-    if ($cv) {
+  public static function checkCV(MCL_TEMPLATE $mcl_tmpl, $name) {
+    if ($name) {
 
       // Gets the cv.
-      $mcl_cv = MCL_CHADO_CV::getCV($cv);
+      $mcl_cv = MCL_CHADO_CV::getCV($name);
       if (!$mcl_cv) {
-        $mcl_tmpl->updateMsg('E', "(name) = ($cv) not found in cv");
+        $mcl_tmpl->updateMsg('E', "(name) = ($name) not found in cv");
       }
     }
   }
@@ -65,7 +65,7 @@ class MCL_CHADO_CV extends CHADO_CV {
     if ($name == 'SITE_CV') {
       $name = MCL_VAR::getValueByName($name);
     }
-    else if ($cv_name == 'SITE_TRAIT_ONTOLOGY') {
+    else if ($name == 'SITE_TRAIT_ONTOLOGY') {
       $name = MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY');
     }
     return MCL_CHADO_CV::bykey(array('name' => $name));

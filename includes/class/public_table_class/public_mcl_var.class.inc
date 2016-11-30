@@ -9,9 +9,9 @@
  */
 class PUBLIC_MCL_VAR  {
 
- /**
-  *  Data members for PUBLIC_MCL_VAR.
-  */
+  /**
+   *  Data members for PUBLIC_MCL_VAR.
+   */
   protected $member_arr  = NULL;
   protected $var_id      = NULL;
   protected $name        = NULL;
@@ -19,9 +19,9 @@ class PUBLIC_MCL_VAR  {
   protected $value       = NULL;
   protected $description = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'var_id'      => 'serial',
     'name'        => 'character_varying(255)',
@@ -30,7 +30,7 @@ class PUBLIC_MCL_VAR  {
     'description' => 'text',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

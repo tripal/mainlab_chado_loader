@@ -9,9 +9,9 @@
  */
 class CHADO_FEATUREPOS  {
 
- /**
-  *  Data members for CHADO_FEATUREPOS.
-  */
+  /**
+   *  Data members for CHADO_FEATUREPOS.
+   */
   protected $member_arr     = NULL;
   protected $featurepos_id  = NULL;
   protected $featuremap_id  = NULL;
@@ -19,18 +19,18 @@ class CHADO_FEATUREPOS  {
   protected $map_feature_id = NULL;
   protected $mappos         = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'featurepos_id'  => 'serial',
-    'featuremap_id'  => 'serial',
+    'featuremap_id'  => 'integer',
     'feature_id'     => 'integer',
     'map_feature_id' => 'integer',
     'mappos'         => 'double',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details
@@ -113,6 +113,7 @@ class CHADO_FEATUREPOS  {
         // Populates all fields. The attribute with 'NOT NULL' would be skipped
         // if the value is empty.
         $fields = array();
+        $fields['featuremap_id']  = $this->featuremap_id;
         $fields['feature_id']     = $this->feature_id;
         $fields['map_feature_id'] = $this->map_feature_id;
         $fields['mappos']         = $this->mappos;
@@ -143,6 +144,7 @@ class CHADO_FEATUREPOS  {
       // Populates all fields. The attribute with 'NOT NULL' would be skipped
       // if the value is empty.
       $fields = array();
+      $fields['featuremap_id']  = $this->featuremap_id;
       $fields['feature_id']     = $this->feature_id;
       $fields['map_feature_id'] = $this->map_feature_id;
       $fields['mappos']         = $this->mappos;
@@ -233,7 +235,7 @@ class CHADO_FEATUREPOS  {
   /**
    * Retrieves the featuremap_id.
    *
-   * @retrun serial
+   * @retrun integer
    */
   public function getFeaturemapID() {
     return $this->featuremap_id;
@@ -242,7 +244,7 @@ class CHADO_FEATUREPOS  {
   /**
    * Updates the featuremap_id.
    *
-   * @param serial $featuremap_id
+   * @param integer $featuremap_id
    */
   public function setFeaturemapID($featuremap_id) {
     $this->featuremap_id = $featuremap_id;

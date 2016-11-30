@@ -9,9 +9,9 @@
  */
 class PUBLIC_MCL_FILE  {
 
- /**
-  *  Data members for PUBLIC_MCL_FILE.
-  */
+  /**
+   *  Data members for PUBLIC_MCL_FILE.
+   */
   protected $member_arr  = NULL;
   protected $file_id     = NULL;
   protected $type        = NULL;
@@ -24,9 +24,9 @@ class PUBLIC_MCL_FILE  {
   protected $submit_date = NULL;
   protected $prop        = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'file_id'     => 'serial',
     'type'        => 'character_varying(255)',
@@ -40,7 +40,7 @@ class PUBLIC_MCL_FILE  {
     'prop'        => 'text',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

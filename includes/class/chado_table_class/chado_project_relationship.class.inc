@@ -9,18 +9,18 @@
  */
 class CHADO_PROJECT_RELATIONSHIP  {
 
- /**
-  *  Data members for CHADO_PROJECT_RELATIONSHIP.
-  */
+  /**
+   *  Data members for CHADO_PROJECT_RELATIONSHIP.
+   */
   protected $member_arr              = NULL;
   protected $project_relationship_id = NULL;
   protected $subject_project_id      = NULL;
   protected $object_project_id       = NULL;
   protected $type_id                 = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'project_relationship_id' => 'serial',
     'subject_project_id'      => 'integer',
@@ -28,7 +28,7 @@ class CHADO_PROJECT_RELATIONSHIP  {
     'type_id'                 => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

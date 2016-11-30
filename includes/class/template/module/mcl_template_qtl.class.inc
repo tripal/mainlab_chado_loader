@@ -170,13 +170,13 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
       $qtl->addDataset($this, $line['dataset_name']);
 
       // Adds colocalized_markers.
-      $qtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['adjacent_to'], FALSE, "[,;]");
+      $qtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]");
 
       // Adds neighboring_markers.
-      $qtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], $this->cvterms['relationship']['located_in'], FALSE, "[,;]");
+      $qtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]");
 
       // Adds stocks.
-      $qtl->addStock($this, $line['source'], $line['genus'], $line['species'], "[,;]");
+      $qtl->addStock($this, $line['source'], $line['genus'], $line['species'], $this->cvterms['SITE_CV']['source'], "[,;]");
 
       // Adds references.
       $qtl->addReference($this, $line['reference'], "[,;]");

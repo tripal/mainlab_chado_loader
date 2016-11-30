@@ -18,7 +18,7 @@ class CHADO_FEATURE_CONTACT  {
   protected $contact_id         = NULL;
 
   /**
-   *  Data types for the data members..
+   *  Data types for the data members.
    */
   protected static $data_types = array(
     'feature_contact_id' => 'serial',

@@ -1,9 +1,9 @@
 <?php
 /**
- * The declaration of MCL_TEMPLATE_GENOTYPE_SNP class.
+ * The declaration of MCL_TEMPLATE_GENOTYPE_SNP_MARKER_COLUMN class.
  *
  */
-class MCL_TEMPLATE_GENOTYPE_SNP extends MCL_TEMPLATE {
+class MCL_TEMPLATE_GENOTYPE_SNP_MARKER_COLUMN extends MCL_TEMPLATE {
 
  /**
   *  Class data members.
@@ -30,7 +30,11 @@ class MCL_TEMPLATE_GENOTYPE_SNP extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::defineDescription()
    */
   public function defineDescription() {
-    $desc = 'The description for genotype sheet';
+    $desc = "
+      This is the template to upload SNP genotyping data. The marker names are listed as headers with prefix '$'.
+      There are no place to specify the organism for the markers. So this template is used only when marker names
+      are absolutely unique in the feature table.
+    ";
     return $desc;
   }
 
@@ -39,11 +43,10 @@ class MCL_TEMPLATE_GENOTYPE_SNP extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $headers = array(
-      'dataset_name'  => array('req' => TRUE, 'width' => 10, 'desc' => "Name of the genotyping dataset. It should match a dataset_name in 'Dataset' sheet."),
-      'stock_name'    => array('req' => TRUE, 'width' => 10, 'desc' => "Name of the stock genotyped. It should match an 'stock_name' of the 'Stock' sheet."),
-      'genus'         => array('req' => TRUE, 'width' => 10, 'desc' => "Genus of the stock"),
-      'species'       => array('req' => TRUE, 'width' => 10, 'desc' => "Species of the stock"),
-      'marker'        => array('req' => TRUE, 'width' => 10, 'desc' => "Name of the marker used for genotyping. It should match a marker_name in the 'Marker' sheet."),
+      'dataset_name'  => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the genotyping dataset. It should match a dataset_name in 'Dataset' sheet."),
+      'stock_name'    => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the stock genotyped. It should match an 'stock_name' of the 'Stock' sheet."),
+      'genus'         => array('req' => TRUE,  'width' => 10, 'desc' => "Genus of the stock"),
+      'species'       => array('req' => TRUE,  'width' => 10, 'desc' => "Species of the stock"),
       'genotype'      => array('req' => TRUE, 'width' => 10, 'desc' => ""),
     );
     return $headers;
@@ -73,8 +76,7 @@ class MCL_TEMPLATE_GENOTYPE_SNP extends MCL_TEMPLATE {
     // Checks stock.
     MCL_CHADO_STOCK::checkStock($this, $line['stock_name'], $line['genus'], $line['species']);
 
-    // Checks marker.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['marker'], '', '', $this->cvterms['sequence']['genetic_marker']);
+    // Checks markers.
   }
 
   /**
@@ -88,21 +90,24 @@ class MCL_TEMPLATE_GENOTYPE_SNP extends MCL_TEMPLATE {
     // Gets the stock.
     $stock = MCL_CHADO_STOCK::getStock($line['stock_name'], $line['genus'], $line['species']);
 
-    // Gets the marker.
-    $marker = MCL_CHADO_FEATURE::getFeature($line['marker'], '', '', $this->cvterms['sequence']['genetic_marker']);
-
-    // Adds a new genotype or gets the genotype if exists.
+    // Adds genotype.
     $uniquename = $line['genotype'];
-    $genotype = MCL_CHADO_GENOTYPE::addGenotype($uniquename, $this->cvterms['sequence']['SNP'], $line['genotype']);
+    $genotype = MCL_CHADO_GENOTYPE::addGenotype($this, $uniquename, $type_id, $line['genotype']);
+    if ($genotype) {
 
-    // Adds a SNP genotype.
-    $details = array(
-      'project_id'  => $dataset->getProjectID(),
-      'stock_id'    => $stock->getStockID(),
-      'feature_id'  => $marker->getFeatureID(),
-      'genotype_id' => $genotype->getGenotypeID(),
-    );
-    $snp_genotype = new CHADO_GENOTYPE_CALL($details);
-    $snp_genotype->insert();
+      // Gets the markers.
+
+
+        // Adds a SNP genotype.
+        $details = array(
+          'project_id'  => $dataset->getProjectID(),
+          'stock_id'    => $stock->getStockID(),
+          'feature_id'  => $marker->getFeatureID(),
+          'genotype_id' => $genotype->getGenotypeID(),
+        );
+        $snp_genotype = new CHADO_GENOTYPE_CALL($details);
+        $snp_genotype->insert();
+
+    }
   }
 }

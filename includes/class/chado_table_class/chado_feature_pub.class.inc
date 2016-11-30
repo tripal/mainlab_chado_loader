@@ -9,24 +9,24 @@
  */
 class CHADO_FEATURE_PUB  {
 
- /**
-  *  Data members for CHADO_FEATURE_PUB.
-  */
+  /**
+   *  Data members for CHADO_FEATURE_PUB.
+   */
   protected $member_arr     = NULL;
   protected $feature_pub_id = NULL;
   protected $feature_id     = NULL;
   protected $pub_id         = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'feature_pub_id' => 'serial',
     'feature_id'     => 'integer',
     'pub_id'         => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

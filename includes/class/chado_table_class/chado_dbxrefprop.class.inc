@@ -9,9 +9,9 @@
  */
 class CHADO_DBXREFPROP  {
 
- /**
-  *  Data members for CHADO_DBXREFPROP.
-  */
+  /**
+   *  Data members for CHADO_DBXREFPROP.
+   */
   protected $member_arr    = NULL;
   protected $dbxrefprop_id = NULL;
   protected $dbxref_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_DBXREFPROP  {
   protected $value         = NULL;
   protected $rank          = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'dbxrefprop_id' => 'serial',
     'dbxref_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_DBXREFPROP  {
     'rank'          => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

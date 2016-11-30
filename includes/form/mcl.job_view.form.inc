@@ -417,17 +417,12 @@ function mcl_job_view_form_submit($form, &$form_state) {
   ->condition('fid', $drupal_file->fid, '=')
   ->execute();
 
-  // Updates job status.
-  $mcl_job = MCL_JOB::byKey(array('job_id' => $job_id));
-  $mcl_job->setStatus(0);
-  $mcl_job->setProgress('');
-  $mcl_job->update();
-
   // Submits the re-uploading job.
-  $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null & echo $!";
-  $pid = exec($cmd);
-
-  // Saves the process ID.
+  $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null & ";
+  $pid = exec($cmd, $output, $return_var);
+  if ($return_var) {
+    drupal_set_message("Failed to re-run the job");
+  }
 
   // Re-direct to "Data Uploading" page.
   $form_state['redirect'] = "mcl/job_view/$job_id";

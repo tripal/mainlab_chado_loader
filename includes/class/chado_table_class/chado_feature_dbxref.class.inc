@@ -9,18 +9,18 @@
  */
 class CHADO_FEATURE_DBXREF  {
 
- /**
-  *  Data members for CHADO_FEATURE_DBXREF.
-  */
+  /**
+   *  Data members for CHADO_FEATURE_DBXREF.
+   */
   protected $member_arr        = NULL;
   protected $feature_dbxref_id = NULL;
   protected $feature_id        = NULL;
   protected $dbxref_id         = NULL;
   protected $is_current        = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'feature_dbxref_id' => 'serial',
     'feature_id'        => 'integer',
@@ -28,7 +28,7 @@ class CHADO_FEATURE_DBXREF  {
     'is_current'        => 'boolean',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

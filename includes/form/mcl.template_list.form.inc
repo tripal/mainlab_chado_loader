@@ -65,6 +65,11 @@ function _mcl_get_template_table() {
     $template_id    = $mcl_template->getTemplateID();
     $tmpl           = MCL_TEMPLATE::getTemplateByID($template_id);
 
+    // Skips if the template is not public.
+    if ($mcl_template->getPublic() != 1) {
+      //continue;
+    }
+
     // Checks if class has been defined.
     $link_details  = '<em>Not Defined</em>';
     $link_download = '<em>N/A</em>';
@@ -78,7 +83,7 @@ function _mcl_get_template_table() {
       $mcl_template->getTemplateType(),
       $mcl_template->getTemplate(),
       $link_details,
-      $link_download,
+      $link_download
     );
     $rows []= $row;
   }

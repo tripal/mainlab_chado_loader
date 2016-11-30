@@ -9,9 +9,9 @@
  */
 class CHADO_STOCK  {
 
- /**
-  *  Data members for CHADO_STOCK.
-  */
+  /**
+   *  Data members for CHADO_STOCK.
+   */
   protected $member_arr  = NULL;
   protected $stock_id    = NULL;
   protected $dbxref_id   = NULL;
@@ -22,9 +22,9 @@ class CHADO_STOCK  {
   protected $type_id     = NULL;
   protected $is_obsolete = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'stock_id'    => 'serial',
     'dbxref_id'   => 'integer',
@@ -36,7 +36,7 @@ class CHADO_STOCK  {
     'is_obsolete' => 'boolean',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

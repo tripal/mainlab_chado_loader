@@ -53,7 +53,7 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
       'genus'                     => array('req' => TRUE,  'width' => 10, 'desc' => "Genus to which the stock belongs to."),
       'species'                   => array('req' => TRUE,  'width' => 10, 'desc' => "Species name. Enter 'sp.' to represent one unknown species, 'spp.' to represent multiple unknown species."),
       'descriptor'                => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the trait. It should exist in 'trait_name' column of the 'Trait' sheet and 'QTL' sheet."),
-      'trait_descriptor_set'      => array('req' => FALSE,  'width' => 20, 'desc' => "The name of the crop trait ontology that is stored in cv table of chado (eg. 'rosaceae_trait_ontology' for GDR, 'cotton_trait_ontology' for cotton). In Main Lab, we develop crop trait ontology for Rosaceae, cool season food legumes, cotton and citrus, and map them to the Plant Trait Ontology. If not provided, the site trait ontology will be used."),
+      'trait_descriptor_set'      => array('req' => FALSE, 'width' => 20, 'desc' => "The name of the crop trait ontology that is stored in cv table of chado (eg. 'rosaceae_trait_ontology' for GDR, 'cotton_trait_ontology' for cotton). In Main Lab, we develop crop trait ontology for Rosaceae, cool season food legumes, cotton and citrus, and map them to the Plant Trait Ontology. If not provided, the site trait ontology will be used."),
       'site_name'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Location/environment where the plant was grown. Site_name should exist in 'site_name' column of the 'Site' sheet. If the phenotypic measurement has bee done in multiple years, create multiple site_code even if it is done in the same location."),
       'mean'                      => array('req' => TRUE,  'width' => 10, 'desc' => "Mean value of the traits for each parent and progeny."),
       'standard_deviation'        => array('req' => FALSE, 'width' => 10, 'desc' => ""),
@@ -157,6 +157,6 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
     $nd_experiment->addDataset($this, $line['dataset_name']);
 
     // Adds references.
-    $nd_experiment->addReference($this, $line['references'], "[,;]");
+    $nd_experiment->addReference($this, $line['reference'], "[,;]");
   }
 }

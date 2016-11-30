@@ -9,18 +9,18 @@
  */
 class CHADO_CVTERMSYNONYM  {
 
- /**
-  *  Data members for CHADO_CVTERMSYNONYM.
-  */
+  /**
+   *  Data members for CHADO_CVTERMSYNONYM.
+   */
   protected $member_arr       = NULL;
   protected $cvtermsynonym_id = NULL;
   protected $cvterm_id        = NULL;
   protected $synonym          = NULL;
   protected $type_id          = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'cvtermsynonym_id' => 'serial',
     'cvterm_id'        => 'integer',
@@ -28,7 +28,7 @@ class CHADO_CVTERMSYNONYM  {
     'type_id'          => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

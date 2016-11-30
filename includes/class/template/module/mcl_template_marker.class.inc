@@ -216,7 +216,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       $marker->addDBXref($this, $db->getDbID(), $line['dbsnp_id'], "[;,]");
 
       // Adds varieties.
-      $marker->addStock($this, $line['variety'], $line['genus'], $line['species'], "[;,]");
+      $marker->addStock($this, $line['variety'], $line['genus'], $line['species'], $this->cvterms['SITE_CV']['source'], "[;,]");
 
       // Adds contacts.
       $marker->addContact($this, $line['contact'], "[;]");

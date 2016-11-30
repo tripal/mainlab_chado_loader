@@ -9,9 +9,9 @@
  */
 class CHADO_CVTERMPROP  {
 
- /**
-  *  Data members for CHADO_CVTERMPROP.
-  */
+  /**
+   *  Data members for CHADO_CVTERMPROP.
+   */
   protected $member_arr    = NULL;
   protected $cvtermprop_id = NULL;
   protected $cvterm_id     = NULL;
@@ -19,9 +19,9 @@ class CHADO_CVTERMPROP  {
   protected $value         = NULL;
   protected $rank          = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'cvtermprop_id' => 'serial',
     'cvterm_id'     => 'integer',
@@ -30,7 +30,7 @@ class CHADO_CVTERMPROP  {
     'rank'          => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

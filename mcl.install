@@ -130,6 +130,11 @@ function mcl_add_table_mcl_template(&$schema) {
         'type' => 'int',
         'not null' => TRUE,
       ),
+      'public' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
     ),
     'primary key' => array('template_id'),
     'unique keys' => array(
@@ -264,9 +269,6 @@ function mcl_add_table_mcl_job(&$schema) {
         'type' => 'int',
         'not null' => TRUE,
       ),
-      'program_id' => array(
-        'type' => 'int',
-      ),
       'submit_date' => array(
         'type' => 'datetime',
         'mysql_type' => 'datetime',                     // The equivalent MySQL data type
@@ -312,10 +314,10 @@ function mcl_populate_table_defaults() {
 function mcl_populate_mcl_var() {
 
   // Gets null/default value.
-  $null_cvterm   = MCL_CHADO_CVTERM::addNull();
-  $null_pub      = MCL_CHADO_PUB::addNull();
-  $null_organism = MCL_CHADO_ORGANISM::addNull();
-  $na_location   = MCL_CHADO_LOCATION::addNA();
+  $null_cvterm  = MCL_CHADO_CVTERM::addNull();
+  $null_pub     = MCL_CHADO_PUB::addNull();
+  $na_organism  = MCL_CHADO_ORGANISM::addNA();
+  $na_location  = MCL_CHADO_LOCATION::addNA();
 
   // Adds MCL global variables.
   $mcl_vars = array(
@@ -324,7 +326,7 @@ function mcl_populate_mcl_var() {
     'SITE_TRAIT_ONTOLOGY'   => array('type' => 'SITE',    'value' => 'rosaceae_trait_ontology',          'desc' => 'CV.name for site specific trait ontology'),
     'CVTERM_ID'             => array('type' => 'DEFAULT', 'value' => $null_cvterm->getCvtermID(),        'desc' => 'dummy cvterm ID. It is used for type_id of NULL pub.'),
     'PUB_ID'                => array('type' => 'DEFAULT', 'value' => $null_pub->getPubID(),              'desc' => 'dummy pub ID. It is used for chado.cvterm_feature.pub_id.'),
-    'ORGANISM_ID'           => array('type' => 'DEFAULT', 'value' => $null_organism->getOrganismID(),    'desc' => 'dummy organism ID. It is used for organims ID of a linkage group.'),
+    'ORGANISM_ID'           => array('type' => 'DEFAULT', 'value' => $na_organism->getOrganismID(),      'desc' => 'dummy organism ID. It is used for organims ID of a linkage group.'),
     'ND_GEOLOCATION_ID'     => array('type' => 'DEFAULT', 'value' => $na_location->getNdGeolocationID(), 'desc' => 'chado.nd_geolocation.nd_geolocation_id for "Not Available"'),
   );
 
@@ -356,11 +358,12 @@ function mcl_populate_mcl_templates() {
     'DESCRIPTOR',
     'SITE',
     'STOCK',
+    'CROSS',
     'PROGENY',
     'MARKER',
     'MTL',
     'QTL',
-    'CROSS',
+    'PROGENY',
     'MAP',
     'MAP_POSITION',
     'FIELD_BOOK',

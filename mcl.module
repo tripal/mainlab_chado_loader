@@ -304,6 +304,7 @@ function mcl_delete_job($job_id) {
     drupal_set_message("Error : Cannot found a job for Job ID ($job_id).");
   }
   $commands = array();
+  $commands[] = ajax_command_invoke(NULL, "reload_page", array('/mcl/upload_data'));
   print ajax_render($commands);
 }
 

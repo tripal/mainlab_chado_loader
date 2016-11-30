@@ -9,18 +9,18 @@
  */
 class CHADO_FEATUREMAP  {
 
- /**
-  *  Data members for CHADO_FEATUREMAP.
-  */
+  /**
+   *  Data members for CHADO_FEATUREMAP.
+   */
   protected $member_arr    = NULL;
   protected $featuremap_id = NULL;
   protected $name          = NULL;
   protected $description   = NULL;
   protected $unittype_id   = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'featuremap_id' => 'serial',
     'name'          => 'character_varying(255)',
@@ -28,7 +28,7 @@ class CHADO_FEATUREMAP  {
     'unittype_id'   => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

@@ -9,18 +9,18 @@
  */
 class CHADO_ND_EXPERIMENT_STOCK  {
 
- /**
-  *  Data members for CHADO_ND_EXPERIMENT_STOCK.
-  */
+  /**
+   *  Data members for CHADO_ND_EXPERIMENT_STOCK.
+   */
   protected $member_arr             = NULL;
   protected $nd_experiment_stock_id = NULL;
   protected $nd_experiment_id       = NULL;
   protected $stock_id               = NULL;
   protected $type_id                = NULL;
 
- /**
-  *  Data types for the data members..
-  */
+  /**
+   *  Data types for the data members.
+   */
   protected static $data_types = array(
     'nd_experiment_stock_id' => 'serial',
     'nd_experiment_id'       => 'integer',
@@ -28,7 +28,7 @@ class CHADO_ND_EXPERIMENT_STOCK  {
     'type_id'                => 'integer',
   );
 
- /**
+  /**
    * Implements the class constructor.
    *
    * @param $details

@@ -13,7 +13,7 @@ function mcl_admin_template_form($form, &$form_state) {
   $form = array();
   $form['#tree'] = TRUE;
 
-  // Add the instruction for managing data templates in MCL.
+  // Adds the instruction for managing data templates in MCL.
   $form['manage_template'] = array(
     '#type'         => 'fieldset',
     '#collapsed'    => FALSE,

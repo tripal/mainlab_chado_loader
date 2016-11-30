@@ -95,6 +95,9 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['fiber_pkg']          = -1;
     $cvterms['SITE_CV']['comments']           = -1;
     $cvterms['SITE_CV']['trait_descriptor']   = -1;
+    $cvterms['SITE_CV']['source']             = -1;
+    $cvterms['SITE_CV']['previous_entry']     = -1;
+
     return $cvterms;
   }
 
@@ -199,6 +202,9 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
       $sample->addProp($this, 'SITE_CV', 'storage_regime', $line['storage_regime']);
       $sample->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
+      // Adds previous-entry.
+      $sample->addPreviousEntry($this, $line['##previous-entry']);
+
       // Gets phenotyping data.
       foreach ($this->descriptors as $descriptor => $cvterm_id) {
 
@@ -208,7 +214,7 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
         }
 
         // Adds a phenotype.
-        $uniquename = $descriptor . '_' . $line[$descriptor];
+        $uniquename = substr($descriptor . '_' . $line[$descriptor], 1);
         $phenotype = MCL_CHADO_PHENOTYPE::addPhenotype($this, $uniquename, $cvterm_id, $line[$descriptor]);
 
         // Adds a nd_experiment.
@@ -276,7 +282,7 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
 
     // Updates $this->descriptor array and job property if no error found.
     if (!$err_flag) {
-      $this->descriptors[$project_id] = $descriptors;
+      $this->descriptors = $descriptors;
     }
   }
 }
