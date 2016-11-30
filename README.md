@@ -14,7 +14,7 @@ The Mainlab Chado Loader is created by Main Bioinformatics Lab (Main Lab) at Was
 ##Download
 The MainLab Chado Loader module can be download from GitHub:
 
-https://www.github.com/tripal/mcl
+https://www.github.com/tripal/mainlab_chado_loader
 
 ## Installation
 After downloading the module, extract it into your site's module directory 
