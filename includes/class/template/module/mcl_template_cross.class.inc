@@ -112,7 +112,7 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
 
       // Adds a paternal parent.
       $paternal_parent = MCL_CHADO_STOCK::getStock($line['father']);
-      $nd_experiment->addStock($this, $maternal_parent, $this->cvterms['SITE_CV']['paternal_parent']);;
+      $nd_experiment->addStock($this, $paternal_parent, $this->cvterms['SITE_CV']['paternal_parent']);;
     }
   }
 }
