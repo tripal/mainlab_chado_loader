@@ -65,7 +65,9 @@ function mcl_access($access_args) {
 */
 function mcl_theme () {
   $template_path = drupal_get_path('module', 'mcl') . '/theme/templates';
-  return array();
+  return array(
+    'mcl_admin_template_form' => array('render element' => 'form'),
+  );
 }
 
 /**

@@ -91,6 +91,7 @@ function mcl_drush_command() {
     'options' => array(
       'working_dir' => t('Specify the working directory.'),
       'move_input'  => t('Moves the input file to the file folder in the job directory.'),
+      'param'       => t('Adds the job parameter (JSON format).'),
     ),
     'examples' => array(
       'Standard example' => 'drush mcl-submit-uploading-job [username] [filepath] --working_dir=/your_path',
@@ -225,10 +226,12 @@ function drush_mcl_rerun_job($job_id, $filepath) {
   // Gets MCL_JOB_UPLOAD.
   $mcl_job = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
 
-  // Gets process ID.
+  // Gets and sets process ID.
   $pid = getmypid();
   $mcl_job->setPID($pid);
-  $mcl_job->update();
+
+  // Gets ans sets the last run date.
+  $mcl_job->setPropByKey('last_run', date("Y-m-d G:i:s"));
 
   // Checks the status option.
   $status = drush_get_option('status');
@@ -577,11 +580,27 @@ function drush_mcl_upload_data($username, $filepath) {
   $move_input = drush_get_option('move_input');
   $move_input = ($move_input) ? TRUE : FALSE;
 
+  // Handles the param option.
+  $param_file = drush_get_option('param');
+  $param = array();
+  if ($param_file) {
+    if (!file_exists($param)) {
+      mcl_print("Error : The parameter file doese not exist", 1, 3);
+      exit;
+    }
+    $contents = file_get_contents($param);
+    $param = json_decode($contents, TRUE);
+    if (!is_array($param)) {
+      mcl_print("Error : The parameter file doese not hava valid JSON string", 1, 3);
+      exit;
+    }
+  }
+
   // Gets MCL_USER.
   $mcl_user = MCL_USER::byKey(array('name' => $username));
 
   // Prepares a uploading job.
-  $mcl_job = mcl_prepare_uploading_job($mcl_user, $filepath, $move_input, $working_dir, $job_name);
+  $mcl_job = mcl_prepare_uploading_job($mcl_user, $filepath, $move_input, $working_dir, $job_name, $param);
   if (!$mcl_job) {
     mcl_print("Error : Failed to prepare a uploading job", 1, 3);
     exit;
@@ -641,7 +660,7 @@ function drush_mcl_upload_data($username, $filepath) {
  *
  * @return MCL_JOB_UPLOAD
  */
-function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $working_dir = '', $job_name = '') {
+function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $working_dir = '', $job_name = '', $param = array()) {
   $mcl_job  = NULL;
 
   // Sets job directory to working directory.
@@ -651,7 +670,7 @@ function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $
   }
 
   // Sets the job name.
-  $name = 'Uploading-Data-File';
+  $name = 'Uploading-' . basename($filepath);
   if ($job_name) {
     $name = $job_name;
   }
@@ -669,6 +688,7 @@ function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $
       'user_id'     => $mcl_user->getUserID(),
       'submit_date' => date("Y-m-d G:i:s"),
       'prop'        => json_encode($prop),
+      'param'       => json_encode($param),
     );
     $mcl_job = new MCL_JOB_UPLOAD($details);
     if ($mcl_job->insert()) {

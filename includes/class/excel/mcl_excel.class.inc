@@ -23,7 +23,6 @@ class MCL_EXCEL {
   private $keywords       = NULL;
   private $category       = NULL;
   private $description    = NULL;
-  private $header_flag    = NULL;
 
   /*
    * Version
@@ -77,8 +76,14 @@ class MCL_EXCEL {
       $this->version = 'Excel2007';
     }
 
+    // Gets the defualt precision.
+    $def_precision = ini_get('precision');
+
     // Creates new PHPExcel object.
     $this->excel = new PHPExcel();
+
+    // Re-set the precision. It seems that PHPExcel change the precision.
+    ini_set('precision', $def_precision);
 
     // Sets the properties of an Excel file.
     $this->_setExcelProperties();
@@ -96,7 +101,7 @@ class MCL_EXCEL {
    */
   public function create($type = 'online') {
 
-    // Returns if $this->data is empty.
+    // Returns if $this->sheets is empty.
     if (empty($this->sheets)) {
       return;
     }

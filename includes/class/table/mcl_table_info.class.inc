@@ -169,6 +169,11 @@ class MCL_TABLE_INFO {
       }
     }
     fclose($fdr);
+
+    // Updates primary key.
+    $this->updatePrimaryKey($table_info);
+
+    // Sets the table information.
     $this->setTableInfo($table_info);
 
     // Displays all the names of tables that do not exists in the current
@@ -184,6 +189,49 @@ class MCL_TABLE_INFO {
       print "  The following tables do not exist in $schema_name.\n";
       print "  --------------------------------------------\n";
       print "$warn\n\n";
+    }
+  }
+
+  /**
+   * Updates primary key. It sometimes primary key is not set. So finds a
+   * field (attribute) that satisfies the following conditions and marks it
+   * as primary key.
+   *  Conditions:
+   *  1. no primvary key exists.
+   *  2. no unique keys exist.
+   *  3. one sequence exists.
+   */
+  private function updatePrimaryKey(&$table_info) {
+
+    foreach ($table_info as $table_name => $info) {
+
+      // Checks (1) no primvary key exists.
+      $primary_key = $info->getPrimaryKey();
+      if ($primary_key) {
+        continue;
+      }
+
+      // Checks (2) no unique keys exist.
+      $unique_keys = $info->getUniqueKeys();
+      if (!empty($unique_keys)) {
+        continue;
+      }
+
+      // Checks (3) one sequence exists.
+      $attrs = $info->getAttrs();
+      $num_serial = 0;
+      $primary_key = '';
+      foreach ($attrs as $attr_name => $attr) {
+        if ($attr->getDataType() == 'serial') {
+          $num_serial++;
+          $primary_key = $attr_name;
+        }
+      }
+
+      // If the number of seiral is one, sets it as a priamry key.
+      if ($num_serial == 1) {
+        $table_info[$table_name]->setPrimaryKey($primary_key);
+      }
     }
   }
 

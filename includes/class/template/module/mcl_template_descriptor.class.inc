@@ -14,6 +14,9 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
     'quantitative_code',
     'quantitative',
     'code',
+    'date',
+    'filepath',
+    'text'
   );
 
   /**
@@ -72,6 +75,7 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['code_ref']    = -1;
     $cvterms['SITE_CV']['qualitative'] = -1;
     $cvterms['SITE_CV']['code']        = -1;
+    $cvterms['SITE_CV']['belongs_to']  = -1;
     return $cvterms;
   }
 
@@ -88,6 +92,9 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
 
     // Checks values.
     MCL_CHADO_CVTERM::checkValues($this, $line['type'], $line['values']);
+
+    // Checks trait_name.
+    MCL_CHADO_CVTERM::checkCvterm($this, MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY'), $line['trait_name']);
 
     // Checks data type.
     if (!in_array($line['data_type'], $this->valid_descriptor_types)) {
@@ -124,6 +131,10 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
 
       // Adds values.
       $descriptor->addValues($this, $line['data_type'], $line['values']);
+
+      // Links to the trait.
+      $trait = MCL_CHADO_CVTERM::getCvterm(MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY'), $line['trait_name']);
+      $descriptor->linkTrait($this, $trait);
     }
   }
 }

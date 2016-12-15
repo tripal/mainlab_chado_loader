@@ -58,7 +58,7 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
           'type_id'     => $type_id,
           'organism_id' => $organism_id,
         );
-        $mcl_tmpl->addMsg('E', 'library', $args);
+         $mcl_tmpl->updateMsg('E', $mcl_tmpl->arrStr($args) . " not found in library");
       }
     }
   }

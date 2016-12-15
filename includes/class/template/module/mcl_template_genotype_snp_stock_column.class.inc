@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_GENOTYPE_SNP_STOCK_COLUMN extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -47,7 +47,7 @@ class MCL_TEMPLATE_GENOTYPE_SNP_STOCK_COLUMN extends MCL_TEMPLATE {
       'marker_name'   => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the marker genotyped. It should match an 'marker_name' of the 'Marker' sheet."),
       'genus'         => array('req' => FALSE, 'width' => 10, 'desc' => "Genus of the marker"),
       'species'       => array('req' => FALSE, 'width' => 10, 'desc' => "Species of the marker"),
-      'genotype'      => array('req' => TRUE, 'width' => 10, 'desc' => ""),
+      '$stock_name'   => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns ($) : followed by stock name"),
     );
     return $headers;
   }
@@ -74,9 +74,10 @@ class MCL_TEMPLATE_GENOTYPE_SNP_STOCK_COLUMN extends MCL_TEMPLATE {
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
     // Checks markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['marker_name'], $line['genus'], $line['species']);
+    MCL_CHADO_FEATURE::checkFeature($this, $line['marker_name'], $line['genus'], $line['species'], $this->cvterms['sequence']['genetic_marker']);
 
     // Checks stocks.
+    $this->_checkStocks($line);
   }
 
   /**
@@ -85,30 +86,59 @@ class MCL_TEMPLATE_GENOTYPE_SNP_STOCK_COLUMN extends MCL_TEMPLATE {
   public function uploadDataLine($line) {
 
     // Gets the dataset.
-    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset']);
+    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset_name']);
 
     // Gets the marker.
-    $marker = MCL_CHADO_FEATURE::getFeature($line['stock_name'], $line['genus'], $line['species']);
+    $marker = MCL_CHADO_FEATURE::getFeature($line['marker_name'], $line['genus'], $line['species'], $this->cvterms['sequence']['genetic_marker']);
 
-    // Adds genotype.
-    $uniquename = $line['genotype'];
-    $genotype = MCL_CHADO_GENOTYPE::addGenotype($this, $uniquename, $type_id, $line['genotype']);
-    if ($genotype) {
+    // Adds genotype_call for each stock.
+    $stock_cols = $this->getJob()->getParamByKey('stock_cols');
+    foreach ($stock_cols as $stock_name => $stock_id) {
 
-      // Gets the stocks.
-      //$stock_names = $this->getSpecialColumns('$');
+      // Adds genotype.
+      $genotype_value = $line['$' . $stock_name];
+      $genotype = MCL_CHADO_GENOTYPE::addGenotype($this, $genotype_value, $this->cvterms['sequence']['SNP'], $genotype_value);
+      if ($genotype) {
 
-
-        // Adds a SNP genotype.
+        // Adds a SNP into genotype_call.
         $details = array(
-            'project_id'  => $dataset->getProjectID(),
-            'stock_id'    => $stock->getStockID(),
-            'feature_id'  => $marker->getFeatureID(),
-            'genotype_id' => $genotype->getGenotypeID(),
+          'project_id'  => $dataset->getProjectID(),
+          'stock_id'    => $stock_id,
+          'feature_id'  => $marker->getFeatureID(),
+          'genotype_id' => $genotype->getGenotypeID(),
         );
-        $snp_genotype = new CHADO_GENOTYPE_CALL($details);
-        $snp_genotype->insert();
-
+        MCL_CHADO_GENOTYPE_CALL::addGenotypeCall($this, $details);
+      }
     }
+  }
+
+  /**
+   * Checks the stock columns for stock_id. Save them in job.param.
+   *
+   * @param array $line
+   */
+  private function _checkStocks($line) {
+
+    // This should be called once.
+    if ($line['line_no'] != 3) {
+      return;
+    }
+
+    // Gets stock_id for the stocks.
+    $stocks = array();
+    foreach ($line as $key => $value) {
+      if (preg_match("/^\\$(.*)$/", $key, $matches)) {
+        $stock_name = $matches[1];
+        $stock = MCL_CHADO_STOCK::getStock($stock_name);
+        if ($stock) {
+          $stocks[$stock_name] = $stock->getStockID();
+        }
+        else {
+          $this->updateMsg('E', "$stock_name not found in stock");
+        }
+      }
+    }
+    $this->getJob()->setParamByKey('stock_cols', $stocks);
+    $this->getJob()->update();
   }
 }

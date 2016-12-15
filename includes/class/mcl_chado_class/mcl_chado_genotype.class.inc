@@ -34,7 +34,6 @@ class MCL_CHADO_GENOTYPE extends CHADO_GENOTYPE {
     parent::__destruct();
   }
 
-
   /**
    * Adds a genotype.
    *

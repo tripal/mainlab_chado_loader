@@ -72,6 +72,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       'image'                     => array('req' => FALSE, 'width' => 10, 'desc' =>"Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
       'contact'                   => array('req' => FALSE, 'width' => 10, 'desc' =>"Contact person for the marker (Please provide the contact info of these researchers in 'Contact' sheet)."),
       'reference'                 => array('req' => FALSE, 'width' => 10, 'desc' =>"Reference where the marker is originally described (pub_id), Multiple references, separated by comma, can be added."),
+      '~idendifier'               => array('req' => FALSE, 'width' => 10, 'desc' =>"Special columns (~) : An identifier must be either primer or probe followed by numerical number and name or seq. (e.g.) primer1_seq and primer1_name."),
     );
 
     // Adds labels.

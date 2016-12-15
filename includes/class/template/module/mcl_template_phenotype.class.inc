@@ -5,13 +5,9 @@
  */
 class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
-  // $descriptor array will contain descriptor (trait name) as key and
-  // cvterm_id as value.
-  private $descriptors = array();
-
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -43,27 +39,28 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $headers = array(
-      'dataset_name'    => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the phenotyping dataset. It should match a 'dataset_name' column entry in the 'Dataset' sheet."),
-      'stock_name'      => array('req' => TRUE,  'width' => 10, 'desc' => "ID of the stock that has been phenotyped. It should match a 'stock_name' column entry in the 'Stock' sheet."),
-      'genus'           => array('req' => TRUE,  'width' => 10, 'desc' => ""),
-      'species'         => array('req' => TRUE,  'width' => 10, 'desc' => ""),
-      'sample_id'       => array('req' => TRUE,  'width' => 10, 'desc' => "The ID of the smallest sample or sub-sample that was tested (Each row should have unique sample_ID). If there is no unique sample ID, users can concatenate a set of columns that gives a unique phenotypic value and those columns become required fields. For example, if a combination of dataset_name, ID, phenotyping_date is unique for the specific phenotype, those three can be concatenated with '_' in between."),
-      'clone_id'        => array('req' => FALSE, 'width' => 10, 'desc' => "ID of a spefic clone if available (eg. individual tree)."),
-      'evaluator'       => array('req' => FALSE, 'width' => 10, 'desc' => "Person who did the phenotyping. Multiple person can be entered with ';' in between. It should match 'contact_name' of the Contact sheet."),
-      'site_name'       => array('req' => FALSE, 'width' => 10, 'desc' => "Site information where the stock for the phenotyping is planted. It should match 'site_name' in the 'Site' sheet."),
-      'rep'             => array('req' => FALSE, 'width' => 10, 'desc' => "Any repetition number."),
-      'rootstock'       => array('req' => FALSE, 'width' => 10, 'desc' => "Name of tje rootstock if the plant are grafted to a rootstock. It should match an 'stock_name' column of the 'Stock' sheet."),
-      'plot'            => array('req' => FALSE, 'width' => 10, 'desc' => "Plot name."),
-      'row'             => array('req' => FALSE, 'width' => 10, 'desc' => "Row."),
-      'position'        => array('req' => FALSE, 'width' => 10, 'desc' => "Position of the plant."),
-      'plant_date'      => array('req' => FALSE, 'width' => 10, 'desc' => "Date of the planting."),
-      'data_year'       => array('req' => FALSE, 'width' => 10, 'desc' => "Phenotyping date if only year is known."),
-      'evaluation_date' => array('req' => FALSE, 'width' => 10, 'desc' => "Date of phenotype evaluation."),
-      'pick_date'       => array('req' => FALSE, 'width' => 10, 'desc' => "Date of the sample collection if the collection is done on a different date than the phenotype evaluation."),
-      'fiber_pkg'       => array('req' => FALSE, 'width' => 10, 'desc' => "Group of samples for phenotyping, can contain samples from multiple germplasm."),
-      'storage_time'    => array('req' => FALSE, 'width' => 10, 'desc' => "Time between collection and phenotyping."),
-      'storage_regime'  => array('req' => FALSE, 'width' => 10, 'desc' => "The condition of sample storage between the collection and phenotyping."),
-      'comments'        => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments for the phenotyping."),
+      'dataset_name'      => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the phenotyping dataset. It should match a 'dataset_name' column entry in the 'Dataset' sheet."),
+      'stock_name'        => array('req' => TRUE,  'width' => 10, 'desc' => "ID of the stock that has been phenotyped. It should match a 'stock_name' column entry in the 'Stock' sheet."),
+      'genus'             => array('req' => TRUE,  'width' => 10, 'desc' => ""),
+      'species'           => array('req' => TRUE,  'width' => 10, 'desc' => ""),
+      'sample_id'         => array('req' => TRUE,  'width' => 10, 'desc' => "The ID of the smallest sample or sub-sample that was tested (Each row should have unique sample_ID). If there is no unique sample ID, users can concatenate a set of columns that gives a unique phenotypic value and those columns become required fields. For example, if a combination of dataset_name, ID, phenotyping_date is unique for the specific phenotype, those three can be concatenated with '_' in between."),
+      'clone_id'          => array('req' => FALSE, 'width' => 10, 'desc' => "ID of a spefic clone if available (eg. individual tree)."),
+      'evaluator'         => array('req' => FALSE, 'width' => 10, 'desc' => "Person who did the phenotyping. Multiple person can be entered with ';' in between. It should match 'contact_name' of the Contact sheet."),
+      'site_name'         => array('req' => FALSE, 'width' => 10, 'desc' => "Site information where the stock for the phenotyping is planted. It should match 'site_name' in the 'Site' sheet."),
+      'rep'               => array('req' => FALSE, 'width' => 10, 'desc' => "Any repetition number."),
+      'rootstock'         => array('req' => FALSE, 'width' => 10, 'desc' => "Name of tje rootstock if the plant are grafted to a rootstock. It should match an 'stock_name' column of the 'Stock' sheet."),
+      'plot'              => array('req' => FALSE, 'width' => 10, 'desc' => "Plot name."),
+      'row'               => array('req' => FALSE, 'width' => 10, 'desc' => "Row."),
+      'position'          => array('req' => FALSE, 'width' => 10, 'desc' => "Position of the plant."),
+      'plant_date'        => array('req' => FALSE, 'width' => 10, 'desc' => "Date of the planting."),
+      'data_year'         => array('req' => FALSE, 'width' => 10, 'desc' => "Phenotyping date if only year is known."),
+      'evaluation_date'   => array('req' => FALSE, 'width' => 10, 'desc' => "Date of phenotype evaluation."),
+      'pick_date'         => array('req' => FALSE, 'width' => 10, 'desc' => "Date of the sample collection if the collection is done on a different date than the phenotype evaluation."),
+      'fiber_pkg'         => array('req' => FALSE, 'width' => 10, 'desc' => "Group of samples for phenotyping, can contain samples from multiple germplasm."),
+      'storage_time'      => array('req' => FALSE, 'width' => 10, 'desc' => "Time between collection and phenotyping."),
+      'storage_regime'    => array('req' => FALSE, 'width' => 10, 'desc' => "The condition of sample storage between the collection and phenotyping."),
+      'comments'          => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments for the phenotyping."),
+      '#descriptor_name'  => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (#) : followed by descriptor name."),
     );
 
     // Adds labels.
@@ -205,8 +202,9 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
       // Adds previous-entry.
       $sample->addPreviousEntry($this, $line['##previous-entry']);
 
-      // Gets phenotyping data.
-      foreach ($this->descriptors as $descriptor => $cvterm_id) {
+      // Adds phenotyping data for each descriptor.
+      $descriptors = $this->getJob()->getParamByKey('descriptors');
+      foreach ($descriptors as $descriptor => $cvterm_id) {
 
         // Skips if no data present.
         if (!$line[$descriptor]) {
@@ -240,13 +238,17 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
   }
 
   /**
-   * Checks trait descriptors. Look for the descritpors for this dataset.
-   * If found, skip. Otherwise, keep them in $this->descriptors.
+   * Checks trait descriptors for cvterm_id. Save them in job.param.
    *
    * @param array $line
    * @param string $dataset_name
    */
   private function _checkDescriptors($line, $dataset_name) {
+
+    // This should be called once.
+    if ($line['line_no'] != 3) {
+      return;
+    }
 
     // Gets the project ID and check for trait_descriptor.
     $dataset    = MCL_CHADO_DATASET::getDataset($dataset_name);
@@ -264,7 +266,6 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
 
     // Go through headers stord in the line array.
     $descriptors = array();
-    $err_flag = FALSE;
     foreach ($line as $column => $value) {
       if (preg_match("/^#[A-Za-z]/", $column)) {
 
@@ -274,15 +275,11 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
           $descriptors[$column] = $cvterm->getCvtermID();
         }
         else {
-          $err_flag = TRUE;
           $this->updateMsg('E', "$cvterm_name not found in cvterm");
         }
       }
     }
-
-    // Updates $this->descriptor array and job property if no error found.
-    if (!$err_flag) {
-      $this->descriptors = $descriptors;
-    }
+    $this->getJob()->setParamByKey('descriptors', $descriptors);
+    $this->getJob()->update();
   }
 }

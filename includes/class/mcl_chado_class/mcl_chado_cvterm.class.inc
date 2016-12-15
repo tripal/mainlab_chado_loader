@@ -356,4 +356,20 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
       $this->addProp($this, 'SITE_CV', 'qualitative', $values, '[;,]');
     }
   }
+
+  /**
+   * Linds between a descript and a trait.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param MCL_CHADO_CVTERM $cv_name
+   */
+  public function linkTrait(MCL_TEMPLATE $mcl_tmpl, MCL_CHADO_CVTERM $trait) {
+
+    if ($trait) {
+
+      // Links a descriptor and a trait.
+      $type_id = $mcl_tmpl->getCvtermID('SITE_CV', 'belongs_to');
+      $mcl_tmpl->addLink('cvterm_relationship', 'subject_id', $this->cvterm_id, 'object_id', $trait->getCvtermID(), $type_id);
+    }
+  }
 }

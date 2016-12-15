@@ -555,6 +555,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
    */
   private function _convertExcel2CSV($filepath) {
 
+
     // Includes PHPExcel libararies.
     $lib_path = 'sites/all/libraries';
     require_once("$lib_path/PHPExcel/PHPExcel.php");
@@ -563,14 +564,27 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     // Gets Excel file type [Excel5 | ].
     $file_type = PHPExcel_IOFactory::identify($filepath);
 
+    // Gets the defualt precision.
+    $def_precision = ini_get('precision');
+
     // Read input Excel file.
     $reader = PHPExcel_IOFactory::createReader($file_type);
     $reader->setReadDataOnly(true);
     $excel = $reader->load($filepath);
     $num_sheets = $excel->getSheetCount();
 
+    // Re-set the precision. It seems that PHPExcel change the precision.
+    ini_set('precision', $def_precision);
+
     // Empties CSV folder.
     mcl_empty_dir($this->csv_dir);
+
+    // Gets the 'template-rename' arary if it exists in job parameter.
+    $param = $this->getParamByKey('template_rename');
+    $template_map = array();
+    if ($param) {
+      $template_map = $param;
+    }
 
     // Save each sheet as CSV file.
     $writer = PHPExcel_IOFactory::createWriter($excel, 'CSV');
@@ -578,6 +592,11 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     for ($i = 0; $i < $num_sheets; $i++) {
       $excel->setActiveSheetIndex($i);
       $template = strtolower($excel->getActiveSheet()->getTitle());
+
+      // Renames the template if necessary.
+      if (array_key_exists($template, $template_map)) {
+        $template = $template_map[$template];
+      }
 
       // Checks for dupliacted sheet name.
       if (array_key_exists($template, $dup_templates)) {
@@ -913,7 +932,104 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     return TRUE;
   }
 
+
   /**
+   * Returns all logs in an array.
+   *
+   * @return array
+   */
+  public function getLogs() {
+    $all_logs = array();
+
+    // Gets the path to the public folder.
+    $public_path  = drupal_realpath('public://');
+    $public_url   = file_create_url('public://');
+
+    // Adds log files  (Warning / Errror / Dup-Data) in recent directory.
+    $recent_dir = $this->getRecentLogDir('recent');
+    $objects = scandir($recent_dir);
+    foreach ($objects as $object) {
+      if ($object === '.' or $object === '..') {
+        continue;
+      }
+      if (is_dir("$recent_dir/$object")) {
+        preg_match("/(\d+)-([A-Z])/", $object, $matches);
+        $status_int = $matches[1];
+        $type       = $matches[2];
+
+        // Skips new data log.
+        if ($type == 'N') {
+          continue;
+        }
+
+        // Initialzes the array.
+        if (!array_key_exists($type, $all_logs)) {
+          $all_logs[$type] = array();
+        }
+
+        $files = file_scan_directory("$recent_dir/$object", "/\.log$/");
+        $log_files = array();
+        foreach ($files as $filepath => $file) {
+          preg_match("/-([A-Za-z\_]+)\.log$/", $filepath, $matches2);
+          $key = $matches2[1];
+          $log_files []= array(
+              'key'      => $key,
+              'filepath' => $filepath,
+              'log_file' => "recent:$object:" . basename($filepath),
+          );
+        }
+
+        // Adds log files.
+        if (!empty($log_files)) {
+          $all_logs[$type][$status_int] = $log_files;
+        }
+      }
+
+      // Adds log files.
+      if (!empty($log_files)) {
+        $all_logs[$type][$status_int] = $log_files;
+      }
+    }
+
+    // Adds log file for new data.
+    // Gets log (new data) files in 'new_data' directory.
+    $new_data_dir = $this->getNewDataLogDir('new_data');
+    $files        = file_scan_directory($new_data_dir, "/\.log$/");
+    $log_files    = array();
+    krsort($files);
+    foreach ($files as $filepath => $file) {
+      preg_match("/([A-Za-z\-\_]+)-(\d+-\d+-\d+)-(\d+-\d+-\d+)\.log$/", $filepath, $matches);
+      $key  = $matches[1];
+      $date = $matches[2];
+      $time = $matches[3];
+      $log_files []= array(
+          'key'       => $key,
+          'date'      => "$date $time",
+          'filepath'  => $filepath,
+          'log_file'  => 'new_data:' . basename($filepath),
+      );
+    }
+
+    // Adds log files.
+    if (!empty($log_files)) {
+
+      // Sort by date-time.
+     // usort($log_files, $this->_cmpDate);
+      $all_logs['N']['40'] = $log_files;
+    }
+    return $all_logs;
+  }
+
+  /**
+   * Translates status int to label.
+   *
+   * @retrun boolean
+   */
+  public function _cmpDate() {
+    return strcmp($b['date'], $a['date']);
+  }
+
+/**
    * Translates status int to label.
    *
    * @retrun boolean

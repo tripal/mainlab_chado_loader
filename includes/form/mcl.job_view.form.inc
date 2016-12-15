@@ -44,13 +44,13 @@ function mcl_job_view_form($form, &$form_state, $job_id = NULL) {
       );
 
       // Adds re-run.
-      $form['job_re_run'] = array(
+      $form['job_rerun'] = array(
         '#type'         => 'fieldset',
         '#collapsed'    => FALSE,
         '#collapsible'  => FALSE,
         '#title'        => 'Re-Run Job',
       );
-      $form['job_re_run']['upload_file'] = array(
+      $form['job_rerun']['upload_file'] = array(
         '#type'               => 'managed_file',
         '#title'              => 'Data template file',
         '#description'        => "Please provide a data template file.",
@@ -61,13 +61,13 @@ function mcl_job_view_form($form, &$form_state, $job_id = NULL) {
           'file_validate_extensions' => array('xls xlsx zip csv'),
         ),
       );
-      $form['job_re_run']['rerun_btn'] = array(
+      $form['job_rerun']['rerun_btn'] = array(
         '#type'   => 'submit',
         '#name'   => 'rerun_btn',
         '#value'  => 'Re-Run the Job',
       );
 
-      //  Gets all logs.
+      // Displays all log files of this job.
       $all_logs = _mcl_get_all_logs($mcl_job);
 
       // Adds the log fieldsets.
@@ -343,6 +343,10 @@ function _mcl_get_detail_table(MCL_JOB_UPLOAD $mcl_job) {
     $status = "Running";
   }
 
+  // Sets the last run date.
+  $last_run = $mcl_job->getPropByKey('last_run');
+  $last_run_date = ($last_run) ? $last_run : '<em>N/A</em>';
+
   // Adds job information.
   $rows = array();
   $rows []= array(array('data' => '<b>Job ID</b>', 'style' => 'width:160px;'), $mcl_job->getJobID());
@@ -355,6 +359,8 @@ function _mcl_get_detail_table(MCL_JOB_UPLOAD $mcl_job) {
   if ($progress) {
     $rows []= array('<b>Progress</b>', $progress);
   }
+
+  $rows []= array('<b>Last Run</b>', $last_run_date);
   $rows []= array('<b>Submit Date</b>', $mcl_job->getSubmitDate());
   $rows []= array('<b>Complete Date</b>', $complete_date);
   $rows []= array('<b>Log Files</b>', $link_log);
@@ -404,7 +410,7 @@ function mcl_job_view_form_submit($form, &$form_state) {
   $job_id = $form['job_id']['#value'];
 
   // Gets the re-uploading file.
-  $drupal_file = file_load($form_state['values']['job_re_run']['upload_file']);
+  $drupal_file = file_load($form_state['values']['job_rerun']['upload_file']);
 
   // Moves the file to the user temp space.
   $dest_filepath    = "$user_dir/tmp/" . $drupal_file->filename;

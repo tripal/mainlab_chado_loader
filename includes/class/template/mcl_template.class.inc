@@ -136,6 +136,15 @@ DESC;
   }
 
   /**
+   * Returns the regular expression for special columns.
+   *
+   * @return string
+   */
+  public function getRegExSpCol() {
+    return "/^[#$@~]/";
+  }
+
+  /**
    * Gets headers used in this template.
    *
    * @return array of header columns.
@@ -160,10 +169,11 @@ DESC;
    *
    * @param string $template_type
    * @param string $template
+   * @param integer $public
    *
    * @return boolean
    */
-  public static function addTemplate($template_type, $template) {
+  public static function addTemplate($template_type, $template, $public = 0) {
 
     // Gets the template type.
     $mcl_template_type = MCL_TEMPLATE_TYPE::byKey(array('type' => $template_type));
@@ -180,6 +190,7 @@ DESC;
       $details = array(
         'template'          => $template,
         'template_type_id'  => $mcl_template_type->getTemplateTypeID(),
+        'public'            => $public,
       );
       $mcl_template = new MCL_TEMPLATE($details);
       if (!$mcl_template->insert()) {
@@ -192,41 +203,70 @@ DESC;
   /**
    * Updates templates.
    *
-   * @param boolean $new_template_only
-   *
+   * @param boolean $remove
+   * @param boolean $refresh
    */
-  public static function updateTemplates($new_template_only = FALSE) {
+  public static function updateTemplates($remove = FALSE, $refresh = FALSE) {
 
-    // If $new_template_only is FALSE, removes all templates from the mcl_template table.
-    if (!$new_template_only) {
-      //$result = db_truncate('mcl_template')->execute();
+    // Gets the template folder.
+    $template_dir = drupal_get_path('module', 'mcl') . '/includes/class/template/module';
+
+    // Removes all templates from the table.
+    if ($refresh) {
+      $num = db_delete('mcl_template')->execute();
     }
 
-    // Gets the directory of the templates.
-    $module_path = drupal_get_path('module', 'mcl');
-    $files = file_scan_directory("$module_path/includes/class/template/module", "/\.inc$/");
+    // Scans the template folder and adds new template if not exists in
+    // mcl_template table.
+    $files = file_scan_directory($template_dir, "/\.inc$/");
+    $template_class = array();
     foreach ($files as $filepath => $file) {
       if (preg_match("/^mcl_template_(.*)\.class$/", $file->name, $matches)) {
-        $template   = $matches[1];
-        $class_name = 'MCL_TEMPLATE_' . strtoupper($template);
-        if (class_exists($class_name)) {
+        $template_name = $matches[1];
+        $template_class[$template_name] = TRUE;
 
-          // Adds a template.
-          $mcl_template = new $class_name();
-          if ($mcl_template->getTemplateType(TRUE)) {
-            if (MCL_TEMPLATE::addTemplate($mcl_template->getTemplateType(), $template)) {
-              drupal_set_message("New template of $class_name has been added.");
-            }
-            else {
-              drupal_set_message("Failed to add the template of $class_name.");
-            }
-          }
-          else {
-            drupal_set_message("Template type of $class_name not found. Check the template type.");
-          }
+        // Checks if the template exists in mcl_template table. If not exists, adds it.
+        $mcl_template = MCL_TEMPLATE::byKey(array('template' => $template_name));
+        if ($mcl_template) {
+          continue;
+        }
+
+        // Checks the class.
+        $class_name = 'MCL_TEMPLATE_' . strtoupper($template_name);
+        if (!class_exists($class_name)) {
+          drupal_set_message("Skipped : $class is not defined.");
+          continue;
+        }
+
+        // Checks the template type.
+        $mcl_template = new $class_name();
+        if (!$mcl_template->getTemplateType(TRUE)) {
+          drupal_set_message("Template type of $class_name not found. Check the template type.");
+          continue;
+        }
+
+        // Adds a new template.
+        if (MCL_TEMPLATE::addTemplate($mcl_template->getTemplateType(), $template_name, 0)) {
+          drupal_set_message("New template of $class_name has been added.");
         }
         else {
-          drupal_set_message("Skipped : $class is not defined.");
+          drupal_set_message("Failed to add the template of $class_name.");
+        }
+      }
+    }
+
+    // Removes the templates that don't have class file from mcl_template table.
+    if ($remove) {
+      $templates = MCL_TEMPLATE::getTemplates();
+      foreach ($templates as $template) {
+        $template_name = $template->getTemplate();
+        if (!array_key_exists($template_name, $template_class)) {
+          if ($template->delete()) {
+            drupal_set_message("$template_name deleted.");
+          }
+          else {
+            drupal_set_message("Failed to delete $template_name.");
+          }
         }
       }
     }
@@ -283,10 +323,13 @@ DESC;
     // Sets headers.
     $headers = array();
     $col_char = 'A';
+    $regex = $this->getRegExSpCol();
     foreach ($tmp as $heading => $prop) {
       $label  = $heading;
       $header = array();
-      $cell   = array();
+      if (preg_match($regex, $heading)) {
+        continue;
+      }
 
       // Adds a label if exists.
       if (array_key_exists('label', $prop)) {
@@ -443,7 +486,7 @@ DESC;
       // Gets CV.
       $cv = CHADO_CV::byKey(array('name' => $tmp_cv_name));
       if (!$cv) {
-        $this->updateMsg('E', "Error : Could not find cv_id for  $cv_name");
+        $this->updateMsg('E', "Error : Could not find cv_id for $tmp_cv_name");
         $error = TRUE;
         continue;
       }
@@ -474,6 +517,9 @@ DESC;
     // Sets red star.
     $star = '<b><span style="color:red;">*</span></b>';
 
+    // Gets the regular expression for special columns.
+    $regex = $this->getRegExSpCol();
+
     // Populates the rows with the headers.
     $rows = array();
     foreach ($this->headers as $name => $info) {
@@ -483,6 +529,11 @@ DESC;
         $name = $info['label'];
       }
       $name = ($info['req']) ? "$star $name" : $name;
+
+      // If the column is special colmn, make it italic.
+      if (preg_match($regex, $name)) {
+        $name = "<em>$name</em>";
+      }
       $row = array($name, $info['desc']);
       $rows []= $row;
     }
@@ -594,6 +645,9 @@ DESC;
     $line_no          = 0;
     $header_dup_arr   = array();
 
+    // Gets the regular expression for special columns.
+    $regex = $this->getRegExSpCol();
+
     // Opens the input file.
     $infile = $this->csv->getFilepath();
     if (!($fh = fopen($infile, 'r'))) {
@@ -636,7 +690,7 @@ DESC;
           // Checks if column has valid name and saves the position of the column.
         // Ignore the column name starting with '#', '@' or '$'.
           $column_name = strtolower($column_name_orig);
-          if (!array_key_exists($column_name, $this->headers) && !preg_match("/^[#@$~]/", $column_name)) {
+          if (!array_key_exists($column_name, $this->headers) && !preg_match($regex, $column_name)) {
             $this->updateMsg('W', "Invalid header : '$column_name_orig' is not valid header name, so this column would be ignored.");
           }
           else {
@@ -738,6 +792,9 @@ DESC;
       return FALSE;
     }
 
+    // Gets the regular expression for special columns.
+    $regex = $this->getRegExSpCol();
+
     // Opens the input file.
     $infile = $this->csv->getFilePath();
     if (!($fh = fopen($infile, 'r'))) {
@@ -773,7 +830,7 @@ DESC;
           }
 
           // Sets column #.
-          if (array_key_exists($column_name, $this->headers) || preg_match("/^#/", $column_name)) {
+          if (array_key_exists($column_name, $this->headers) || preg_match($regex, $column_name)) {
             $this->headers[$column_name]['col'] = $i;
           }
         }
@@ -789,7 +846,7 @@ DESC;
         }
 
         // Populates the data line array.
-        $line_arr = array();
+        $line_arr = array('line_no' => $line_no);
         foreach ($this->headers as $column => $prop) {
           if ($prop['col'] > -1) {
             $line_arr[$column] = trim($columns[$prop['col']]);
@@ -838,6 +895,9 @@ DESC;
     // Gets the number of lines in the file.
     $total_lines = count(file($infile)) - 1;
 
+    // Gets the regular expression for special columns.
+    $regex = $this->getRegExSpCol();
+
     // Upload data by line.
     while(!feof($fh)) {
       $line_no++;
@@ -864,7 +924,7 @@ DESC;
         // Saves the position of the column.
         for ($i =0; $i < sizeof($columns); $i++) {
           $column_name = $columns[$i];
-          if (array_key_exists($column_name, $this->headers) || preg_match("/^[#@~]/", $column_name)) {
+          if (array_key_exists($column_name, $this->headers) || preg_match($regex, $column_name)) {
             $this->headers[$column_name]['col'] = $i;
           }
         }
@@ -880,7 +940,7 @@ DESC;
         }
 
         // Populates the data line array.
-        $line_arr = array();
+        $line_arr = array('line_no' => $line_no);
         foreach ($this->headers as $column => $prop) {
           if ($prop['col'] > -1) {
             $line_arr[$column] = trim($columns[$prop['col']]);

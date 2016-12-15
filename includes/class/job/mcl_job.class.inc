@@ -134,14 +134,17 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     if (parent::insert()) {
 
       // Get MCL user directory.
-      $mcl_user_directory = mcl_get_config_setting('mcl_working_dir') . '/user';
+      $working_dir = $this->getPropByKey('working_dir');
+      if (!$working_dir) {
+        $working_dir = mcl_get_config_setting('mcl_working_dir') . '/user';
+      }
 
       // Gets username.
       $drupal_user = MCL_USER::getDrupalUser($this->user_id);
       $username = $drupal_user->name;
 
       // Updates MCL directories.
-      $this->user_dir = "$mcl_user_directory/$username";
+      $this->user_dir = "$working_dir/$username";
       $this->job_dir  = $this->user_dir . '/' . $this->job_id;
       $this->log_dir  = $this->job_dir . '/logs';
       $this->file_dir = $this->job_dir . '/files';

@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_GENOTYPE_SNP_MARKER_COLUMN extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -47,7 +47,7 @@ class MCL_TEMPLATE_GENOTYPE_SNP_MARKER_COLUMN extends MCL_TEMPLATE {
       'stock_name'    => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the stock genotyped. It should match an 'stock_name' of the 'Stock' sheet."),
       'genus'         => array('req' => TRUE,  'width' => 10, 'desc' => "Genus of the stock"),
       'species'       => array('req' => TRUE,  'width' => 10, 'desc' => "Species of the stock"),
-      'genotype'      => array('req' => TRUE, 'width' => 10, 'desc' => ""),
+      '$marker_name'  => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns ($) : followed by marker name"),
     );
     return $headers;
   }
@@ -77,6 +77,7 @@ class MCL_TEMPLATE_GENOTYPE_SNP_MARKER_COLUMN extends MCL_TEMPLATE {
     MCL_CHADO_STOCK::checkStock($this, $line['stock_name'], $line['genus'], $line['species']);
 
     // Checks markers.
+    $this->_checkMarkers($line);
   }
 
   /**
@@ -85,29 +86,59 @@ class MCL_TEMPLATE_GENOTYPE_SNP_MARKER_COLUMN extends MCL_TEMPLATE {
   public function uploadDataLine($line) {
 
     // Gets the dataset.
-    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset']);
+    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset_name']);
 
     // Gets the stock.
     $stock = MCL_CHADO_STOCK::getStock($line['stock_name'], $line['genus'], $line['species']);
 
-    // Adds genotype.
-    $uniquename = $line['genotype'];
-    $genotype = MCL_CHADO_GENOTYPE::addGenotype($this, $uniquename, $type_id, $line['genotype']);
-    if ($genotype) {
+    // Adds genotype_call for each marker.
+    $marker_cols = $this->getJob()->getParamByKey('marker_cols');
+    foreach ($marker_cols as $marker_name => $feature_id) {
 
-      // Gets the markers.
+      // Adds genotype.
+      $genotype_value = $line['$' . $marker_name];
+      $genotype = MCL_CHADO_GENOTYPE::addGenotype($this, $genotype_value, $this->cvterms['sequence']['SNP'], $genotype_value);
+      if ($genotype) {
 
-
-        // Adds a SNP genotype.
+        // Adds a SNP into genotype_call.
         $details = array(
           'project_id'  => $dataset->getProjectID(),
           'stock_id'    => $stock->getStockID(),
-          'feature_id'  => $marker->getFeatureID(),
+          'feature_id'  => $feature_id,
           'genotype_id' => $genotype->getGenotypeID(),
         );
-        $snp_genotype = new CHADO_GENOTYPE_CALL($details);
-        $snp_genotype->insert();
-
+        MCL_CHADO_GENOTYPE_CALL::addGenotypeCall($this, $details);
+      }
     }
+  }
+
+  /**
+   * Checks the markers for feature_id. Save them in job.param.
+   *
+   * @param array $line
+   */
+  private function _checkMarkers($line) {
+
+    // This should be called once.
+    if ($line['line_no'] != 3) {
+      return;
+    }
+
+    // Gets feature_id for the markers.
+    $markers = array();
+    foreach ($line as $key => $value) {
+      if (preg_match("/^\\$(.*)$/", $key, $matches)) {
+        $marker_name = $matches[1];
+         $marker = MCL_CHADO_FEATURE::getFeature($marker_name, '', '', $this->cvterms['sequence']['genetic_marker']);
+        if ($marker) {
+          $markers[$marker_name] = $marker->getFeatureID();
+        }
+        else {
+          $this->updateMsg('E', "$marker_name not found in feature");
+        }
+      }
+    }
+    $this->getJob()->setParamByKey('marker_cols', $markers);
+    $this->getJob()->update();
   }
 }

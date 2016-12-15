@@ -124,7 +124,7 @@ class CHADO_GENOTYPE_CALL  {
 
 
         // Inserts the record.
-        db_insert('chado.genotype_call')
+        $this->genotype_call_id = db_insert('chado.genotype_call')
           ->fields($fields)
           ->execute();
       }
@@ -158,7 +158,7 @@ class CHADO_GENOTYPE_CALL  {
       // Updates the record.
       db_update('chado.genotype_call')
         ->fields($fields)
-
+        ->condition('genotype_call_id', $this->genotype_call_id, '=')
         ->execute();
     }
     catch (Exception $e) {
@@ -178,7 +178,7 @@ class CHADO_GENOTYPE_CALL  {
     try {
 
       db_delete('chado.genotype_call')
-
+        ->condition('genotype_call_id', $this->genotype_call_id, '=')
         ->execute();
     }
     catch (Exception $e) {

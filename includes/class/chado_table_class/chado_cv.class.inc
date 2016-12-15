@@ -112,7 +112,7 @@ class CHADO_CV  {
 
 
         // Inserts the record.
-        db_insert('chado.cv')
+        $this->cv_id = db_insert('chado.cv')
           ->fields($fields)
           ->execute();
       }
@@ -143,7 +143,7 @@ class CHADO_CV  {
       // Updates the record.
       db_update('chado.cv')
         ->fields($fields)
-
+        ->condition('cv_id', $this->cv_id, '=')
         ->execute();
     }
     catch (Exception $e) {
@@ -163,7 +163,7 @@ class CHADO_CV  {
     try {
 
       db_delete('chado.cv')
-
+        ->condition('cv_id', $this->cv_id, '=')
         ->execute();
     }
     catch (Exception $e) {

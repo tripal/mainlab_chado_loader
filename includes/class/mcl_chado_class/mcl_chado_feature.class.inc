@@ -63,7 +63,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     // Gets the uniquenames.
     $uniquenames = preg_split($mcl_tmpl->getSepRegex($separator), $feature, NULL, PREG_SPLIT_NO_EMPTY);
     foreach ($uniquenames as $uniquename) {
-      $uniquename   = trim($uniquename);
+      $uniquename = trim($uniquename);
 
       // Sets the arguments.
       $args = array(

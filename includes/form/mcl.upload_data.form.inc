@@ -57,12 +57,12 @@ function mcl_upload_data_form($form, &$form_state) {
       '#markup' => $desc,
     );
 
-    // Adds the job table.
+    // Adds the job list table.
     $form['job_list'] = array(
       '#type'         => 'fieldset',
       '#collapsed'    => FALSE,
       '#collapsible'  => TRUE,
-      '#title'        => 'Uploading Job List',
+      '#title'        => 'Uploading Jobs',
     );
     $form['job_list']['job_table'] = array(
       '#markup' => _mcl_get_uploading_job_table(),
@@ -95,6 +95,7 @@ function _mcl_get_uploading_job_table() {
     array('data' => 'Job ID', 'style' => 'width:80px'),
     array('data' => 'Status', 'style' => 'width:60px'),
     array('data' => 'Name', 'style' => ''),
+    array('data' => 'Last Run', 'style' => 'width:150px'),
     array('data' => 'Submit Date', 'style' => 'width:150px'),
     array('data' => 'Details', 'style' => 'width:40px'),
     array('data' => 'Action', 'style' => 'width:40px'),
@@ -122,11 +123,16 @@ function _mcl_get_uploading_job_table() {
       $status = "Running";
     }
 
+    // Sets the last run date.
+    $last_run = $mcl_job->getPropByKey('last_run');
+    $last_run_date = ($last_run) ? $last_run : '<em>N/A</em>';
+
     // Adds the row.
     $row = array(
       $job_id,
       $status,
       $mcl_job->getName(),
+      $last_run_date,
       $mcl_job->getSubmitDate(),
       l('view', "/mcl/job_view/$job_id"),
       $delete_link,
