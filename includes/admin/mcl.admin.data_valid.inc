@@ -20,8 +20,18 @@ function mcl_admin_data_valid_form($form, &$form_state) {
     '#collapsible'  => TRUE,
     '#title'        => 'Data validation Type',
   );
+  $desc = "
+    The table below shows the validation types that currrently defined in MCL.
+    It is sometimes required that data in certain columns must be restricted.
+    Suppose you want to restrict type of location as following types.
+    <br /><br /><em>greenhouse, open field, orchard and seedling block</em><br /><br />
+    Create a new data validation type '<em>location_type</em>' first and add
+    these types as their members. If the members of the validation type are
+    cvterms, provide the cv name of the cvterms. Once data validation types are
+    defined, it can be accessed from a template file by MCL_TEMPATE_DATA_TYPE class.
+  ";
   $form['data_valid_type']['table'] = array(
-    '#markup' => 'Description here..',
+    '#markup' => $desc,
   );
 
   // Adds data validation type form.
@@ -34,8 +44,12 @@ function mcl_admin_data_valid_form($form, &$form_state) {
     '#collapsible'  => TRUE,
     '#title'        => 'Data validation',
   );
+  $desc = "
+    The members of each validation type are listed in the table below.
+    Please add a new member or delete the existing member.
+  ";
   $form['data_valid']['table'] = array(
-    '#markup' => 'Description here..',
+    '#markup' => $desc,
   );
 
   // Adds data validation form.
@@ -101,7 +115,7 @@ function _mcl_get_mcl_data_valid_type_form(&$form) {
   );
   $form['data_valid_type']['data_valid_types']['add_data_valid_type']['type'] = array(
     '#type'         => 'textfield',
-    '#title'        => t('New data valid type'),
+    '#title'        => t('New data validation type'),
     '#description'  => t("Please type a new type for data validation"),
     '#attributes'   => array('style' => 'width:250px;'),
   );
