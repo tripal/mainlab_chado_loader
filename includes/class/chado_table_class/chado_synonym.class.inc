@@ -7,7 +7,7 @@
  * The declaration of CHADO_SYNONYM class.
  *
  */
-class CHADO_SYNONYM  {
+class CHADO_SYNONYM  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_SYNONYM.
@@ -94,6 +94,27 @@ class CHADO_SYNONYM  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'synonym_id' => array(
+        array('table' => 'feature_synonym', 'attr' => 'synonym_id'),
+        array('table' => 'library_synonym', 'attr' => 'synonym_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -160,7 +181,7 @@ class CHADO_SYNONYM  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

@@ -120,7 +120,7 @@ class MCL_TEMPLATE_GENOTYPE_SNP_STOCK_COLUMN extends MCL_TEMPLATE {
   private function _checkStocks($line) {
 
     // This should be called once.
-    if ($line['line_no'] != 3) {
+    if ($line['line_no'] != 3 || $this->getJob()->getParamByKey('stock_cols')) {
       return;
     }
 

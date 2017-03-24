@@ -92,11 +92,12 @@ function _mcl_get_uploading_job_table() {
 
   // Sets the headers.
   $headers = array(
-    array('data' => 'Job ID', 'style' => 'width:80px'),
+    array('data' => 'Job ID', 'style' => 'width:70px'),
     array('data' => 'Status', 'style' => 'width:60px'),
     array('data' => 'Name', 'style' => ''),
-    array('data' => 'Last Run', 'style' => 'width:150px'),
-    array('data' => 'Submit Date', 'style' => 'width:150px'),
+    array('data' => 'Filesize', 'style' => 'width:90px'),
+    array('data' => 'Last Run', 'style' => 'width:100px'),
+    array('data' => 'Submit Date', 'style' => 'width:100px'),
     array('data' => 'Details', 'style' => 'width:40px'),
     array('data' => 'Action', 'style' => 'width:40px'),
   );
@@ -125,15 +126,37 @@ function _mcl_get_uploading_job_table() {
 
     // Sets the last run date.
     $last_run = $mcl_job->getPropByKey('last_run');
-    $last_run_date = ($last_run) ? $last_run : '<em>N/A</em>';
+    $last_run_date = '<em>N/A</em>';
+    if ($last_run) {
+      $tmp = explode(" ", $last_run);
+      $d = $tmp[0];
+      $t = $tmp[1];
+      $last_run_date = "<span title='$t'>$d</span>";
+    }
+
+    // Sets the submit date.
+    $submit = $mcl_job->getSubmitDate();
+    $submit_date = '<em>N/A</em>';
+    if ($submit) {
+      $tmp = explode(" ", $submit);
+      $d = $tmp[0];
+      $t = $tmp[1];
+      $submit_date = "<span title='$t'>$d</span>";
+    }
+
+    // Gets filesize.
+    $file_id = $mcl_job->getFileID();
+    $mcl_file = MCL_FILE::byKey(array('file_id' => $file_id));
+    $filesize = $mcl_file->getFilesize();
 
     // Adds the row.
     $row = array(
       $job_id,
       $status,
       $mcl_job->getName(),
+      mcl_format_bytes($filesize),
       $last_run_date,
-      $mcl_job->getSubmitDate(),
+      $submit_date,
       l('view', "/mcl/job_view/$job_id"),
       $delete_link,
     );
@@ -183,6 +206,12 @@ function _mcl_get_add_job_form(&$form, MCL_USER $mcl_user) {
       'file_validate_extensions' => array('xls xlsx zip csv'),
     ),
   );
+  $form['add_upload_job']['no_transaction_cb'] = array(
+    '#type'           => 'checkbox',
+    '#title'          => 'No transaction',
+    '#description'    => "Check if the size of your uploading file are large.",
+    '#default_value'  => FALSE,
+  );
   $form['add_upload_job']['add_btn'] = array(
     '#type'   => 'submit',
     '#name'   => 'add_btn',
@@ -214,6 +243,7 @@ function mcl_upload_data_form_validate($form, &$form_state) {
   $mcl_job = MCL_JOB::byKey(array('name' => $name, 'user_id' => $user->uid));
   if ($mcl_job) {
     form_set_error('add_upload_job][name', t("The job name '$name' exists. Please change the name of the job."));
+    return;
   }
 }
 
@@ -250,6 +280,9 @@ function mcl_upload_data_form_submit($form, &$form_state) {
     ->condition('fid', $drupal_file->fid, '=')
     ->execute();
 
+  // Gets Drupal user directory.
+  $drupal_user_directory = dirname($mcl_user->getUserDir());
+
   // Creates a MCL_JOB_UPLOAD and gets job ID.
   $details = array(
     'name'        => $job_name,
@@ -258,7 +291,7 @@ function mcl_upload_data_form_submit($form, &$form_state) {
     'status'      => 0,
     'user_id'     => $user->uid,
     'submit_date' => date("Y-m-d G:i:s"),
-    'prop'        => json_encode(array('working_dir' => $mcl_user->getUserDir())),
+    'prop'        => json_encode(array('working_dir' => $drupal_user_directory)),
   );
   $mcl_job = new MCL_JOB_UPLOAD($details);
   if ($mcl_job->insert()) {
@@ -281,8 +314,15 @@ function mcl_upload_data_form_submit($form, &$form_state) {
       $mcl_job->setFileID($upload_file->getFileID());
       if ($mcl_job->update()) {
 
+        // Gets 'no_transaction' option.
+        $opt_no_transaction = '';
+        $no_transaction_cb = trim($form_state['values']['add_upload_job']['no_transaction_cb']);
+        if ($no_transaction_cb) {
+          $opt_no_transaction = '--no_transaction';
+        }
+
         // Runs the job.
-        $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null  & ";
+        $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_no_transaction > /dev/null 2>/dev/null  & ";
         $pid = exec($cmd, $output, $return_var);
         if ($return_var) {
           drupal_set_message("Failed to add a uploading job");

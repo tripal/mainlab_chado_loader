@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_CV extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -15,6 +15,7 @@ class MCL_TEMPLATE_CV extends MCL_TEMPLATE {
     $details['template_type'] = 'CV';
     parent::__construct($details);
   }
+
   /**
    * @see MCL_TEMPLATE::byKey()
    */

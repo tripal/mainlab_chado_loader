@@ -8,17 +8,6 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
   /**
    *  Class data members.
    */
-  // Valid descriptor types.
-  private $valid_descriptor_types = array(
-    'qualitative',
-    'quantitative_code',
-    'quantitative',
-    'code',
-    'date',
-    'filepath',
-    'text'
-  );
-
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -58,7 +47,6 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
       'values'                => array('req' => FALSE, 'width' => 10, 'desc' => "Code definition for a coded descriptor."),
       'data_unit'             => array('req' => FALSE, 'width' => 10, 'desc' => "Unit for the trait descriptor."),
       'definition'            => array('req' => FALSE, 'width' => 90, 'desc' => "Definition of the descriptor."),
-//      'image_file'            => array('req' => FALSE, 'width' => 10, 'desc' => "The image file for the descriptor."),
     );
     return $headers;
   }
@@ -84,10 +72,10 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
    */
   public function runErrorCheckDataLine($line) {
 
-    // Checks SITE_DB.
+    // Checks db.
     MCL_CHADO_DB::checkDB($this, MCL_VAR::getValueByName('SITE_DB'));
 
-    // Checks CV for trait_descriptor_set.
+    // Checks cv for trait_descriptor_set.
     MCL_CHADO_CV::checkCV($this, $line['trait_descriptor_set']);
 
     // Checks values.
@@ -96,9 +84,9 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
     // Checks trait_name.
     MCL_CHADO_CVTERM::checkCvterm($this, MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY'), $line['trait_name']);
 
-    // Checks data type.
-    if (!in_array($line['data_type'], $this->valid_descriptor_types)) {
-      $this->updateMsg('E', "Error - data type : '" . $line['data_type'] . "' is not valid descriptor type");
+    // Checks descirptor type.
+    if (!MCL_DATA_VALID_TYPE::validate('descirptor_type', $line['data_type'])) {
+      $this->updateMsg('E', 'Invalid descirptor type : ' . $line['data_type']);
     }
   }
 

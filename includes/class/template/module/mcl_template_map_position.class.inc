@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -87,19 +87,22 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     // Checks map.
     MCL_CHADO_FEATUREMAP::checkMap($this, $line['map_name']);
 
-    // Checks marker_qtl_mtl. It must be generic marker, MTL or QTL.
+    // Checks feature. It must be generic marker, MTL or QTL.
     $marker_qtl_mtl = $line['marker_qtl_mtl'];
-    $args = array(
-      'uniquename'  => $marker_qtl_mtl,
-      'type_id'     => $this->cvterms['sequence']['genetic_marker'],
-    );
-    $feature = MCL_CHADO_FEATURE::byKey($args);
+
+    // Gets genetic marker.
+    $feature = MCL_CHADO_FEATURE::getFeatureAlias($marker_qtl_mtl, $genus, $species, $this->cvterms['sequence']['genetic_marker']);
     if (!$feature) {
 
-      $args['type_id'] = $this->cvterms['sequence']['qtl'];
+      // Gets the QTL.
+      $args = array(
+        'uniquename'  => $marker_qtl_mtl,
+        'type_id'     => $this->cvterms['sequence']['qtl'],
+      );
       $feature = MCL_CHADO_FEATURE::byKey($args);
       if (!$feature) {
 
+        // Gets the MTL.
         $args['type_id'] = $this->cvterms['sequence']['heritable_phenotypic_marker'];
         $feature = MCL_CHADO_FEATURE::byKey($args);
         if (!$feature) {
@@ -114,25 +117,34 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
    */
   public function uploadDataLine($line) {
 
-    // Gets the feature. It must be marker, QTL or MTL.
+    // Gets the feature. It must be genetic marker, QTL or MTL.
     $marker_qtl_mtl = $line['marker_qtl_mtl'];
-    $args = array(
-      'uniquename'  => $marker_qtl_mtl,
-      'type_id'     => $this->cvterms['sequence']['genetic_marker'],
-    );
-    $feature = MCL_CHADO_FEATURE::byKey($args);
+
+    // Gets the genetic marker.
+    $feature = MCL_CHADO_FEATURE::getFeatureAlias($marker_qtl_mtl, $genus, $species, $this->cvterms['sequence']['genetic_marker']);
     if (!$feature) {
-      $args['type_id'] = $this->cvterms['sequence']['qtl'];
+
+      // Gets the QTL.
+      $args = array(
+        'uniquename'  => $marker_qtl_mtl,
+        'type_id'     => $this->cvterms['sequence']['qtl'],
+      );
       $feature = MCL_CHADO_FEATURE::byKey($args);
       if (!$feature) {
+
+        // Gets the MTL.
         $args['type_id'] = $this->cvterms['sequence']['heritable_phenotypic_marker'];
         $feature = MCL_CHADO_FEATURE::byKey($args);
       }
     }
-    $organism_id = $feature->getOrganismID();
+
+    // Updates $organism_id and $marker_qtl_mtl.
+    $marker_qtl_mtl = $feature->getUniquename();
+    $organism_id    = $feature->getOrganismID();
 
     // Adds a locus if this is a genetic marker. If locus name is empty,
     // use $marker_qtl_mtl.
+    $locus = NULL;
     if ($feature->getTypeID() == $this->cvterms['sequence']['genetic_marker']) {
       $locus_name = ($line['locus_name']) ? $line['locus_name'] : $marker_qtl_mtl;
       $locus = MCL_CHADO_FEATURE::addFeature($this, $locus_name, $locus_name, $this->cvterms['sequence']['marker_locus'], $organism_id);
@@ -147,7 +159,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     $map = MCL_CHADO_FEATUREMAP::byKey(array('name' => $line['map_name']));
 
     // Adds a linkage group.
-    $linkage_group = $link['linkage_group'];
+    $linkage_group = $line['linkage_group'];
 
     // Gets organism ID for a linkage group.
     $organism_id_lg = MCL_VAR::getValueByName('ORGANISM_ID');
@@ -175,7 +187,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     $bin_name = $line['bin_name'];
     if ($bin_name) {
       $uniquename = $map->getName() . '.' . $bin_name;
-      $bin = MCL_CHADO_FEATURE::addFeature($this, $uniquename, '', $chromosome_arm_name, $this->cvterms['SITE_CV']['bin'], $organism_id);
+      $bin = MCL_CHADO_FEATURE::addFeature($this, $uniquename, '', $this->cvterms['SITE_CV']['bin'], $organism_id);
       if ($bin) {
 
         // Adds a relationship.
@@ -193,10 +205,13 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     $stop     = $line['stop'];
     $qtl_peak = $line['qtl_peak'];
     $data     = trim($start.$stop.$qtl_peak);
-    if ($data && $linkage_group) {
+    if ($linkage_group && ($data || $data == '0')) {
+
+      // Sets the target feature.
+      $target_feature = ($locus) ? $locus : $feature;
 
       // Adds a featurepos.
-      $featurepos = MCL_CHADO_FEATUREPOS::addFeaturepos($this, $feature, $map, $linkage_group);
+      $featurepos = MCL_CHADO_FEATUREPOS::addFeaturepos($this, $target_feature, $map, $linkage_group);
       if ($featurepos) {
 
         // Adds properties.
@@ -205,8 +220,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
         $featurepos->addProp($this, 'SITE_CV', 'qtl_peak', $line['qtl_peak']);
         $featurepos->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
-
-        // Adds a featurepos if the linkage_group, the bin and either start or stop exist.
+        // Adds a featurepos for the bin if exists.
         $data = trim($start.$stop);
         if ($data && $linkage_group && $bin) {
 

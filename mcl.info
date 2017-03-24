@@ -1,7 +1,8 @@
-name               = Mainlab Chado Loader
-description        = PHP data uploader to chado schema for Mainlab
-package            = Mainlab
-project            = MCL
-core               = 7.x
-version            = 7.x-1.0
-configure          = admin/mainlab_chado_loader
+name           = Mainlab Chado Loader
+description    = PHP data uploader to chado schema for Mainlab
+package        = Mainlab
+project        = MCL
+core           = 7.x
+version        = 7.x-1.0
+configure      = admin/mainlab_chado_loader
+dependencies[] = file

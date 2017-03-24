@@ -7,7 +7,7 @@
  * The declaration of CHADO_ORGANISM_PUB class.
  *
  */
-class CHADO_ORGANISM_PUB  {
+class CHADO_ORGANISM_PUB  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_ORGANISM_PUB.
@@ -91,6 +91,23 @@ class CHADO_ORGANISM_PUB  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('organism_id' => array('fk_table' => 'organism', 'fk_attr' => 'organism_id')),
+      array('pub_id' => array('fk_table' => 'pub', 'fk_attr' => 'pub_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +172,7 @@ class CHADO_ORGANISM_PUB  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

@@ -7,7 +7,7 @@
  * The declaration of CHADO_FEATURE class.
  *
  */
-class CHADO_FEATURE  {
+class CHADO_FEATURE  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_FEATURE.
@@ -121,6 +121,47 @@ class CHADO_FEATURE  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('dbxref_id' => array('fk_table' => 'dbxref', 'fk_attr' => 'dbxref_id')),
+      array('organism_id' => array('fk_table' => 'organism', 'fk_attr' => 'organism_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'feature_id' => array(
+        array('table' => 'featureloc', 'attr' => 'feature_id'),
+        array('table' => 'featureloc', 'attr' => 'srcfeature_id'),
+        array('table' => 'feature_cvterm', 'attr' => 'feature_id'),
+        array('table' => 'feature_dbxref', 'attr' => 'feature_id'),
+        array('table' => 'feature_pub', 'attr' => 'feature_id'),
+        array('table' => 'feature_synonym', 'attr' => 'feature_id'),
+        array('table' => 'featureprop', 'attr' => 'feature_id'),
+        array('table' => 'analysisfeature', 'attr' => 'feature_id'),
+        array('table' => 'feature_contact', 'attr' => 'feature_id'),
+        array('table' => 'feature_genotype', 'attr' => 'chromosome_id'),
+        array('table' => 'feature_genotype', 'attr' => 'feature_id'),
+        array('table' => 'feature_image', 'attr' => 'feature_id'),
+        array('table' => 'feature_nd_geolocation', 'attr' => 'feature_id'),
+        array('table' => 'feature_project', 'attr' => 'feature_id'),
+        array('table' => 'feature_relationship', 'attr' => 'object_id'),
+        array('table' => 'feature_relationship', 'attr' => 'subject_id'),
+        array('table' => 'feature_stock', 'attr' => 'feature_id'),
+        array('table' => 'featurepos', 'attr' => 'feature_id'),
+        array('table' => 'featurepos', 'attr' => 'map_feature_id'),
+        array('table' => 'genotype_call', 'attr' => 'feature_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -203,7 +244,7 @@ class CHADO_FEATURE  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

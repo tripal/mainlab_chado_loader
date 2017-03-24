@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_PROGENY extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -81,7 +81,8 @@ class MCL_TEMPLATE_PROGENY extends MCL_TEMPLATE {
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
     // Checks cross_number.
-    MCL_CHADO_ND_EXPERIMENT::checkCrossNumber($this, $line['dataset_name'], $line['cross_number'], $this->cvterms['SITE_CV']['cross_experiment'], $this->cvterms['SITE_CV']['cross_number']);
+    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset_name']);
+    MCL_CHADO_ND_EXPERIMENT::checkCrossNumber($this, $dataset->getProjectID(), $line['cross_number'], $this->cvterms['SITE_CV']['cross_experiment'], $this->cvterms['SITE_CV']['cross_experiment']);
   }
 
   /**
@@ -93,12 +94,15 @@ class MCL_TEMPLATE_PROGENY extends MCL_TEMPLATE {
     $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
     $organism_id = $organism->getOrganismID();
 
+    // Gets the dataset.
+    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset_name']);
+
     // Adds a progeny.
     $progeny = MCL_CHADO_STOCK::addStock($this, $line['progeny_name'], '', $organism_id, $this->cvterms['SITE_CV']['breeding_research_material']);
     if ($progeny) {
 
       // Gets the cross.
-      $cross = MCL_CHADO_ND_EXPERIMENT::byCrossNumber($line['dataset_name'], $line['cross_number'], $this->cvterms['SITE_CV']['cross_experiment'], $this->cvterms['SITE_CV']['cross_number']);
+      $cross = MCL_CHADO_ND_EXPERIMENT::byCrossNumber($dataset->getProjectID(), $line['cross_number'], $this->cvterms['SITE_CV']['cross_experiment'], $this->cvterms['SITE_CV']['cross_experiment']);
 
       // Adds parents and links this progeny and cross.
       if ($cross) {

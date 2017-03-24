@@ -65,7 +65,9 @@ class MCL_CLASS_LOADER {
     else if (preg_match("/^MCL_JOB/", $class_name, $matches)) {
       $path .= 'job/';
     }
-
+    else if (preg_match("/^MCL_DATA_VALID/", $class_name, $matches)) {
+      $path .= 'data_valid/';
+    }
     else if (preg_match("/^MCL_TABLE/", $class_name, $matches)) {
       $path .= 'table/';
     }

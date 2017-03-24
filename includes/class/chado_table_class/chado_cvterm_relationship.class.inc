@@ -7,7 +7,7 @@
  * The declaration of CHADO_CVTERM_RELATIONSHIP class.
  *
  */
-class CHADO_CVTERM_RELATIONSHIP  {
+class CHADO_CVTERM_RELATIONSHIP  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_CVTERM_RELATIONSHIP.
@@ -94,6 +94,24 @@ class CHADO_CVTERM_RELATIONSHIP  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('object_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+      array('subject_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -160,7 +178,7 @@ class CHADO_CVTERM_RELATIONSHIP  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

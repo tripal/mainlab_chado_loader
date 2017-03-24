@@ -7,7 +7,7 @@
  * The declaration of CHADO_LIBRARY_CONTACT class.
  *
  */
-class CHADO_LIBRARY_CONTACT  {
+class CHADO_LIBRARY_CONTACT  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_LIBRARY_CONTACT.
@@ -91,6 +91,20 @@ class CHADO_LIBRARY_CONTACT  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return NULL;
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +169,7 @@ class CHADO_LIBRARY_CONTACT  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

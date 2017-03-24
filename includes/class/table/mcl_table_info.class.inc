@@ -110,7 +110,7 @@ class MCL_TABLE_INFO {
         }
         continue;
       }
-      else if (preg_match("/^ALTER SEQUENCE ([A-Za-z0-9_]+) OWNED BY ([A-Za-z0-9_]+)\.([A-Za-z0-9_]+)/i", $line, $matches)) {
+      else if (preg_match("/^ALTER SEQUENCE ([A-Za-z0-9\_]+) OWNED BY ([A-Za-z0-9\_]+)\.([A-Za-z0-9\_]+)/i", $line, $matches)) {
         $seq_table_name = strtolower($matches[2]);
         $seq_attr_name = strtolower($matches[3]);
         if (in_array($seq_table_name, $target_tables)) {
@@ -151,15 +151,15 @@ class MCL_TABLE_INFO {
       if ($flag_constraint) {
         if ($cur_table) {
           $const = $this->parseConstraint($line);
-          if ($const['type'] == 'PRIMARY') {
+          if ($const['type'] == 'primary') {
             $cur_table->setPrimaryKey($const['attr']);
             $cur_table->addSQL($const['type'], $sql . $line_orig);
           }
-          else if ($const['type'] == 'UNIQUE') {
+          else if ($const['type'] == 'unique') {
             $cur_table->addUniqueKey($const);
             $cur_table->addSQL($const['type'], $sql . $line_orig);
           }
-          else if ($const['type'] == 'FOREIGN') {
+          else if ($const['type'] == 'foreign') {
             $cur_table->addSQL($const['type'], $sql . $line_orig);
           }
         }
@@ -170,8 +170,14 @@ class MCL_TABLE_INFO {
     }
     fclose($fdr);
 
-    // Updates primary key.
+    // Updates the primary key.
     $this->updatePrimaryKey($table_info);
+
+    // Updates the foreign keys.
+    $this->updateForeignKeys($table_info);
+
+    // Updates the related tables.
+    $this->updateRelTables($table_info);
 
     // Sets the table information.
     $this->setTableInfo($table_info);
@@ -193,7 +199,7 @@ class MCL_TABLE_INFO {
   }
 
   /**
-   * Updates primary key. It sometimes primary key is not set. So finds a
+   * Updates the primary key. It sometimes primary key is not set. So finds a
    * field (attribute) that satisfies the following conditions and marks it
    * as primary key.
    *  Conditions:
@@ -218,9 +224,9 @@ class MCL_TABLE_INFO {
       }
 
       // Checks (3) one sequence exists.
-      $attrs = $info->getAttrs();
-      $num_serial = 0;
-      $primary_key = '';
+      $attrs        = $info->getAttrs();
+      $num_serial   = 0;
+      $primary_key  = '';
       foreach ($attrs as $attr_name => $attr) {
         if ($attr->getDataType() == 'serial') {
           $num_serial++;
@@ -236,6 +242,76 @@ class MCL_TABLE_INFO {
   }
 
   /**
+   * Updates the foreign keys.
+   *
+   * @param $table_info
+   */
+  private function updateForeignKeys(&$table_info) {
+
+    // Gets all foreign keys.
+    $fks = array();
+    foreach ($table_info as $table_name => $info) {
+      $sqls = $info->getSQL('foreign', TRUE);
+      if (empty($sqls)) {
+        continue;
+      }
+      foreach ($sqls as $sql) {
+        if (preg_match("/FOREIGN KEY \(([a-z\_]+)\) REFERENCES ([a-z\_]+)\s*\(([a-z\_]+)\)/", $sql, $matches)) {
+          $attr     = trim($matches[1]);
+          $fk_table = trim($matches[2]);
+          $fk_attr  = trim($matches[3]);
+          $fks[$table_name][$attr] = array(
+            'fk_table' => $fk_table,
+            'fk_attr' => $fk_attr,
+          );
+        }
+      }
+    }
+
+    // Sets the foreign keys.
+    foreach ($table_info as $table_name => $info) {
+      if (array_key_exists($table_name, $fks)) {
+        $table_info[$table_name]->setForeignKeys($fks[$table_name]);
+      }
+    }
+  }
+
+  /**
+   * Updates the related tables.
+   *
+   * @param $table_info
+   */
+  private function updateRelTables(&$table_info) {
+
+    // Gets all foreign keys.
+    $rel = array();
+    foreach ($table_info as $table_name => $info) {
+      $sqls = $info->getSQL('foreign', TRUE);
+      if (empty($sqls)) {
+        continue;
+      }
+      foreach ($sqls as $sql) {
+        if (preg_match("/FOREIGN KEY \(([a-z\_]+)\) REFERENCES ([a-z\_]+)\s*\(([a-z\_]+)\)/", $sql, $matches)) {
+          $attr     = trim($matches[1]);
+          $fk_table = trim($matches[2]);
+          $fk_attr  = trim($matches[3]);
+          $rel[$fk_table][$fk_attr][] = array(
+            'table' => $table_name,
+            'attr'  => $attr,
+          );
+        }
+      }
+    }
+
+    // Sets the related tables.
+    foreach ($table_info as $table_name => $info) {
+      if (array_key_exists($table_name, $rel)) {
+        $table_info[$table_name]->setRelTables($rel[$table_name]);
+      }
+    }
+  }
+
+  /**
    * Parse constraint line.
    */
   private function parseConstraint($line) {
@@ -246,7 +322,7 @@ class MCL_TABLE_INFO {
       $attr       = strtolower($matches[2]);
       $const = array(
         'name' => $const_name,
-        'type' => 'PRIMARY',
+        'type' => 'primary',
         'attr' => $attr,
       );
     }
@@ -255,7 +331,7 @@ class MCL_TABLE_INFO {
       $attrs      = strtolower($matches[2]);
       $const = array(
         'name'  => $const_name,
-        'type'  => 'UNIQUE',
+        'type'  => 'unique',
         'attrs' => preg_split("/\s*,\s*/", $attrs),
       );
     }
@@ -266,7 +342,7 @@ class MCL_TABLE_INFO {
       $fk_attr    = strtolower($matches[4]);
       $const = array(
         'name'     => $const_name,
-        'type'     => 'FOREIGN',
+        'type'     => 'foreign',
         'fk_table' => $fk_table,
         'fk_attr'  => $fk_attr,
       );

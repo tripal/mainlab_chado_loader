@@ -68,7 +68,7 @@ class MCL_CHADO_DBXREF extends CHADO_DBXREF {
    *
    * @return MCL_CHADO_DBXREF
    */
-  public static function addDBXref(MCL_TEMPLATE $mcl_tmpl, $db_id, $accession) {
+  public static function addDBXref(MCL_TEMPLATE $mcl_tmpl = NULL, $db_id, $accession) {
 
     // Sets the arguments.
     $args = array(
@@ -77,24 +77,25 @@ class MCL_CHADO_DBXREF extends CHADO_DBXREF {
     );
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
     $mcl_dbxref = MCL_CHADO_DBXREF::byKey($args);
     if ($mcl_dbxref) {
-      $mcl_tmpl->addMsg('D', 'dbxref', $args);
+      self::addMsg($mcl_tmpl, 'D', 'dbxref', $args);
     }
     else {
 
       // Adds a new dbxref.
       $mcl_dbxref = new MCL_CHADO_DBXREF($args);
       if ($mcl_dbxref->insert()) {
-        $mcl_tmpl->addMsg('N', 'dbxref', $args);
+        self::addMsg($mcl_tmpl, 'N', 'dbxref', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'dbxref', $args);
+        self::addMsg($mcl_tmpl, 'E', 'dbxref', $args);
+        return NULL;
       }
     }
     return $mcl_dbxref;
@@ -108,9 +109,14 @@ class MCL_CHADO_DBXREF extends CHADO_DBXREF {
    * @param string $cvterm_name
    * @param string $value
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name, $value, $separator = '') {
-    $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
-    $mcl_tmpl->addProperty('dbxrefrop', 'dbxref_id', $this->dbxref_id, $type_id, $value, $separator);
+  public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
+    if ($value) {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->addProperty($mcl_tmpl, 'dbxrefrop', 'dbxref_id', $this->dbxref_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 }

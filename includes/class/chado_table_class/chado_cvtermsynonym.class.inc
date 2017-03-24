@@ -7,7 +7,7 @@
  * The declaration of CHADO_CVTERMSYNONYM class.
  *
  */
-class CHADO_CVTERMSYNONYM  {
+class CHADO_CVTERMSYNONYM  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_CVTERMSYNONYM.
@@ -94,6 +94,23 @@ class CHADO_CVTERMSYNONYM  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('cvterm_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -158,7 +175,7 @@ class CHADO_CVTERMSYNONYM  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
-*/
+ */
 /**
  * MCL Job View form.
  *
@@ -38,6 +38,14 @@ function mcl_job_view_form($form, &$form_state, $job_id = NULL) {
     $mcl_job = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
     if ($mcl_job) {
 
+      // Adds the refresh button.
+      $url = "mcl/job_view/$job_id";
+      $button = "<button style='width:100px;margin-bottom:15px;' onclick=\"bims.add_main_panel('bims_panel_add_on_job_upload', 'Upload Job' ,'$url'); return (false);\">Refresh</button>";
+
+      $form['refresh_page'] = array(
+        '#markup' => $button,
+      );
+
       // Adds the table for job details.
       $form['job_view']['details'] = array(
         '#markup' => _mcl_get_detail_table($mcl_job),
@@ -60,6 +68,19 @@ function mcl_job_view_form($form, &$form_state, $job_id = NULL) {
         '#upload_validators'  => array(
           'file_validate_extensions' => array('xls xlsx zip csv'),
         ),
+      );
+      $form['job_rerun']['force_cb'] = array(
+        '#type'           => 'checkbox',
+        '#title'          => 'Force to upload data',
+        '#description'    => "Check if new data were added to the template which has already been uploaded.",
+        '#default_value'  => FALSE,
+      );
+      $default = ($mcl_job->getPropByKey('transaction')) ? FALSE : TRUE;
+      $form['job_rerun']['no_transaction_cb'] = array(
+        '#type'           => 'checkbox',
+        '#title'          => 'No transaction',
+        '#description'    => "Check if the size of your uploading file are large.",
+        '#default_value'  => $default,
       );
       $form['job_rerun']['rerun_btn'] = array(
         '#type'   => 'submit',
@@ -140,7 +161,7 @@ function _mcl_get_all_logs(MCL_JOB_UPLOAD $mcl_job) {
       $files = file_scan_directory("$recent_dir/$object", "/\.log$/");
       $log_files = array();
       foreach ($files as $filepath => $file) {
-        preg_match("/-([A-Za-z\_]+)\.log$/", $filepath, $matches2);
+        preg_match("/-([A-Za-z0-9\_]+)\.log$/", $filepath, $matches2);
         $key = $matches2[1];
         $log_files []= array(
           'key'      => $key,
@@ -324,8 +345,8 @@ function _mcl_get_detail_table(MCL_JOB_UPLOAD $mcl_job) {
   global $base_root;
 
   // Adds the link to the uploaded file.
-  $mcl_file = $mcl_job->getMCLFile();
-  $link_template =  l('download',  'mcl/download_file/' . $mcl_file->getFileID());
+  $mcl_file       = $mcl_job->getMCLFile();
+  $link_template  =  l('download',  'mcl/download_file/' . $mcl_file->getFileID());
 
   // Adds the link to download all log files in zip.
   $link_log = l('download all', 'mcl/download_log/' . $mcl_job->getJobID());
@@ -336,11 +357,22 @@ function _mcl_get_detail_table(MCL_JOB_UPLOAD $mcl_job) {
     $complete_date = '<em>N/A</em>';
   }
 
-  // Sets status.
-  $status = $mcl_job->getStatusLabel();
-  $run_lock = $mcl_job->getJobDir() . '/run.lock';
-  if (file_exists($run_lock)) {
-    $status = "Running";
+  // Sets the status.
+  $status = $mcl_job->getStatus();
+  $status_label = $mcl_job->getStatusLabel();
+  if ($status > 0 && $status < 100) {
+
+    // Checks process ID to make sure it is actually running.
+    $pid = $mcl_job->getPID();
+    $proc_file = "/proc/$pid";
+    if (file_exists($proc_file)) {
+      $status_label = "Running [$pid]";
+    }
+    else {
+      $status_label = "Failed";
+      $mcl_job->setStatus(-200);
+      $mcl_job->update();
+    }
   }
 
   // Sets the last run date.
@@ -352,7 +384,9 @@ function _mcl_get_detail_table(MCL_JOB_UPLOAD $mcl_job) {
   $rows []= array(array('data' => '<b>Job ID</b>', 'style' => 'width:160px;'), $mcl_job->getJobID());
   $rows []= array('<b>Name</b>', $mcl_job->getName());
   $rows []= array('<b>Data Template File</b>', $link_template);
-  $rows []= array('<b>Status</b>', $status);
+  $rows []= array('<b>File Name</b>', $mcl_file->getFilename());
+  $rows []= array('<b>File Size</b>', mcl_format_bytes($mcl_file->getFilesize()));
+  $rows []= array('<b>Status</b>', $status_label);
 
   // Adds progress row if not empty.
   $progress = $mcl_job->getProgress();
@@ -423,8 +457,30 @@ function mcl_job_view_form_submit($form, &$form_state) {
   ->condition('fid', $drupal_file->fid, '=')
   ->execute();
 
+  // Gets 'force' option.
+  $opt_force = '';
+  $force_cb = trim($form_state['values']['job_rerun']['force_cb']);
+  if ($force_cb) {
+    $opt_force = '--force';
+  }
+
+  // Gets 'no_transaction' option.
+  $opt_no_transaction = '';
+  $trans = TRUE;
+  $no_transaction_cb = trim($form_state['values']['job_rerun']['no_transaction_cb']);
+  if ($no_transaction_cb) {
+    $opt_no_transaction = '--no_transaction';
+    $trans = FALSE;
+  }
+
+  // Gets MCL_JOB_UPLOAD and updates the properties.
+  $mcl_job = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
+  $mcl_job->setPropByKey('transaction', $trans);
+  $mcl_job->setStatus(0);
+  $mcl_job->update();
+
   // Submits the re-uploading job.
-  $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input > /dev/null 2>/dev/null & ";
+  $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_force $opt_no_transaction > /dev/null 2>/dev/null & ";
   $pid = exec($cmd, $output, $return_var);
   if ($return_var) {
     drupal_set_message("Failed to re-run the job");

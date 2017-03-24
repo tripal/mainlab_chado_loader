@@ -7,7 +7,7 @@
  * The declaration of CHADO_CONTACT class.
  *
  */
-class CHADO_CONTACT  {
+class CHADO_CONTACT  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_CONTACT.
@@ -94,6 +94,30 @@ class CHADO_CONTACT  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'contact_id' => array(
+        array('table' => 'contactprop', 'attr' => 'contact_id'),
+        array('table' => 'feature_contact', 'attr' => 'contact_id'),
+        array('table' => 'featuremap_contact', 'attr' => 'contact_id'),
+        array('table' => 'nd_experiment_contact', 'attr' => 'contact_id'),
+        array('table' => 'project_contact', 'attr' => 'contact_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -158,7 +182,7 @@ class CHADO_CONTACT  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

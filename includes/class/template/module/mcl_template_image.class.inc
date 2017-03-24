@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_IMAGE extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -60,8 +60,7 @@ class MCL_TEMPLATE_IMAGE extends MCL_TEMPLATE {
   /**
    * @see MCL_TEMPLATE::runErrorCheckDataLine()
    */
-  public function runErrorCheckDataLine($line) {
-  }
+  public function runErrorCheckDataLine($line) {}
 
   /**
    * @see MCL_TEMPLATE::uploadDataLine()

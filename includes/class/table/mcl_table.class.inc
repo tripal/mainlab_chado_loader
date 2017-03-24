@@ -14,6 +14,8 @@ class MCL_TABLE {
   private $attrs        = NULL;
   private $primary_key  = NULL;
   private $unique_keys  = NULL;
+  private $foreign_keys = NULL;
+  private $rel_tables   = NULL;
   private $sqls         = NULL;
   private $data_types   = NULL;
   private $constraints  = NULL;
@@ -26,6 +28,8 @@ class MCL_TABLE {
     $this->schema_name  = $schema_name;
     $this->attrs        = array();
     $this->unique_keys  = array();
+    $this->foreign_keys = array();
+    $this->rel_tables   = array();
     $this->sqls         = array();
 
     // Sets class name.
@@ -65,6 +69,7 @@ class MCL_TABLE {
 
     // Adds a SQL.
     if (in_array($type, $this->constraints)) {
+
       if (array_key_exists($type, $this->sqls)) {
         $this->sqls[$type][] = $sql;
       }
@@ -81,19 +86,18 @@ class MCL_TABLE {
    * Return the SQL statement.
    *
    * @param string $type
+   * @param boolean $flag
    *
-   * @return string
+   * @return string or array
    */
-  public function getSQL($type) {
-    $sqls = '';
+  public function getSQL($type, $flag = FALSE) {
+    $sqls = NULL;
 
     // Returns the SQL.
     if (in_array($type, $this->constraints)) {
       if (array_key_exists($type, $this->sqls)) {
         $arr = $this->sqls[$type];
-        if ($arr) {
-          $sqls = implode("\n", $arr);
-        }
+        return ($flag) ? $arr : implode("\n", $arr);
       }
     }
     else {
@@ -301,6 +305,42 @@ class MCL_TABLE {
    */
   public function setPrimaryKey($primary_key) {
     $this->primary_key = $primary_key;
+  }
+
+  /**
+   * Retrieves the foreign keys.
+   *
+   * @retrun array
+   */
+  public function getForeignKeys() {
+    return $this->foreign_keys;
+  }
+
+  /**
+   * Updates the foreign keys.
+   *
+   * @param array $foreign_keys
+   */
+  public function setForeignKeys($foreign_keys) {
+    $this->foreign_keys = $foreign_keys;
+  }
+
+  /**
+   * Retrieves the related tables.
+   *
+   * @retrun array
+   */
+  public function getRelTables() {
+    return $this->rel_tables;
+  }
+
+  /**
+   * Updates the related tables.
+   *
+   * @param array $rel_tables
+   */
+  public function setRelTables($rel_tables) {
+    $this->rel_tables = $rel_tables;
   }
 
   /**

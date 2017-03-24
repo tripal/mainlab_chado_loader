@@ -7,7 +7,7 @@
  * The declaration of CHADO_FEATURE_SYNONYM class.
  *
  */
-class CHADO_FEATURE_SYNONYM  {
+class CHADO_FEATURE_SYNONYM  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_FEATURE_SYNONYM.
@@ -100,6 +100,24 @@ class CHADO_FEATURE_SYNONYM  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('feature_id' => array('fk_table' => 'feature', 'fk_attr' => 'feature_id')),
+      array('pub_id' => array('fk_table' => 'pub', 'fk_attr' => 'pub_id')),
+      array('synonym_id' => array('fk_table' => 'synonym', 'fk_attr' => 'synonym_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -170,7 +188,7 @@ class CHADO_FEATURE_SYNONYM  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

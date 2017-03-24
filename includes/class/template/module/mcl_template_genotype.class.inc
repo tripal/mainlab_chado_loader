@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_GENOTYPE extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -176,7 +176,7 @@ class MCL_TEMPLATE_GENOTYPE extends MCL_TEMPLATE {
       $nd_experiment->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
       // Adds a stock.
-      $nd_experiment->addStock($this, $sample);
+      $nd_experiment->addStock($this, $sample, '');
 
       // Adds evaluators.
       $nd_experiment->addContact($this, $line['experimenter'], "[;]");

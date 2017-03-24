@@ -7,7 +7,7 @@
  * The declaration of CHADO_EIMAGEPROP class.
  *
  */
-class CHADO_EIMAGEPROP  {
+class CHADO_EIMAGEPROP  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_EIMAGEPROP.
@@ -97,6 +97,23 @@ class CHADO_EIMAGEPROP  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('eimage_id' => array('fk_table' => 'eimage', 'fk_attr' => 'eimage_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -163,7 +180,7 @@ class CHADO_EIMAGEPROP  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

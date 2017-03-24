@@ -48,6 +48,19 @@ function mcl_form($form, &$form_state) {
   // Adds the link to the list of drush commands.
   if (user_access('admin_mcl')) {
     $items[] = l('Drush commands', '/mcl/drush');
+    $items []= array(
+      'data' => 'Data Queries',
+      'children' => array(
+        array(
+          'data' => l('Feature', '/mcl/data_query/feature'),
+          'style' => array('list-style-type:disc;'),
+        ),
+        array(
+          'data' => l('Stock', '/mcl/data_query/stock'),
+          'style' => array('list-style-type:disc;'),
+        ),
+      ),
+    );
   }
   $form['mcl']['page_link'] = array(
     '#markup' => theme('item_list', array('items' => $items)),

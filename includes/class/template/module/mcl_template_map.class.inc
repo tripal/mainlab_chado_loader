@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -87,7 +87,7 @@ class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
     MCL_CHADO_FEATUREMAP::checkMapUnit($this, $line['map_unit']);
 
     // Checks stock.
-    MCL_CHADO_STOCK::checkStock($this, $line['population_name'], $line['genus'], $line['species'], "[,;]");
+    MCL_CHADO_STOCK::checkStock($this, $line['population_name'], '', '', "[,;]");
 
     // Checks contacts.
     MCL_CHADO_CONTACT::checkContact($this, $line['contact'], '[;]');
@@ -119,7 +119,7 @@ class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
       $map->addOrganism($this, $line['genus'], $line['species'], "[,;]");
 
       // Adds stocks.
-      $map->addStock($this, $line['population_name'], $line['genus'], $line['species'], "[,;]");
+      $map->addStock($this, $line['population_name'], '', '', "[,;]");
 
       // Adds contacts.
       $map->addContact($this, $line['contact'], "[;]");

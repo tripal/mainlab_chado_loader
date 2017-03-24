@@ -139,6 +139,7 @@ class MCL_JOB_MANAGER  {
     $lock_file = $mcl_job->getJobDir() . '/run.lock';
     $fp = fopen($lock_file, 'w+');
     if (flock($fp, LOCK_EX|LOCK_NB)) {
+      chmod($lock_file, 0777);
       mcl_print("Processing job : " . $mcl_job->getName() . " [" . $mcl_job->getJobID() . "]", 1, 2);
 
       // Clears previous log files.

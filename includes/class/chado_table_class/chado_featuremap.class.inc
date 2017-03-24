@@ -7,7 +7,7 @@
  * The declaration of CHADO_FEATUREMAP class.
  *
  */
-class CHADO_FEATUREMAP  {
+class CHADO_FEATUREMAP  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_FEATUREMAP.
@@ -94,6 +94,31 @@ class CHADO_FEATUREMAP  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('unittype_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'featuremap_id' => array(
+        array('table' => 'featuremap_contact', 'attr' => 'featuremap_id'),
+        array('table' => 'featuremap_organism', 'attr' => 'featuremap_id'),
+        array('table' => 'featuremap_pub', 'attr' => 'featuremap_id'),
+        array('table' => 'featuremap_stock', 'attr' => 'featuremap_id'),
+        array('table' => 'featuremapprop', 'attr' => 'featuremap_id'),
+        array('table' => 'featurepos', 'attr' => 'featuremap_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -158,7 +183,7 @@ class CHADO_FEATUREMAP  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

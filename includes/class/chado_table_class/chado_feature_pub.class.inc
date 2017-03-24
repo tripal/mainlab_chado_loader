@@ -7,7 +7,7 @@
  * The declaration of CHADO_FEATURE_PUB class.
  *
  */
-class CHADO_FEATURE_PUB  {
+class CHADO_FEATURE_PUB  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_FEATURE_PUB.
@@ -91,6 +91,23 @@ class CHADO_FEATURE_PUB  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('feature_id' => array('fk_table' => 'feature', 'fk_attr' => 'feature_id')),
+      array('pub_id' => array('fk_table' => 'pub', 'fk_attr' => 'pub_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +172,7 @@ class CHADO_FEATURE_PUB  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

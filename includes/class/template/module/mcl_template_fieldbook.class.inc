@@ -1,13 +1,13 @@
 <?php
 /**
- * The declaration of MCL_TEMPLATE_FIELD_BOOK class.
+ * The declaration of MCL_TEMPLATE_FIELDBOOK class.
  *
  */
-class MCL_TEMPLATE_FIELD_BOOK extends MCL_TEMPLATE {
+class MCL_TEMPLATE_FIELDBOOK extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -30,7 +30,7 @@ class MCL_TEMPLATE_FIELD_BOOK extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::defineDescription()
    */
   public function defineDescription() {
-    $desc = 'The description for field book sheet';
+    $desc = 'The description for fieldbook sheet';
     return $desc;
   }
 

@@ -7,7 +7,7 @@
  * The declaration of CHADO_STOCKPROP class.
  *
  */
-class CHADO_STOCKPROP  {
+class CHADO_STOCKPROP  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_STOCKPROP.
@@ -97,6 +97,23 @@ class CHADO_STOCKPROP  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('stock_id' => array('fk_table' => 'stock', 'fk_attr' => 'stock_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -165,7 +182,7 @@ class CHADO_STOCKPROP  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

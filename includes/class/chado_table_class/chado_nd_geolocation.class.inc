@@ -7,7 +7,7 @@
  * The declaration of CHADO_ND_GEOLOCATION class.
  *
  */
-class CHADO_ND_GEOLOCATION  {
+class CHADO_ND_GEOLOCATION  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_ND_GEOLOCATION.
@@ -100,6 +100,26 @@ class CHADO_ND_GEOLOCATION  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return NULL;
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'nd_geolocation_id' => array(
+        array('table' => 'feature_nd_geolocation', 'attr' => 'nd_geolocation_id'),
+        array('table' => 'nd_experiment', 'attr' => 'nd_geolocation_id'),
+        array('table' => 'nd_geolocationprop', 'attr' => 'nd_geolocation_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -168,7 +188,7 @@ class CHADO_ND_GEOLOCATION  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

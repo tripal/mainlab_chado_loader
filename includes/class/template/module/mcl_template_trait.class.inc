@@ -5,15 +5,9 @@
  */
 class MCL_TEMPLATE_TRAIT extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
-  public $valid_trait_categories = array(
-    'biochemical trait', 'growth and development trait',
-    'anatomy and morphology trait', 'quality trait', 'stature or vigor trait',
-    'sterility or fertility trait', 'stress trait', 'yield trait', 'physiological trait',
-  );
-
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -60,14 +54,6 @@ class MCL_TEMPLATE_TRAIT extends MCL_TEMPLATE {
     $cvterms = array();
     $cvterms['SITE_CV']['abbreviation'] = -1;
     $cvterms['relationship']['is_a']    = -1;
-    $cvterms['SITE_TRAIT_ONTOLOGY']['biochemical trait']            = -1;
-    $cvterms['SITE_TRAIT_ONTOLOGY']['growth and development trait'] = -1;
-    $cvterms['SITE_TRAIT_ONTOLOGY']['anatomy and morphology trait'] = -1;
-    $cvterms['SITE_TRAIT_ONTOLOGY']['quality trait']                = -1;
-    $cvterms['SITE_TRAIT_ONTOLOGY']['stature or vigor trait']       = -1;
-    $cvterms['SITE_TRAIT_ONTOLOGY']['sterility or fertility trait'] = -1;
-    $cvterms['SITE_TRAIT_ONTOLOGY']['stress trait']                 = -1;
-    $cvterms['SITE_TRAIT_ONTOLOGY']['yield trait']                  = -1;
     return $cvterms;
   }
 
@@ -76,8 +62,10 @@ class MCL_TEMPLATE_TRAIT extends MCL_TEMPLATE {
    */
   public function runErrorCheckDataLine($line) {
 
-    // Checks for trait category.
-    MCL_CHADO_TRAIT::checkCategory($this, $line['trait_category']);
+    // Checks for the trait category.
+    if (!MCL_DATA_VALID_TYPE::validate('trait_category', $line['trait_category'])) {
+      $this->updateMsg('E', 'Invalid trait category : ' . $line['trait_category']);
+    }
   }
 
   /**

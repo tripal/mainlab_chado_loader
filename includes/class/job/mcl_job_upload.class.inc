@@ -35,8 +35,23 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     if ($file_id) {
       $this->upload_file = MCL_FILE::byKey(array('file_id' => $file_id));
     }
+
+    // Sets job properties.
     $this->force = $this->getPropByKey('force');
     $this->csv_dir = $this->getPropByKey('csv_dir');
+
+    // Creates folders for CSV files.
+    if ($this->csv_dir && !file_exists($this->csv_dir)) {
+      mcl_create_dir($this->csv_dir);
+    }
+
+    // Resets 'columns' in job properties.
+    $this->setPropByKey('columns', array());
+
+    // Resets new log files.
+    if ($this->job_id) {
+      $this->resetNewLogFiles();
+    }
   }
 
   /**
@@ -55,7 +70,6 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
    */
   public function insert() {
     if (parent::insert()) {
-
       // Creates folders for CSV files.
       $csv_dir = $this->job_dir . '/csv';
       if (!file_exists($csv_dir)) {
@@ -203,11 +217,9 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         mcl_print("-- Log file ($status-$type) for $template created", 2);
         fclose($fdw);
 
-        // Copies new data log to 'new_data' directory.
+        // Keeps the all logs for new data for later use.
         if ($type == 'N') {
-          $new_data_log = "$dir_new_data/$template-" . date("Y-m-d-G-i-s") . '.log';
-          $cmd = "cp $filepath $new_data_log";
-          exec($cmd);
+          $this->addNewLogFile($template, $filepath);
         }
       }
     }
@@ -223,6 +235,50 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       mcl_print("[$template] Error found at job status = $status ($label)", 1);
     }
     return !$error_flag;
+  }
+
+  /**
+   * Adds a filepath of a log file for new data.
+   *
+   * @param string $template
+   * @param string $filepath
+   *
+   * @return boolean
+   */
+  public function addNewLogFile($template, $filepath) {
+
+    // Gets the new data logs.
+    $new_data_logs = $this->getPropByKey('new_data_logs');
+    if ($new_data_logs) {
+      $new_data_logs[$template]= $filepath;
+    }
+    else {
+      $new_data_logs = array($template => $filepath);
+    }
+    $this->setPropByKey('new_data_logs', $new_data_logs);
+    return $this->update();
+  }
+
+  /**
+   * Returns an array of the filepaths of logs file for new data.
+   *
+   * @return array
+   */
+  public function getNewLogFiles() {
+
+    // Gets the new data logs.
+    $new_data_logs = $this->getPropByKey('new_data_logs');
+    if (!$new_data_logs) {
+      $new_data_logs = array();
+    }
+    return $new_data_logs;
+  }
+
+  /**
+   * Resets log files for new data.
+   */
+  public function resetNewLogFiles() {
+    $this->setPropByKey('new_data_logs', '');
   }
 
   /**
@@ -288,8 +344,16 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
    */
   public function run() {
 
+    // Sets the transaction.
+    $transaction = NULL;
+    $trans = $this->getTransaction();
+    if ($trans) {
+      $transaction = db_transaction();
+    }
+
     // Runs uploading job.
     try {
+      $this->resetProgress();
       $job_id = $this->getJobID();
 
       // Initializes the job.
@@ -366,7 +430,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         $this->setStatus(100);
         $this->update();
         $this->sendCompleteEmail();
-        $this->setProgress('');
+        $this->setProgress('COMPLETED');
       }
     }
     catch (Exception $e) {
@@ -374,13 +438,31 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       // Sends an error notifiation email.
       $this->sendError();
 
+      // If error occurs, rollbacks transactions.
+      if ($transaction) {
+        $transaction->rollback();
+      }
+
       // Sets the status as 'FAILED'
       $this->setStatus(-200);
       $this->update();
+      $this->setProgress('FAILED');
 
       // Keeps the error message.
       watchdog('mcl', $e->getMessage(), array(), WATCHDOG_ERROR);
       return FALSE;
+    }
+
+    // No error has occured. So copy the logs file for new data.
+    $new_log_files = $this->getNewLogFiles();
+    if ($new_log_files) {
+      $date_str = date("Y-m-d-G-i-s");
+      $dir_new_data = $this->getNewDataLogDir();
+      foreach ($new_log_files as $template => $log_file) {
+        $new_data_log = "$dir_new_data/$template" . '-' . $date_str . '.log';
+        $cmd = "cp $log_file $new_data_log";
+        exec($cmd);
+      }
     }
     return TRUE;
   }
@@ -396,22 +478,13 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     $err_msg = '';
 
     // Sends a syntax error email.
-    if ($this->status == 30) {
-
-
-    }
+    if ($this->status == 30) {}
 
     // Sends a data uploading error email.
-    else if ($this->status == 40) {
-
-
-    }
+    else if ($this->status == 40) {}
 
     // Sends a data uploading error email.
-    else if ($this->status == 50) {
-
-
-    }
+    else if ($this->status == 50) {}
 
     // Sends an error message.
     if ($err_msg) {
@@ -555,11 +628,13 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
    */
   private function _convertExcel2CSV($filepath) {
 
-
     // Includes PHPExcel libararies.
     $lib_path = 'sites/all/libraries';
     require_once("$lib_path/PHPExcel/PHPExcel.php");
     require_once("$lib_path/PHPExcel/PHPExcel/IOFactory.php");
+
+    // Sets the line ending.
+    $line_ending = '&&&&&';
 
     // Gets Excel file type [Excel5 | ].
     $file_type = PHPExcel_IOFactory::identify($filepath);
@@ -572,6 +647,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     $reader->setReadDataOnly(true);
     $excel = $reader->load($filepath);
     $num_sheets = $excel->getSheetCount();
+    print "\tExcel has $num_sheets sheets\n\n";
 
     // Re-set the precision. It seems that PHPExcel change the precision.
     ini_set('precision', $def_precision);
@@ -592,6 +668,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     for ($i = 0; $i < $num_sheets; $i++) {
       $excel->setActiveSheetIndex($i);
       $template = strtolower($excel->getActiveSheet()->getTitle());
+      print "\tcopying $template\n\n";
 
       // Renames the template if necessary.
       if (array_key_exists($template, $template_map)) {
@@ -615,11 +692,39 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
 
         // Write to a CSV file.
         $writer->setSheetIndex($i);
+        $writer->setLineEnding($line_ending);
         $writer->save($csv_filepath);
 
-        // Adds the template name at begining of the file.
+        // Replace newline characters in cell value with white spaces.
         $file_contents = file_get_contents($csv_filepath);
-        file_put_contents($csv_filepath, "#$template\n" . $file_contents);
+        $file_contents = str_replace("\n", ' ', $file_contents);
+        $file_contents = str_replace($line_ending, "\n", $file_contents);
+        file_put_contents($csv_filepath,  $file_contents);
+
+        // Opens the cvs file.
+        if (!($fdr = fopen($csv_filepath, 'r'))) {
+          return FALSE;
+        }
+
+        // Adds the template name at begining of the file.
+        $file_contents = "#$template\n";
+
+        // Cleanup the contents of the file.
+        while (!feof($fdr)) {
+          $line = trim(fgets($fdr));
+
+          // Exits if no data in the line.
+          $check = preg_replace("/[\",\s]/", '', $line);
+          if ($check == '') {
+            break;
+          }
+          // Adds the data line.
+          $file_contents .= "$line\n";
+        }
+        fclose($fdr);
+
+        // Updates the contents of the file.
+        file_put_contents($csv_filepath,  $file_contents);
 
         // Creates MCL_FILE if not exists.
         if (!$this->existCSV($template)) {
@@ -698,6 +803,15 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     if (!is_array($csv_files)) {
       $csv_files = array();
     }
+
+    // Removes if exists.
+    foreach ($csv_files as $file_id => $csv_filename) {
+      if ($csv_filename == $csv_file->getFilename()) {
+        unset($csv_files[$file_id]);
+      }
+    }
+
+    // Updates $this->csv_files.
     $csv_files[$csv_file->getFileID()] = $csv_file->getFilename();
     $this->setPropByKey('csv_files', $csv_files);
     return $this->update();
@@ -724,18 +838,21 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       $csv_file = MCL_FILE_CSV::byKey(array('file_id' => $mcl_file_id));
 
       // Skips if the error checking has been completed.
-      /*
       if ($csv_file->hasPassed($this->status_int['syntax error']) && !$this->getForce()) {
-        mcl_print("Skipped - Syntax error has already been checked", 3, 2);
+        mcl_print("  > Skipped - Syntax error has already been checked", 2, 2);
         continue;
       }
-      */
 
       // Resets the logs.
       $this->resetLogs($csv_file->getTemplate());
 
       // Runs the syntax error checking.
       $tmpl_obj = MCL_TEMPLATE::getTemplateClass($this, $csv_file);
+      if (!$tmpl_obj) {
+        $no_error_flag = FALSE;
+        mcl_print("Cannot found template class", 2, 2);
+        continue;
+      }
       $this->setProgress("Running syntax error check for " . $tmpl_obj->getTemplate());
       if ($tmpl_obj->runErrorCheckSyntax()) {
         $csv_file->setPassed($this->status_int['syntax error'], TRUE);
@@ -789,16 +906,16 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       // completed.
       mcl_print("[$mcl_file_id] $filename", 1);
       mcl_print("- Running the data error checking", 2);
-//      if ($csv_file->hasPassed($this->status_int['data error']) && !$this->getForce()) {
-//        mcl_print("Skipped - Data error has already been checked", 3, 2);
-//      }
-//      else {
+      if ($csv_file->hasPassed($this->status_int['data error']) && !$this->getForce()) {
+        mcl_print("  > Skipped - Data error has already been checked", 2, 2);
+      }
+      else {
 
         // Runs the data error checking.
         $this->setProgress("Running data error check for " . $tmpl_obj->getTemplate());
         if ($tmpl_obj->runErrorCheckData()) {
           $csv_file->setPassed($this->status_int['data error'], TRUE);
-          mcl_print("Data error check passed", 3, 2);
+          mcl_print("Data error check passed", 2, 2);
         }
         $this->setProgress("Done data error check for " . $tmpl_obj->getTemplate());
 
@@ -808,36 +925,26 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
           $this->writeLog();
           return FALSE;
         }
-//      }
+      }
 
       // Uploads CSV data file.
       mcl_print("- Uploading data file", 2);
 
       // Skips if the data has been uploaded.
-      /*
-      if ($csv_file->hasPassed($this->status_int['uploading'])) {
-        mcl_print("Skipped - Data has already been uploaded", 3, 2);
+      if ($csv_file->hasPassed($this->status_int['uploading']) && !$this->getForce()) {
+        mcl_print("  > Skipped - Data has already been uploaded", 2, 2);
         continue;
-      }*/
+      }
 
       // Upload the data file.
-      $trans = $this->getTransaction();
-      if ($trans) {
-        $transaction = db_transaction();
-      }
       $this->setProgress("Uploading data for " . $tmpl_obj->getTemplate());
       if ($tmpl_obj->uploadData()) {
-        //$csv_file->setPassed($this->status_int['uploading'], TRUE);
-        mcl_print("Data has been uploaded for $template", 3, 2);
-        $this->setProgress("Done uploading data for " . $tmpl_obj->getTemplate());
+        $csv_file->setPassed($this->status_int['uploading'], TRUE);
+        mcl_print("Data have been uploaded to $template", 2, 2);
+        $this->setProgress("Done uploading data to " . $tmpl_obj->getTemplate());
       }
       else {
         $this->setProgress("Failed to upload data for " . $tmpl_obj->getTemplate());
-
-        // If error occurs, rollbacks transaction for this CSV file.
-        if ($trans) {
-          $transaction->rollback();
-        }
 
         // Detetes the log for new data.
         $this->deleteMsg('N');
@@ -871,14 +978,25 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       // Gets the rank of csv file.
       $mcl_file_csv = MCL_FILE_CSV::byKey(array('file_id' => $file_id));
       $rank = MCL_TEMPLATE::getRank($mcl_file_csv->getTemplate());
-      $info = array('csv_filename' => $csv_filename, 'file_id' => $file_id);
-      $csv_files_unsorted[$rank] = $info;
+      $info = array(
+        'file_id'       => $file_id,
+        'csv_filename'  => $csv_filename,
+        'rank' => $rank
+      );
+      $csv_files_unsorted[] = $info;
     }
 
     // Sorts CSV files.
-    ksort($csv_files_unsorted);
+    usort($csv_files_unsorted,
+      function($a, $b) {
+        if ($a['rank'] == $b['rank']) {
+          return $a['csv_filename'] < $b['csv_filename'];
+        }
+        return $a['rank'] > $b['rank'];
+      }
+    );
     $csv_files_sorted = array();
-    foreach ($csv_files_unsorted as $rank => $info) {
+    foreach ($csv_files_unsorted as  $info) {
       $csv_files_sorted[$info['file_id']] = $info['csv_filename'];
     }
     return $csv_files_sorted;
@@ -897,10 +1015,12 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     $csv_files = $this->getPropByKey('csv_files');
     if (is_array($csv_files)) {
       foreach ($csv_files as $file_id => $csv_filename) {
-        $csv_file     = MCL_FILE_CSV::byKey(array('file_id' => $file_id));
-        $csv_template = $csv_file->getTemplate();
-        if ($template == $csv_file->getTemplate()) {
-          return TRUE;
+        $csv_file = MCL_FILE_CSV::byKey(array('file_id' => $file_id));
+        if ($csv_file) {
+          $csv_template = $csv_file->getTemplate();
+          if ($template == $csv_file->getTemplate()) {
+            return TRUE;
+          }
         }
       }
     }
@@ -1014,7 +1134,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     if (!empty($log_files)) {
 
       // Sort by date-time.
-     // usort($log_files, $this->_cmpDate);
+      // usort($log_files, $this->_cmpDate);
       $all_logs['N']['40'] = $log_files;
     }
     return $all_logs;

@@ -7,7 +7,7 @@
  * The declaration of CHADO_EIMAGE class.
  *
  */
-class CHADO_EIMAGE  {
+class CHADO_EIMAGE  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_EIMAGE.
@@ -94,6 +94,25 @@ class CHADO_EIMAGE  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return NULL;
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'eimage_id' => array(
+        array('table' => 'eimageprop', 'attr' => 'eimage_id'),
+        array('table' => 'feature_image', 'attr' => 'eimage_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -160,7 +179,7 @@ class CHADO_EIMAGE  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

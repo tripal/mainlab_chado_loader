@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */

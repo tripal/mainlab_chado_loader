@@ -41,8 +41,10 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    * @param string $uniquename
    * @param integer $type_id
    * @param integer $organism_id
+   *
+   * @return boolean
    */
-  public static function checkLibrary(MCL_TEMPLATE $mcl_tmpl, $uniquename, $type_id, $organism_id = NULL) {
+  public static function checkLibrary(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $type_id, $organism_id = NULL) {
     if ($uniquename && $type_id) {
 
       // Updates the organism_id if not provided.
@@ -53,14 +55,11 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
       // Gets the library.
       $mcl_library = MCL_CHADO_LIBRARY::getLibrary($uniquename, $type_id, $organism_id);
       if (!$mcl_library) {
-        $args = array(
-          'uniquename'  => $uniquename,
-          'type_id'     => $type_id,
-          'organism_id' => $organism_id,
-        );
-         $mcl_tmpl->updateMsg('E', $mcl_tmpl->arrStr($args) . " not found in library");
+         self::updateMsg($mcl_tmpl, 'E', "(uniquename, type_id, organism_id) = ($uniquename, $type_id, $organism_id) not found in library");
+         return FALSE;
       }
     }
+    return TRUE;
   }
 
   /**
@@ -83,7 +82,7 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
       'type_id'     => $type_id,
       'organism_id' => $organism_id,
     );
-    return  MCL_CHADO_LIBRARY::bykey($keys);
+    return MCL_CHADO_LIBRARY::bykey($keys);
   }
 
   /**
@@ -95,7 +94,7 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    *
    * @return MCL_CHADO_LIBRARY
    */
-  public static function addLibrary(MCL_TEMPLATE $mcl_tmpl, $uniquename, $type_id, $organism_id = NULL) {
+  public static function addLibrary(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $type_id, $organism_id = NULL) {
 
     // Updates the organism_id if not provided.
     if (!$organism_id) {
@@ -110,14 +109,14 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
     );
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
     $mcl_library = MCL_CHADO_LIBRARY::byKey($args);
     if ($mcl_library) {
-      $mcl_tmpl->addMsg('D', 'library', $args);
+      self::addMsg($mcl_tmpl, 'D', 'library', $args);
     }
     else {
 
@@ -125,10 +124,11 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
       $args['name']  = $uniquename;
       $mcl_library = new MCL_CHADO_LIBRARY($args);
       if ($mcl_library->insert()) {
-        $mcl_tmpl->addMsg('N', 'library', $args);
+        self::addMsg($mcl_tmpl, 'N', 'library', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'library', $args);
+        self::addMsg($mcl_tmpl, 'E', 'library', $args);
+        return NULL;
       }
     }
     return $mcl_library;
@@ -142,10 +142,15 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    * @param string $cvterm_name
    * @param string $value
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name, $value, $separator = '') {
-    $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
-    $mcl_tmpl->addProperty('libraryprop', 'library_id', $this->library_id, $type_id, $value, $separator);
+  public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
+    if ($value) {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->addProperty($mcl_tmpl, 'libraryprop', 'library_id', $this->library_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -153,32 +158,36 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param MCL_CHADO_SYNONYM $mcl_synonym
+   *
+   * @return boolean
    */
-  public function addSynonym(MCL_TEMPLATE $mcl_tmpl, MCL_CHADO_SYNONYM $mcl_synonym) {
+  public function addSynonym(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_SYNONYM $mcl_synonym) {
     if ($mcl_synonym) {
 
       // Checks for duplication.
       $args = array(
-          'synonym_id'  => $mcl_synonym->getSynonymID(),
-          'library_id'  => $this->library_id,
-          'pub_id'      => MCL_VAR::getValueByName('PUB_ID'),
+        'synonym_id'  => $mcl_synonym->getSynonymID(),
+        'library_id'  => $this->library_id,
+        'pub_id'      => MCL_VAR::getValueByName('PUB_ID'),
       );
       $chado_library_synonym = CHADO_LIBRARY_SYNONYM::byKey($args);
       if ($chado_library_synonym) {
-        $mcl_tmpl->addMsg('D', 'library_synonym', $args);
+        $this->addMsg($mcl_tmpl, 'D', 'library_synonym', $args);
       }
       else {
 
         // Adds a new relationship.
         $chado_library_synonym = new CHADO_LIBRARY_SYNONYM($args);
         if ($chado_library_synonym->insert()) {
-          $mcl_tmpl->addMsg('N', 'library_synonym', $args);
+          $this->addMsg($mcl_tmpl, 'N', 'library_synonym', $args);
         }
         else {
-          $mcl_tmpl->addMsg('E', 'library_synonym', $args);
+          $this->addMsg($mcl_tmpl, 'E', 'library_synonym', $args);
+          return FALSE;
         }
       }
     }
+    return TRUE;
   }
 
   /**
@@ -187,18 +196,27 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $contact
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addContact(MCL_TEMPLATE $mcl_tmpl, $contact, $separator = '') {
+  public function addContact(MCL_TEMPLATE $mcl_tmpl = NULL, $contact, $separator = '') {
+    $flag = TRUE;
     if ($contact) {
-      $names = preg_split($mcl_tmpl->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
+      $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
         $mcl_contact = MCL_CHADO_CONTACT::byKey(array('name' => $name));
         if ($mcl_contact) {
-          $mcl_tmpl->addLink('library_contact', 'library_id', $this->library_id, 'contact_id', $mcl_contact->getContactID());
+          if (!$this->addLink($mcl_tmpl, 'library_contact', 'library_id', $this->library_id, 'contact_id', $mcl_contact->getContactID())) {
+            $flag = FALSE;
+          }
+        }
+        else {
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   }
 
   /**
@@ -207,17 +225,25 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $reference
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addReference(MCL_TEMPLATE $mcl_tmpl, $reference, $separator = '') {
+  public function addReference(MCL_TEMPLATE $mcl_tmpl = NULL, $reference, $separator = '') {
+    $flag = TRUE;
     if ($reference) {
-      $pub_ids = preg_split($mcl_tmpl->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
+      $pub_ids = preg_split($this->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);
         $mcl_pub = MCL_CHADO_PUB::getPub($pub_id);
         if ($mcl_pub) {
-          $mcl_tmpl->addLink('library_pub', 'library_id', $this->library_id, 'pub_id', $pub_id);
+          $this->addLink($mcl_tmpl, 'library_pub', 'library_id', $this->library_id, 'pub_id', $pub_id);
+        }
+        else {
+          $this->updateMsg($mcl_tmpl, 'E', "(pub_id) = ($pub_id) not found in pub");
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   }
 }

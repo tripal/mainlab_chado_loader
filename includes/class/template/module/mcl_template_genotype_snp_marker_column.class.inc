@@ -45,8 +45,8 @@ class MCL_TEMPLATE_GENOTYPE_SNP_MARKER_COLUMN extends MCL_TEMPLATE {
     $headers = array(
       'dataset_name'  => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the genotyping dataset. It should match a dataset_name in 'Dataset' sheet."),
       'stock_name'    => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the stock genotyped. It should match an 'stock_name' of the 'Stock' sheet."),
-      'genus'         => array('req' => TRUE,  'width' => 10, 'desc' => "Genus of the stock"),
-      'species'       => array('req' => TRUE,  'width' => 10, 'desc' => "Species of the stock"),
+      'genus'         => array('req' => FALSE, 'width' => 10, 'desc' => "Genus of the stock"),
+      'species'       => array('req' => FALSE, 'width' => 10, 'desc' => "Species of the stock"),
       '$marker_name'  => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns ($) : followed by marker name"),
     );
     return $headers;
@@ -93,6 +93,7 @@ class MCL_TEMPLATE_GENOTYPE_SNP_MARKER_COLUMN extends MCL_TEMPLATE {
 
     // Adds genotype_call for each marker.
     $marker_cols = $this->getJob()->getParamByKey('marker_cols');
+
     foreach ($marker_cols as $marker_name => $feature_id) {
 
       // Adds genotype.
@@ -120,7 +121,7 @@ class MCL_TEMPLATE_GENOTYPE_SNP_MARKER_COLUMN extends MCL_TEMPLATE {
   private function _checkMarkers($line) {
 
     // This should be called once.
-    if ($line['line_no'] != 3) {
+    if ($line['line_no'] != 3 || $this->getJob()->getParamByKey('marker_cols')) {
       return;
     }
 

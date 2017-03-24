@@ -15,7 +15,6 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   protected $job_dir      = NULL;
   protected $log_dir      = NULL;
   protected $file_dir     = NULL;
-  protected $progress     = NULL;
   protected $pid          = NULL;
 
   // Message types.
@@ -93,10 +92,6 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     if ($file_dir) {
       $this->file_dir = $file_dir;
     }
-    $progress = $this->getPropByKey('progress');
-    if ($progress) {
-      $this->progress = $progress;
-    }
     $pid = $this->getPropByKey('pid');
     if ($pid) {
       $this->pid = $pid;
@@ -153,7 +148,6 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
       $this->setPropByKey('job_dir', $this->job_dir);
       $this->setPropByKey('log_dir', $this->log_dir);
       $this->setPropByKey('file_dir', $this->file_dir);
-      $this->setPropByKey('progress', $this->progress);
       $this->setPropByKey('pid', $this->pid);
       $this->update();
 
@@ -385,6 +379,57 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     return $this->msg_types[$type];
   }
 
+  /**
+   * Resets the progress file.
+   */
+  public function resetProgress() {
+    $progress_file = $this->getJobDir() . '/progress';
+    if (file_exists($progress_file)) {
+      unlink($progress_file);
+    }
+
+    // Creates a progress file.
+    file_put_contents($progress_file, 'RESET PROGRESS');
+  }
+
+  /**
+   * Retrieves the progress of the job.
+   *
+   * @retrun string
+   */
+  public function getProgress() {
+
+    // Gets the process file.
+    $progress_file = $this->getJobDir() . '/progress';
+    if (file_exists($progress_file)) {
+      return file_get_contents($progress_file);
+    }
+    else {
+      return 'No progress report.';
+    }
+  }
+
+  /**
+   * Updates the progress of the job.
+   *
+   * @param string $progress
+   * @param boolean $append
+   */
+  public function setProgress($progress, $append = FALSE) {
+
+    // Gets the process file.
+    $progress_file = $this->getJobDir() . '/progress';
+
+    // Appends the previous message.
+    $old_progress = '';
+    if ($append) {
+      if (file_exists($progress_file)) {
+        $old_progress = file_get_contents($progress_file) . "\n";
+      }
+    }
+    file_put_contents($progress_file, $old_progress . $progress);
+  }
+
   /*
    * Defines getters and setters below.
    */
@@ -511,7 +556,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   }
 
   /**
-   * Retrieves the progress ID.
+   * Retrieves the process ID.
    *
    * @retrun integer
    */
@@ -520,37 +565,13 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   }
 
   /**
-   * Updates the progress ID.
+   * Updates the process ID.
    *
    * @param integer $pid
    */
   public function setPID($pid) {
     $this->pid = $pid;
     $this->setPropByKey('pid', $pid);
-    $this->update();
-  }
-
-  /**
-   * Retrieves the progress of the job.
-   *
-   * @retrun string
-   */
-  public function getProgress() {
-    return $this->progress;
-  }
-
-  /**
-   * Updates the progress of the job.
-   *
-   * @param string $progress
-   * @param boolean $append
-   */
-  public function setProgress($progress, $append = FALSE) {
-    $new_progress = $progress;
-    if ($append) {
-      $new_progress = $this->progress . '<br />' . $progress;
-    }
-    $this->setPropByKey('progress', $new_progress);
     $this->update();
   }
 

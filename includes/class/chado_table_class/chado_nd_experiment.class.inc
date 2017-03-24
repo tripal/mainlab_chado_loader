@@ -7,7 +7,7 @@
  * The declaration of CHADO_ND_EXPERIMENT class.
  *
  */
-class CHADO_ND_EXPERIMENT  {
+class CHADO_ND_EXPERIMENT  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_ND_EXPERIMENT.
@@ -91,6 +91,33 @@ class CHADO_ND_EXPERIMENT  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('nd_geolocation_id' => array('fk_table' => 'nd_geolocation', 'fk_attr' => 'nd_geolocation_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'nd_experiment_id' => array(
+        array('table' => 'nd_experiment_contact', 'attr' => 'nd_experiment_id'),
+        array('table' => 'nd_experiment_genotype', 'attr' => 'nd_experiment_id'),
+        array('table' => 'nd_experiment_phenotype', 'attr' => 'nd_experiment_id'),
+        array('table' => 'nd_experiment_project', 'attr' => 'nd_experiment_id'),
+        array('table' => 'nd_experiment_pub', 'attr' => 'nd_experiment_id'),
+        array('table' => 'nd_experiment_stock', 'attr' => 'nd_experiment_id'),
+        array('table' => 'nd_experimentprop', 'attr' => 'nd_experiment_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +182,7 @@ class CHADO_ND_EXPERIMENT  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

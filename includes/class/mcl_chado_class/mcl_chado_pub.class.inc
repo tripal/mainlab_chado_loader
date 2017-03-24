@@ -41,20 +41,25 @@ class MCL_CHADO_PUB extends CHADO_PUB {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $reference
    * @param string $separator
+   *
+   * @return boolean
    */
-  public static function checkPUB(MCL_TEMPLATE $mcl_tmpl, $reference, $separator) {
+  public static function checkPUB(MCL_TEMPLATE $mcl_tmpl = NULL, $reference, $separator) {
+    $flag = TRUE;
     if ($reference) {
 
       // Checks the pub.
-      $pub_ids = preg_split($mcl_tmpl->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
+      $pub_ids = preg_split(self::getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);
         $pub = MCL_CHADO_PUB::getPub($pub_id);
         if (!$pub) {
-          $mcl_tmpl->updateMsg('E', "(pub_id) = ($pub_id) not found in pub");
+          self::updateMsg($mcl_tmpl, 'E', "(pub_id) = ($pub_id) not found in pub");
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   }
 
   /**

@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -46,6 +46,7 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
       'species'                     => array('req' => TRUE,  'width' => 10, 'desc' => "The species of the phenotyping material."),
       'trait_name'                  => array('req' => TRUE,  'width' => 10, 'desc' => "Descriptive name for trait, it should be one of the crop trait ontology and should match a term in 'Trait' sheet."),
       'trait_descriptor_set'        => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the crop trait ontology (entered by the curator who loads the data into the database). If not provided, the site trait ontology will be used."),
+      'site_name'                   => array('req' => FALSE, 'width' => 10, 'desc' => "It should match 'site_name' in the 'Site' sheet."),
       'alias'                       => array('req' => FALSE, 'width' => 10, 'desc' => "Other names for the trait, multiple aliases, separated by a semicolon (;) can be added."),
       'r2'                          => array('req' => FALSE, 'width' => 10, 'desc' => "Fraction of the total variation explained by the QTLs."),
       'lod'                         => array('req' => FALSE, 'width' => 10, 'desc' => "QTL Likelihood of odds."),
@@ -117,6 +118,9 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
     // Checks trait.
     MCL_CHADO_TRAIT::checkTrait($this, $line['trait_name'], $line['trait_descriptor_set']);
 
+    // Checks site.
+    MCL_CHADO_LOCATION::checkSite($this, $line['site_name']);
+
     // Checks colocalized_markers.
     MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], '', '', $this->cvterms['sequence']['genetic_marker'], '[;,]');
 
@@ -169,10 +173,13 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
       // Adds dataset.
       $qtl->addDataset($this, $line['dataset_name']);
 
-      // Adds colocalized_markers.
+      // Adds site.
+      $qtl->addSite($this, $line['site_name']);
+
+      // Adds colocalized markers.
       $qtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]");
 
-      // Adds neighboring_markers.
+      // Adds neighboring markers.
       $qtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]");
 
       // Adds stocks.

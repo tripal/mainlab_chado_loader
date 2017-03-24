@@ -67,7 +67,7 @@ function _mcl_get_template_table() {
 
     // Skips if the template is not public.
     if ($mcl_template->getPublic() != 1) {
-      //continue;
+      continue;
     }
 
     // Checks if class has been defined.

@@ -35,21 +35,61 @@ class MCL_CHADO_CV extends CHADO_CV {
   }
 
   /**
-   * Checks the existance of cv. If not, write the error messasge
+   * Checks the existance of cv by name. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $name
+   * @param boolean $req
+   *
+   * @return boolean
    */
-  public static function checkCV(MCL_TEMPLATE $mcl_tmpl, $name) {
+  public static function checkCV(MCL_TEMPLATE $mcl_tmpl = NULL, $name, $req = FALSE) {
     if ($name) {
 
       // Gets the cv.
       $mcl_cv = MCL_CHADO_CV::getCV($name);
       if (!$mcl_cv) {
-        $mcl_tmpl->updateMsg('E', "(name) = ($name) not found in cv");
+        self::updateMsg($mcl_tmpl, 'E', "(name) = ($name) not found in cv");
+        return FALSE;
       }
     }
+    else {
+      if ($req) {
+        self::updateMsg($mcl_tmpl, 'E', "name is empty");
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Checks the existance of cv by cv_id. If not, write the error messasge
+   * to the log.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $cv_id
+   * @param boolean $req
+   *
+   * @return boolean
+   */
+  public static function checkCVByID(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_id, $req = FALSE) {
+    if ($cv_id) {
+
+      // Gets the cv.
+      $mcl_cv = MCL_CHADO_CV::byKey(array('cv_id' => $cv_id));
+      if (!$mcl_cv) {
+        self::updateMsg($mcl_tmpl, 'E', "(cv_id) = ($cv_id) not found in cv");
+        return FALSE;
+      }
+    }
+    else {
+      if ($req) {
+        self::updateMsg($mcl_tmpl, 'E', "cv_id is empty");
+        return FALSE;
+      }
+    }
+    return TRUE;
   }
 
   /**
@@ -99,20 +139,20 @@ class MCL_CHADO_CV extends CHADO_CV {
    *
    * return MCL_CHADO_CV
    */
-  public static function addCV(MCL_TEMPLATE $mcl_tmpl, $name, $definition) {
+  public static function addCV(MCL_TEMPLATE $mcl_tmpl = NULL, $name, $definition) {
 
     // Sets the arguments.
     $args = array('name' => $name);
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
     $mcl_cv = MCL_CHADO_CV::byKey($args);
     if ($mcl_cv) {
-      $mcl_tmpl->addMsg('D', 'cv', $args);
+      self::addMsg($mcl_tmpl, 'D', 'cv', $args);
     }
     else {
 
@@ -120,10 +160,11 @@ class MCL_CHADO_CV extends CHADO_CV {
       $args['definition'] = $definition;
       $mcl_cv = new MCL_CHADO_CV($args);
       if ($mcl_cv->insert()) {
-        $mcl_tmpl->addMsg('N', 'cv', $args);
+        self::addMsg($mcl_tmpl, 'N', 'cv', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'cv', $args);
+        self::addMsg($mcl_tmpl, 'E', 'cv', $args);
+        return NULL;
       }
     }
     return $mcl_cv;

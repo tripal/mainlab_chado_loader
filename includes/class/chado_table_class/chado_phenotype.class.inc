@@ -7,7 +7,7 @@
  * The declaration of CHADO_PHENOTYPE class.
  *
  */
-class CHADO_PHENOTYPE  {
+class CHADO_PHENOTYPE  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_PHENOTYPE.
@@ -106,6 +106,29 @@ class CHADO_PHENOTYPE  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('assay_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+      array('attr_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+      array('cvalue_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+      array('observable_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'phenotype_id' => array(
+        array('table' => 'nd_experiment_phenotype', 'attr' => 'phenotype_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -178,7 +201,7 @@ class CHADO_PHENOTYPE  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

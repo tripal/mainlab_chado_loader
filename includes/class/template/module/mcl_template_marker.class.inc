@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -39,40 +39,40 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $headers = array(
-      'marker_name'               => array('req' => TRUE,  'width' => 10, 'desc' =>"Name of the marker."),
-      'marker_type'               => array('req' => FALSE, 'width' => 10, 'desc' =>"Marker type such as SSR, RFLP, RAPD, STS, SCAR, overgo probe and Isozyme. Refer to the available marker_type page for each database."),
-      'genus'                     => array('req' => TRUE,  'width' => 10, 'desc' =>"The genus name of the organism from which the marker was developed."),
-      'species'                   => array('req' => TRUE,  'width' => 10, 'desc' =>"The species name of the organism from which the marker was developed. Enter 'sp.' to represent one unknown species, 'spp.' to represent multiple unknown species."),
-      'alias'                     => array('req' => FALSE, 'width' => 10, 'desc' =>"Other names used for the marker. Multiple aliases, separated by a semicolon (;), can be added."),
-      'marker_sequence'           => array('req' => FALSE, 'width' => 10, 'desc' =>"Sequence of the marker when available. For SNP, it should be in the format of 5'flanking sequence[A/T] 3'flanking sequence."),
-      'gb_id'                     => array('req' => FALSE, 'width' => 10, 'desc' =>"Associated GenBank ID of the marker or the source of the marker (eg. EST)."),
-      'dbsnp_id'                  => array('req' => FALSE, 'width' => 10, 'desc' =>"Associated dbSNP_ID. #ss number should be used."),
-      'five_prime_flanking_seq'   => array('req' => FALSE, 'width' => 10, 'desc' =>"5' flanking sequence of SNP or Indel."),
-      'three_prime_flanking_seq'  => array('req' => FALSE, 'width' => 10, 'desc' =>"3' flanking sequence of SNP or Indel."),
-      'shared_species'            => array('req' => FALSE, 'width' => 10, 'desc' =>"Species names of organisms that have been found to have the same SNP. If there are more than one other species, using ';' to separate."),
-      'repeat_motif'              => array('req' => FALSE, 'width' => 10, 'desc' =>"Repeat motif for SSR markers."),
+      'marker_name'               => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the marker."),
+      'marker_type'               => array('req' => TRUE,  'width' => 10, 'desc' => "Marker type such as SSR, RFLP, RAPD, STS, SCAR, overgo probe and Isozyme. Refer to the available marker_type page for each database."),
+      'genus'                     => array('req' => TRUE,  'width' => 10, 'desc' => "The genus name of the organism from which the marker was developed."),
+      'species'                   => array('req' => TRUE,  'width' => 10, 'desc' => "The species name of the organism from which the marker was developed. Enter 'sp.' to represent one unknown species, 'spp.' to represent multiple unknown species."),
+      'alias'                     => array('req' => FALSE, 'width' => 10, 'desc' => "Other names used for the marker. Multiple aliases, separated by a semicolon (;), can be added."),
+      'marker_sequence'           => array('req' => FALSE, 'width' => 10, 'desc' => "Sequence of the marker when available. For SNP, it should be in the format of 5'flanking sequence[A/T] 3'flanking sequence."),
+      'gb_id'                     => array('req' => FALSE, 'width' => 10, 'desc' => "Associated GenBank ID of the marker or the source of the marker (eg. EST)."),
+      'dbsnp_id'                  => array('req' => FALSE, 'width' => 10, 'desc' => "Associated dbSNP_ID. #ss number should be used."),
+      'five_prime_flanking_seq'   => array('req' => FALSE, 'width' => 10, 'desc' => "5' flanking sequence of SNP or Indel."),
+      'three_prime_flanking_seq'  => array('req' => FALSE, 'width' => 10, 'desc' => "3' flanking sequence of SNP or Indel."),
+      'shared_species'            => array('req' => FALSE, 'width' => 10, 'desc' => "Species names of organisms that have been found to have the same SNP. If there are more than one other species, using ';' to separate."),
+      'repeat_motif'              => array('req' => FALSE, 'width' => 10, 'desc' => "Repeat motif for SSR markers."),
       'snp_chip_name'             => array('req' => FALSE, 'width' => 10, 'desc' => "SNP chip name when SNPs belong to a chip (the name should match 'name' in Library sheet."),
       'snp_chip_id'               => array('req' => FALSE, 'width' => 10, 'desc' => "SNP chip ID if there is a specific ID for the specific SNP chip entered in 'SNP_chip_ID'."),
-      'restriction_enzyme'        => array('req' => FALSE, 'width' => 10, 'desc' =>"Restriction Enzyme used for CAPS marker or other markers that use restriction enzymes."),
-      'product_length'            => array('req' => FALSE, 'width' => 10, 'desc' =>"The PCR product length from the source species of the marker."),
-      'max_length'                => array('req' => FALSE, 'width' => 10, 'desc' =>"The maximum product size that have been observed."),
-      'min_length'                => array('req' => FALSE, 'width' => 10, 'desc' =>"The minimum product size that have been observed."),
-      'is_codominant'             => array('req' => FALSE, 'width' => 10, 'desc' =>"Yes if the marker is codominant, No otherwise."),
-      'pcr_condition'             => array('req' => FALSE, 'width' => 10, 'desc' =>"PCR condition for PCR-based markers."),
-      'screening_method'          => array('req' => FALSE, 'width' => 10, 'desc' =>"Gel type, % etc (eg. 2% agarose) for PCR product visualization and any other screening methods for other types of markers."),
-      'monomorphic_population'    => array('req' => FALSE, 'width' => 10, 'desc' =>"The name of the mapping population of which the marker was monomorphic."),
-      'source_marker_name'        => array('req' => FALSE, 'width' => 10, 'desc' =>"The name of the marker from which the marker is generated (STS, SSR or SCAR markers are often generated from other markers). The detail of the source marker should be given in a separate row."),
-      'source_description'        => array('req' => FALSE, 'width' => 10, 'desc' =>"Whether the marker was developed from the sequence of EST, BAC, cDNA, genomic clone, or WGS."),
-      'indel_seq'                 => array('req' => FALSE, 'width' => 10, 'desc' =>"sequences of indel (eg. ATT)."),
-      'alleles'                   => array('req' => FALSE, 'width' => 10, 'desc' =>"Alleles for the SNP marker (eg. A/T)."),
-      'gel_picture_file_name'     => array('req' => FALSE, 'width' => 10, 'desc' =>"File name of the gel picture if available."),
-      'gel_picture_legend'        => array('req' => FALSE, 'width' => 10, 'desc' =>"Legend of the gel picture if available."),
-      'comments'                  => array('req' => FALSE, 'width' => 10, 'desc' =>"Any comments about the marker."),
-      'variety'                   => array('req' => FALSE, 'width' => 10, 'desc' =>"The variety from which the marker was developed. It should match a 'stock_name' in the Stock sheet."),
-      'image'                     => array('req' => FALSE, 'width' => 10, 'desc' =>"Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
-      'contact'                   => array('req' => FALSE, 'width' => 10, 'desc' =>"Contact person for the marker (Please provide the contact info of these researchers in 'Contact' sheet)."),
-      'reference'                 => array('req' => FALSE, 'width' => 10, 'desc' =>"Reference where the marker is originally described (pub_id), Multiple references, separated by comma, can be added."),
-      '~idendifier'               => array('req' => FALSE, 'width' => 10, 'desc' =>"Special columns (~) : An identifier must be either primer or probe followed by numerical number and name or seq. (e.g.) primer1_seq and primer1_name."),
+      'restriction_enzyme'        => array('req' => FALSE, 'width' => 10, 'desc' => "Restriction Enzyme used for CAPS marker or other markers that use restriction enzymes."),
+      'product_length'            => array('req' => FALSE, 'width' => 10, 'desc' => "The PCR product length from the source species of the marker."),
+      'max_length'                => array('req' => FALSE, 'width' => 10, 'desc' => "The maximum product size that have been observed."),
+      'min_length'                => array('req' => FALSE, 'width' => 10, 'desc' => "The minimum product size that have been observed."),
+      'is_codominant'             => array('req' => FALSE, 'width' => 10, 'desc' => "Yes if the marker is codominant, No otherwise."),
+      'pcr_condition'             => array('req' => FALSE, 'width' => 10, 'desc' => "PCR condition for PCR-based markers."),
+      'screening_method'          => array('req' => FALSE, 'width' => 10, 'desc' => "Gel type, % etc (eg. 2% agarose) for PCR product visualization and any other screening methods for other types of markers."),
+      'monomorphic_population'    => array('req' => FALSE, 'width' => 10, 'desc' => "The name of the mapping population of which the marker was monomorphic."),
+      'source_marker_name'        => array('req' => FALSE, 'width' => 10, 'desc' => "The name of the marker from which the marker is generated (STS, SSR or SCAR markers are often generated from other markers). The detail of the source marker should be given in a separate row."),
+      'source_description'        => array('req' => FALSE, 'width' => 10, 'desc' => "Whether the marker was developed from the sequence of EST, BAC, cDNA, genomic clone, or WGS."),
+      'indel_seq'                 => array('req' => FALSE, 'width' => 10, 'desc' => "sequences of indel (eg. ATT)."),
+      'alleles'                   => array('req' => FALSE, 'width' => 10, 'desc' => "Alleles for the SNP marker (eg. A/T)."),
+      'gel_picture_file_name'     => array('req' => FALSE, 'width' => 10, 'desc' => "File name of the gel picture if available."),
+      'gel_picture_legend'        => array('req' => FALSE, 'width' => 10, 'desc' => "Legend of the gel picture if available."),
+      'comments'                  => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments about the marker."),
+      'variety'                   => array('req' => FALSE, 'width' => 10, 'desc' => "The variety from which the marker was developed. It should match a 'stock_name' in the Stock sheet."),
+      'image'                     => array('req' => FALSE, 'width' => 10, 'desc' => "Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
+      'contact'                   => array('req' => FALSE, 'width' => 10, 'desc' => "Contact person for the marker (Please provide the contact info of these researchers in 'Contact' sheet)."),
+      'reference'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Reference where the marker is originally described (pub_id), Multiple references, separated by comma, can be added."),
+      '~idendifier'               => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (~) : An identifier must be either primer or probe followed by numerical number and name or seq. (e.g.) primer1_seq and primer1_name."),
     );
 
     // Adds labels.
@@ -246,7 +246,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       $marker->addSequence($this, $line, '~primer', $this->cvterms['sequence']['primer'], $this->cvterms['relationship']['adjacent_to']);
 
       // Adds probe sequences.
-      $marker->addSequence($this, $line, '~probe', $this->cvterms['sequence']['probe'], $this->cvterms['sequence']['associated_with']);
+      $marker->addSequence($this, $line, '~probe', $this->cvterms['sequence']['probe'], $this->cvterms['sequence']['associated_with'], TRUE);
     }
   }
 }

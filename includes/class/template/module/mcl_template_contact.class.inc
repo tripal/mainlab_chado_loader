@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_CONTACT extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_UPLOAD::__construct()
    */
@@ -95,20 +95,19 @@ class MCL_TEMPLATE_CONTACT extends MCL_TEMPLATE {
   public function runErrorCheckDataLine($line) {
 
     // Checks contact type.
-    $first_name = $line['first_name'];
-    $last_name  = $line['last_name'];
-    $type       = $line['type'];
+    $type = $line['type'];
     if ($type == 'person') {
+      $first_name = $line['first_name'];
+      $last_name  = $line['last_name'];
       if (!$first_name || !$last_name) {
         $this->updateMsg('E', "type : first_name and last_name must be not empty");
       }
     }
     else {
 
-      // Checks for the cvterm_id of the type.
-      $valid_types = array('person', 'institution', 'lab', 'organization', 'database', 'company');
-      if (!in_array($type, $valid_types)) {
-        $this->updateMsg('E', "Invalid contact type : $type not found in cvterm");
+      // Checks for the contact type.
+      if (!MCL_DATA_VALID_TYPE::validate('contact_type', $type)) {
+        $this->updateMsg('E', "Invalid contact type : $type");
       }
     }
   }

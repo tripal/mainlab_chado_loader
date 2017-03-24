@@ -36,20 +36,20 @@ class MCL_CHADO_PHENOTYPE extends CHADO_PHENOTYPE {
    *
    * @return MCL_CHADO_PHENOTYPE
    */
-  public static function addPhenotype(MCL_TEMPLATE $mcl_tmpl, $uniquename, $attr_id, $value) {
+  public static function addPhenotype(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $attr_id, $value) {
 
     // Sets the arguments.
     $args = array('uniquename' => $uniquename);
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
     $mcl_phenotype = MCL_CHADO_PHENOTYPE::byKey($args);
     if ($mcl_phenotype) {
-      $mcl_tmpl->addMsg('D', 'phenotype', $args);
+      self::addMsg($mcl_tmpl, 'D', 'phenotype', $args);
     }
     else {
 
@@ -58,10 +58,11 @@ class MCL_CHADO_PHENOTYPE extends CHADO_PHENOTYPE {
       $args['attr_id']  = $attr_id;
       $mcl_phenotype = new MCL_CHADO_PHENOTYPE($args);
       if ($mcl_phenotype->insert()) {
-        $mcl_tmpl->addMsg('N', 'phenotype', $args);
+        self::addMsg($mcl_tmpl, 'N', 'phenotype', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'phenotype', $args);
+        self::addMsg($mcl_tmpl, 'E', 'phenotype', $args);
+        return NULL;
       }
     }
     return $mcl_phenotype;

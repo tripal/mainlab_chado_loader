@@ -7,7 +7,7 @@
  * The declaration of CHADO_ORGANISM class.
  *
  */
-class CHADO_ORGANISM  {
+class CHADO_ORGANISM  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_ORGANISM.
@@ -100,6 +100,32 @@ class CHADO_ORGANISM  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return NULL;
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'organism_id' => array(
+        array('table' => 'feature', 'attr' => 'organism_id'),
+        array('table' => 'featuremap_organism', 'attr' => 'organism_id'),
+        array('table' => 'library', 'attr' => 'organism_id'),
+        array('table' => 'organism_dbxref', 'attr' => 'organism_id'),
+        array('table' => 'organism_pub', 'attr' => 'organism_id'),
+        array('table' => 'organism_relationship', 'attr' => 'object_organism_id'),
+        array('table' => 'organism_relationship', 'attr' => 'subject_organism_id'),
+        array('table' => 'organismprop', 'attr' => 'organism_id'),
+        array('table' => 'stock', 'attr' => 'organism_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -170,7 +196,7 @@ class CHADO_ORGANISM  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

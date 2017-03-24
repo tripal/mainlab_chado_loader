@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_UPLOAD::__construct()
    */
@@ -24,7 +24,7 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
     if ($parent) {
       return new self($parent->getMemberArr());
     }
-    }
+  }
 
   /**
    * @see MCL_TEMPLATE::defineDescription()
@@ -78,10 +78,14 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
     MCL_CHADO_LOCATION::checkSite($this, $line['site_name']);
 
     // Checks maternal parent.
-    MCL_CHADO_STOCK::checkStock($this, $line['mother']);
+    if ($line['mother'] != 'N/A') {
+      MCL_CHADO_STOCK::checkStock($this, $line['mother']);
+    }
 
     // Checks paternal parent.
-    MCL_CHADO_STOCK::checkStock($this, $line['father']);
+    if ($line['father'] != 'N/A') {
+      MCL_CHADO_STOCK::checkStock($this, $line['father']);
+    }
   }
 
   /**
@@ -92,27 +96,34 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
     // Gets nd_geolocation_id.
     $nd_geolocation_id = MCL_CHADO_LOCATION::getLocationIDBySite($line['site_name']);
 
-    // Adds a nd_experiment.
-    $dup_key = $line['dataset_name'] . '_' . $line['cross_number'];
-    $nd_experiment = MCL_CHADO_ND_EXPERIMENT::addNdExperiment($this, $this->cvterms['SITE_CV']['cross_experiment'], $nd_geolocation_id, $this->cvterms['SITE_CV']['cross_number'], $dup_key);
-    if ($nd_experiment) {
+    // Gets dataset.
+    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset_name']);
+
+    // Adds a cross.
+    $dup_key = $dataset->getProjectID() . '_' . $line['cross_number'];
+    $cross = MCL_CHADO_ND_EXPERIMENT::addNdExperiment($this, $this->cvterms['SITE_CV']['cross_experiment'], $nd_geolocation_id, $this->cvterms['SITE_CV']['cross_experiment'], $dup_key);
+    if ($cross) {
 
       // Adds properties.
-      $nd_experiment->addProp($this, 'SITE_CV', 'cross_number', $line['cross_number']);
-      $nd_experiment->addProp($this, 'SITE_CV', 'cross_date', $line['cross_date']);
-      $nd_experiment->addProp($this, 'SITE_CV', 'mother_location', $line['mother_location']);
-      $nd_experiment->addProp($this, 'SITE_CV', 'father_location', $line['father_location']);
+      $cross->addProp($this, 'SITE_CV', 'cross_number', $line['cross_number']);
+      $cross->addProp($this, 'SITE_CV', 'cross_date', $line['cross_date']);
+      $cross->addProp($this, 'SITE_CV', 'mother_location', $line['mother_location']);
+      $cross->addProp($this, 'SITE_CV', 'father_location', $line['father_location']);
 
       // Adds a dataset.
-      $nd_experiment->addDataset($this, $line['dataset_name']);
+      $cross->addDataset($this, $line['dataset_name']);
 
       // Adds a maternal parent.
-      $maternal_parent = MCL_CHADO_STOCK::getStock($line['mother']);
-      $nd_experiment->addStock($this, $maternal_parent, $this->cvterms['SITE_CV']['maternal_parent']);
+      if ($line['mother'] != 'N/A') {
+        $maternal_parent = MCL_CHADO_STOCK::getStock($line['mother']);
+        $cross->addStock($this, $maternal_parent, $this->cvterms['SITE_CV']['maternal_parent']);
+      }
 
       // Adds a paternal parent.
-      $paternal_parent = MCL_CHADO_STOCK::getStock($line['father']);
-      $nd_experiment->addStock($this, $paternal_parent, $this->cvterms['SITE_CV']['paternal_parent']);;
+      if ($line['father'] != 'N/A') {
+        $paternal_parent = MCL_CHADO_STOCK::getStock($line['father']);
+        $cross->addStock($this, $paternal_parent, $this->cvterms['SITE_CV']['paternal_parent']);;
+      }
     }
   }
 }

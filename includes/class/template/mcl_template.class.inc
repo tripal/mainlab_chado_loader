@@ -77,17 +77,22 @@ class MCL_TEMPLATE extends PUBLIC_MCL_TEMPLATE {
     );
 
     // Special column table.
-    $desc_REQ   = "The star symbol indicates a required column. All the values in this column must be provided";
-    $desc_PROP  = "A column name followed by double pound signs must be a cvterm name. The cvterm is used as a type of a property table.";
-    $desc_DESC  = "A column name followed by single pound sign must be a cvterm name. The cvterm is used as a descriptor of evaluation data in the column." .
-                  "<br />(<em>e.g.</em>) #brix #pH #fruit_weight";
-    $desc_SEQ   = "A column name followed by a tilde symbol indicates that the column holds sequnce information.";
-
+    $desc_REQ     = 'The star symbol indicates a required column. All the values in this column must be provided';
+    $desc_DESC    = 'A column name followed by single pound sign must be a cvterm name. The cvterm is used as a descriptor of evaluation data in the column.' .
+                    '<br />(<em>e.g.</em>) #brix #pH #fruit_weight';
+    $desc_SEQ     = 'A column name followed by a tilde symbol indicates that the column holds sequnce information.';
+    $desc_MARKER  = 'A column name followed by a dollar symbol indicates that the column holds marker name.';
+    $desc_STOCK   = 'A column name followed by a percent symbol indicates that the column holds stock name.';
+    $desc_PROP    = 'A column name followed by double special characters must be a cvterm name. The cvterm is used as a type of a property table.' .
+                    '<br />The following special characters can be used : #, @, % and $' .
+                    '<br />(<em>e.g.</em>) ##cvterm_name @@cvterm_name %%cvterm_name and $$cvterm_name';
     $rows = array(
       array('*', 'required', $desc_REQ),
-      array('##', 'property', $desc_PROP),
       array('#', 'descriptor', $desc_DESC),
-      array('~', 'descriptor', $desc_SEQ),
+      array('$', 'marker', $desc_MARKER),
+      array('%', 'stock', $desc_STOCK),
+      array('~', 'sequence', $desc_SEQ),
+      array('(sp)(sp)', 'property', $desc_PROP),
     );
     $table_vars = array(
       'header'      => $headers,
@@ -141,7 +146,7 @@ DESC;
    * @return string
    */
   public function getRegExSpCol() {
-    return "/^[#$@~]/";
+    return "/^[#$%@~]{1,2}/";
   }
 
   /**
@@ -362,6 +367,11 @@ DESC;
    */
   public static function validateTemplate($template) {
 
+    // Updates the template name.
+    if (MCL_TEMPLATE::isColumnTemplate($template)) {
+      $template = 'COLUMN';
+    }
+
     // Checks if a template for this template exists.
     $mcl_template = MCL_TEMPLATE::byKey(array('template' => $template));
     if ($mcl_template) {
@@ -373,6 +383,7 @@ DESC;
     return FALSE;
   }
 
+
   /**
    * Gets the rank of the template. The rank is based on the type of template.
    *
@@ -383,6 +394,11 @@ DESC;
    *
    */
   public static function getRank($template) {
+
+    // Updates the template name.
+    if (preg_match("/^([A-Za-z0-9\_]+)_column$/", $template, $matches)) {
+      $template = $matches[1];
+    }
 
     // Gets the rank of the template.
     $mcl_template = MCL_TEMPLATE::byKey(array('template' => $template));
@@ -399,12 +415,41 @@ DESC;
    */
   public static function getTemplateClass(MCL_JOB_UPLOAD $job, MCL_FILE_CSV $csv) {
 
+    // Gets and updates the template.
+    $template = $csv->getTemplate();
+    if (MCL_TEMPLATE::isColumnTemplate($template)) {
+      $template = 'column';
+    }
+
     // Gets the child class object of MCL_TEMPLATE.
-    $class_name = 'MCL_TEMPLATE_' . strtoupper($csv->getTemplate());
-    $mcl_template = $class_name::byKey(array('template' => $csv->getTemplate()));
-    $mcl_template->setJob($job);
-    $mcl_template->setCSV($csv);
-    return $mcl_template;
+    $class_name = 'MCL_TEMPLATE_' . strtoupper($template);
+    $mcl_template = $class_name::byKey(array('template' => $template));
+    if ($mcl_template) {
+      $mcl_template->setJob($job);
+      $mcl_template->setCSV($csv);
+      return $mcl_template;
+    }
+    return NULL;
+  }
+
+  /**
+   * Returns MCL_TEMPLATE object.
+   *
+   * @param string $template
+   *
+   * @return Descendance of MCL_TEMPLATE
+   */
+  public static function getByTemplate($template) {
+
+    // Gets the template.
+    $mcl_template = MCL_TEMPLATE::byKey(array('template' => $template));
+
+    // Gets the child class object of MCL_TEMPLATE.
+    $class_name = 'MCL_TEMPLATE_' . strtoupper($template);
+    if (!class_exists($class_name)) {
+      return NULL;
+    }
+    return $class_name::byKey(array('template_id' => $mcl_template->getTemplateID()));
   }
 
   /**
@@ -622,7 +667,7 @@ DESC;
   }
 
   /**
-   * Runs syntax error check.
+   * Runs syntax error check for regular template.
    *
    * The input file should have
    *   1st line : pound sign (#) and template name.
@@ -734,6 +779,7 @@ DESC;
           if ($prop['req']) {
             $col = $this->headers[$column]['col'];
             $value = $columns[$col];
+
             if (!$value && $value === '') {
               $this->updateMsg('E', "Error : Missing data on column [$column]");
             }
@@ -743,6 +789,20 @@ DESC;
     }
     fclose($fh);
     return $this->isPassed();
+  }
+
+  /**
+   * Checks if the provided column is a valid column name for a column-template.
+   *
+   * @param string $column
+   *
+   * @return boolean
+   */
+  public function isValidColumnTemplateHeaders($column) {
+    $valid_arr = array(
+      'name', 'alias', 'cv_name', 'description'
+    );
+    return in_array($column, $valid_arr);
   }
 
   /**
@@ -970,6 +1030,33 @@ DESC;
   }
 
   /**
+   * Adds custom columns.
+   *
+   * @param string $prefix
+   * @param MCL_TEMPLATE $mcl_template
+   * @param array $line
+   */
+  public function addCustomColumns($prefix, MCL_TEMPLATE $mcl_template, $line) {
+
+    // Checks if a column-template exists.
+    $columns    = $this->job->getPropByKey('columns');
+    $column_arr = array();
+    if (array_key_exists($this->getTemplate(), $columns)) {
+      $column_arr = $columns[$this->getTemplate()];
+    }
+
+    // Uploads a custom columns for this line.
+    if (!empty($column_arr)) {
+      foreach ($column_arr as $cvterm_name => $cv_name) {
+        $value = $line[$prefix . $cvterm_name];
+        if ($value) {
+          $mcl_template->addProp($this, $cv_name, $cvterm_name, $value);
+        }
+      }
+    }
+  }
+
+  /**
    * Adds one or more properties
    *
    * @param string $table_name
@@ -995,7 +1082,7 @@ DESC;
       else {
 
         // Poluplates the array with values.
-        $value_arr = preg_split($this->getSepRegex($separator), $value, NULL, PREG_SPLIT_NO_EMPTY);
+        $value_arr = preg_split(CHADO_TABLE::getSepRegex($separator), $value, NULL, PREG_SPLIT_NO_EMPTY);
 
         // Adds each property.
         $rank = 0;
@@ -1155,6 +1242,16 @@ DESC;
   }
 
   /**
+   * Tests templates.
+   *
+   * @param array $templates
+   * @param string $tmp_dir
+   */
+  public function testTemplates($templates, $tmp_dir) {
+    foreach ($templates as $template) {}
+  }
+
+  /**
    * Returns the template summary.
    */
   public function templateSummary() {
@@ -1197,15 +1294,6 @@ DESC;
       $values .= $prefix . $value;
     }
     return "($keys) = ($values)";
-  }
-
-  /**
-   * Returns the regular expression of the separator.
-   *
-   * @param string
-   */
-  public function getSepRegex($separator) {
-    return ($separator) ? "/$separator/" : '/@@@@@/';
   }
 
   /**
@@ -1253,6 +1341,15 @@ DESC;
       }
     }
     return empty($data_str);
+  }
+
+  /**
+   * Returns if this is a column-template.
+   *
+   * @return boolean
+   */
+  public static function isColumnTemplate($template) {
+    return preg_match("/_column$/i", $template);
   }
 
   /*

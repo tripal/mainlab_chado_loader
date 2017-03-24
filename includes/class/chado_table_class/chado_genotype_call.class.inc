@@ -7,7 +7,7 @@
  * The declaration of CHADO_GENOTYPE_CALL class.
  *
  */
-class CHADO_GENOTYPE_CALL  {
+class CHADO_GENOTYPE_CALL  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_GENOTYPE_CALL.
@@ -100,6 +100,25 @@ class CHADO_GENOTYPE_CALL  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('feature_id' => array('fk_table' => 'feature', 'fk_attr' => 'feature_id')),
+      array('genotype_id' => array('fk_table' => 'genotype', 'fk_attr' => 'genotype_id')),
+      array('project_id' => array('fk_table' => 'project', 'fk_attr' => 'project_id')),
+      array('stock_id' => array('fk_table' => 'stock', 'fk_attr' => 'stock_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -170,7 +189,7 @@ class CHADO_GENOTYPE_CALL  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

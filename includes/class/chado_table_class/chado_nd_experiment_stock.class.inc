@@ -7,7 +7,7 @@
  * The declaration of CHADO_ND_EXPERIMENT_STOCK class.
  *
  */
-class CHADO_ND_EXPERIMENT_STOCK  {
+class CHADO_ND_EXPERIMENT_STOCK  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_ND_EXPERIMENT_STOCK.
@@ -94,6 +94,24 @@ class CHADO_ND_EXPERIMENT_STOCK  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('nd_experiment_id' => array('fk_table' => 'nd_experiment', 'fk_attr' => 'nd_experiment_id')),
+      array('stock_id' => array('fk_table' => 'stock', 'fk_attr' => 'stock_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -160,7 +178,7 @@ class CHADO_ND_EXPERIMENT_STOCK  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

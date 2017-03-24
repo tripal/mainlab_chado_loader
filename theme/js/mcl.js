@@ -23,7 +23,7 @@
           url : $(this).attr("log-file"),
           dataType: "text",
           success : function (data) {
-            $(id_viewer).html(name + data.replace(/\n/g, '<br />'));
+            $(id_viewer).html(name + '<br />' + data.replace(/\n/g, '<br />'));
           }
         });
       });

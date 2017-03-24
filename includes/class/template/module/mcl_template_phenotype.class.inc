@@ -220,6 +220,7 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
 
         // Adds properties.
         $nd_experiment->addProp($this, 'SITE_CV', 'data_year', $line['data_year']);
+
         $nd_experiment->addProp($this, 'SITE_CV', 'evaluation_date', $line['evaluation_date']);
 
         // Adds evaluators.
@@ -241,33 +242,27 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
    * Checks trait descriptors for cvterm_id. Save them in job.param.
    *
    * @param array $line
-   * @param string $dataset_name
    */
   private function _checkDescriptors($line, $dataset_name) {
 
     // This should be called once.
-    if ($line['line_no'] != 3) {
+    if ($line['line_no'] != 3 || $this->getJob()->getParamByKey('descriptors')) {
       return;
     }
 
     // Gets the project ID and check for trait_descriptor.
-    $dataset    = MCL_CHADO_DATASET::getDataset($dataset_name);
+    $dataset    = MCL_CHADO_DATASET::getDataset($line['dataset_name']);
     $project_id = $dataset->getProjectID();
-    $cv_name    = $dataset->getProp($this, 'SITE_CV', 'trait_descriptor');
+    $cv_name    = $dataset->getProp('SITE_CV', 'trait_descriptor');
     if (!$cv_name) {
       $this->updateMsg('E', "$dataset_name does not have trait_descriptor as a project property");
-      return;
-    }
-
-    // Skips if the descriptors has been checked for this dataset.
-    if (array_key_exists($project_id, $this->descriptors)) {
       return;
     }
 
     // Go through headers stord in the line array.
     $descriptors = array();
     foreach ($line as $column => $value) {
-      if (preg_match("/^#[A-Za-z]/", $column)) {
+      if (preg_match("/^#[A-Za-z0-9\_]/", $column)) {
 
         $cvterm_name = str_replace('#', '', $column);
         $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);

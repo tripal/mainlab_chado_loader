@@ -7,7 +7,7 @@
  * The declaration of CHADO_LIBRARY class.
  *
  */
-class CHADO_LIBRARY  {
+class CHADO_LIBRARY  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_LIBRARY.
@@ -106,6 +106,29 @@ class CHADO_LIBRARY  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('organism_id' => array('fk_table' => 'organism', 'fk_attr' => 'organism_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'library_id' => array(
+        array('table' => 'library_pub', 'attr' => 'library_id'),
+        array('table' => 'library_synonym', 'attr' => 'library_id'),
+        array('table' => 'libraryprop', 'attr' => 'library_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -180,7 +203,7 @@ class CHADO_LIBRARY  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

@@ -7,7 +7,7 @@
  * The declaration of CHADO_GENOTYPE class.
  *
  */
-class CHADO_GENOTYPE  {
+class CHADO_GENOTYPE  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_GENOTYPE.
@@ -97,6 +97,29 @@ class CHADO_GENOTYPE  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'genotype_id' => array(
+        array('table' => 'feature_genotype', 'attr' => 'genotype_id'),
+        array('table' => 'genotype_call', 'attr' => 'genotype_id'),
+        array('table' => 'genotypeprop', 'attr' => 'genotype_id'),
+        array('table' => 'nd_experiment_genotype', 'attr' => 'genotype_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -165,7 +188,7 @@ class CHADO_GENOTYPE  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

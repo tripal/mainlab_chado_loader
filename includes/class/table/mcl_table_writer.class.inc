@@ -11,6 +11,7 @@ class MCL_TABLE_WRITER {
   private $output_dir = NULL;
   private $table_info = NULL;
   private $namespace  = NULL;
+  private $extends    = NULL;
 
   /**
    * Implements the class constructor.
@@ -18,10 +19,11 @@ class MCL_TABLE_WRITER {
    * @param MCL_TABLE_INFO $table_info
    * @param string $output_dir
    */
-  public function __construct(MCL_TABLE_INFO $table_info, $output_dir, $namespace = '') {
+  public function __construct(MCL_TABLE_INFO $table_info, $output_dir, $namespace = '', $extends = '') {
     $this->table_info = $table_info;
     $this->output_dir = $output_dir;
     $this->namespace  = $namespace;
+    $this->extends    = $extends;
   }
 
   /**
@@ -89,6 +91,7 @@ class MCL_TABLE_WRITER {
       fputs($fdw, $code);
       fclose($fdw);
     }
+
     // Writes the table definition to an individula file.
     else {
       foreach ($tables as $table_name => $table) {
@@ -152,5 +155,23 @@ class MCL_TABLE_WRITER {
    */
   public function setNamespace($namespace) {
     $this->namespace = $namespace;
+  }
+
+  /**
+   * Retrieves the extends.
+   *
+   * @retrun string
+   */
+  public function getExtends() {
+    return $this->extends;
+  }
+
+  /**
+   * Updates the extends.
+   *
+   * @param string $extends
+   */
+  public function setExtends($extends) {
+    $this->extends = $extends;
   }
 }

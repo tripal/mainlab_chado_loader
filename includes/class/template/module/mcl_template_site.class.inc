@@ -5,9 +5,9 @@
  */
 class MCL_TEMPLATE_SITE extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -59,13 +59,14 @@ class MCL_TEMPLATE_SITE extends MCL_TEMPLATE {
    */
   public function defineCvterms() {
     $cvterms = array();
-    $cvterms['SITE_CV']['type']      = -1;
-    $cvterms['SITE_CV']['country']   = -1;
-    $cvterms['SITE_CV']['state']     = -1;
-    $cvterms['SITE_CV']['region']    = -1;
-    $cvterms['SITE_CV']['address']   = -1;
-    $cvterms['SITE_CV']['comments']  = -1;
-    $cvterms['SITE_CV']['site_code'] = -1;
+    $cvterms['SITE_CV']['type']           = -1;
+    $cvterms['SITE_CV']['site_long_name'] = -1;
+    $cvterms['SITE_CV']['country']        = -1;
+    $cvterms['SITE_CV']['state']          = -1;
+    $cvterms['SITE_CV']['region']         = -1;
+    $cvterms['SITE_CV']['address']        = -1;
+    $cvterms['SITE_CV']['comments']       = -1;
+    $cvterms['SITE_CV']['site_code']      = -1;
     return $cvterms;
   }
 
@@ -73,7 +74,11 @@ class MCL_TEMPLATE_SITE extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::runErrorCheckDataLine()
    */
   public function runErrorCheckDataLine($line) {
-    // Checks data here ...
+
+    // Checks for the contact type.
+    if (!MCL_DATA_VALID_TYPE::validate('location_type', $line['type'])) {
+      $this->updateMsg('E', 'Invalid location type : ' . $line['type']);
+    }
   }
 
     /**
@@ -100,6 +105,7 @@ class MCL_TEMPLATE_SITE extends MCL_TEMPLATE {
 
       // Adds properties.
       $location->addProp($this, 'SITE_CV', 'type', $line['type']);
+      $location->addProp($this, 'SITE_CV', 'site_long_name', $line['site_long_name']);
       $location->addProp($this, 'SITE_CV', 'country', $line['country']);
       $location->addProp($this, 'SITE_CV', 'state', $line['state']);
       $location->addProp($this, 'SITE_CV', 'region', $line['region']);

@@ -20,13 +20,12 @@ class MCL_TABLE_CLASS_WRITER {
    *
    * @param MCL_TABLE $table
    * @param MCL_TABLE_WRITER $writer
-   * @param string $extends
    */
-  public function __construct($table, $writer, $extends = '') {
+  public function __construct($table, $writer) {
     $this->table      = $table;
     $this->output_dir = $writer->getOutputDir();
     $this->namespace  = $writer->getNamespace();
-    $this->extends    = $extends;
+    $this->extends    = $writer->getExtends();
 
     // Updates the data type arrays.
     $this->data_type_numeric  = $table->getDataTypes('NUMERIC');
@@ -271,7 +270,9 @@ class MCL_TABLE_CLASS_WRITER {
     $data_types               = $this->getDataTypes();
     $constructor              = $this->getConstructor();
     $destructor               = $this->getDestructor();
-    $generate_by_key          = $this->getGenerateByKey('drupal');
+    $func_bykey               = $this->getFuncByKey('drupal');
+    $func_getfk               = $this->getFuncGetFK();
+    $func_getRelTable         = $this->getFuncGetRelTable();
     $func_insert              = $this->getFuncInsert('drupal');
     $func_update              = $this->getFuncUpdate('drupal');
     $func_delete              = $this->getFuncDelete('drupal');
@@ -317,7 +318,17 @@ $destructor
   /**
    * Generate $class_name by key(s).
    */
-$generate_by_key
+$func_bykey
+
+  /**
+   * Returns the foreign keys.
+   */
+$func_getfk
+
+  /**
+   * Returns the related tables.
+   */
+$func_getRelTable
 
   /**
    * Adds a new record.
@@ -330,7 +341,7 @@ $func_insert
 $func_update
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
 $func_delete
 
@@ -465,7 +476,7 @@ CLASS_CODE;
   /**
    * Returns the generate by key(s) of this class.
    */
-   function getGenerateByKey($type = NULL) {
+   function getFuncByKey($type = NULL) {
     $table        = $this->table;
     $table_name   = $table->getName();
     $schema_name  = $this->table->getSchemaName();
@@ -517,6 +528,66 @@ CLASS_CODE;
       return new self(\$details);
     }
     return NULL;
+  }
+CLASS_CODE;
+    return $code;
+  }
+
+  /**
+   * Returns getFK function().
+   */
+  function getFuncGetFK() {
+    $fk = 'return NULL;';
+
+    // Gets the foreign keys.
+    $f_keys = $this->table->getForeignKeys();
+    if (!empty($f_keys)) {
+      $fk = "return array(\n";
+      $rows = array();
+      foreach ($f_keys as $attr => $info) {
+        $fk_table = $info['fk_table'];
+        $fk_attr  = $info['fk_attr'];
+        $fk .= "      array('$attr' => array('fk_table' => '$fk_table', 'fk_attr' => '$fk_attr')),\n";
+      }
+      $fk .= '    );';
+    }
+
+    // getFK function.
+    $code = <<< CLASS_CODE
+  public static function getFK() {
+    $fk
+  }
+CLASS_CODE;
+    return $code;
+  }
+
+  /**
+   * Returns getRelTable function().
+   */
+  function getFuncGetRelTable() {
+    $rel = 'return NULL;';
+
+    // Gets the related tables.
+    $rel_tables = $this->table->getRelTables();
+    if (!empty($rel_tables)) {
+      $rel = "return array(\n";
+      $rows = array();
+      foreach ($rel_tables as $attr => $table_info) {
+        $rel .= "      '$attr' => array(\n";
+        foreach ($table_info as $info) {
+          $fk_table = $info['table'];
+          $fk_attr  = $info['attr'];
+          $rel .= "        array('table' => '$fk_table', 'attr' => '$fk_attr'),\n";
+        }
+        $rel .= "      ),\n";
+      }
+      $rel .= '    );';
+    }
+
+    // getRelTable function.
+    $code = <<< CLASS_CODE
+  public static function getRelTable() {
+    $rel
   }
 CLASS_CODE;
     return $code;

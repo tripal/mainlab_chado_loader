@@ -5,15 +5,9 @@
  */
 class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
 
- /**
-  *  Class data members.
-  */
-  // Valid stock types.
-  public $valid_stock_types = array(
-    'variety', 'cultivar', 'breeding_research_material', 'population',
-    'wild_unimproved', 'tbd', 'landrace', 'germplasm', 'species'
-  );
-
+  /**
+   *  Class data members.
+   */
   /**
    * @see MCL_TEMPLATE::__construct()
    */
@@ -120,9 +114,6 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
     // Checks organism.
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
-    // Checks germplasm type.
-    MCL_CHADO_STOCK::checkType($this, $line['germplasm_type']);
-
     // Checks aliases.
     MCL_CHADO_STOCK::checkAlias($this, $line['alias'], '[;,]');
 
@@ -131,6 +122,11 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
+
+    // Checks germplasm type.
+    if (!MCL_DATA_VALID_TYPE::validate('stock_type', $line['germplasm_type'])) {
+      $this->updateMsg('E', 'Invalid stock type : ' . $line['germplasm_type']);
+    }
   }
 
   /**

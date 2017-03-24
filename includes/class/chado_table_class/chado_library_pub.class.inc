@@ -7,7 +7,7 @@
  * The declaration of CHADO_LIBRARY_PUB class.
  *
  */
-class CHADO_LIBRARY_PUB  {
+class CHADO_LIBRARY_PUB  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_LIBRARY_PUB.
@@ -91,6 +91,23 @@ class CHADO_LIBRARY_PUB  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('library_id' => array('fk_table' => 'library', 'fk_attr' => 'library_id')),
+      array('pub_id' => array('fk_table' => 'pub', 'fk_attr' => 'pub_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +172,7 @@ class CHADO_LIBRARY_PUB  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

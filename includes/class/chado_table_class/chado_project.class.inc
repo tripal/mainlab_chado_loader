@@ -7,7 +7,7 @@
  * The declaration of CHADO_PROJECT class.
  *
  */
-class CHADO_PROJECT  {
+class CHADO_PROJECT  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_PROJECT.
@@ -91,6 +91,31 @@ class CHADO_PROJECT  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return NULL;
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'project_id' => array(
+        array('table' => 'feature_project', 'attr' => 'project_id'),
+        array('table' => 'genotype_call', 'attr' => 'project_id'),
+        array('table' => 'nd_experiment_project', 'attr' => 'project_id'),
+        array('table' => 'project_contact', 'attr' => 'project_id'),
+        array('table' => 'project_pub', 'attr' => 'project_id'),
+        array('table' => 'project_relationship', 'attr' => 'object_project_id'),
+        array('table' => 'project_relationship', 'attr' => 'subject_project_id'),
+        array('table' => 'projectprop', 'attr' => 'project_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +180,7 @@ class CHADO_PROJECT  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 
