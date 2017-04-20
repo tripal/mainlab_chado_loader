@@ -73,15 +73,15 @@ class MCL_CHADO_SYNONYM extends CHADO_SYNONYM {
     }
 
     // Checks for duplication.
-    $mcl_synonym = MCL_CHADO_SYNONYM::byKey($args);
-    if ($mcl_synonym) {
+    $synonym = MCL_CHADO_SYNONYM::byKey($args);
+    if ($synonym) {
       self::addMsg($mcl_tmpl, 'D', 'synonym', $args);
     }
     else {
 
       // Adds a new synonym.
-      $mcl_synonym = new MCL_CHADO_SYNONYM($args);
-      if ($mcl_synonym->insert()) {
+      $synonym = new MCL_CHADO_SYNONYM($args);
+      if ($synonym->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'synonym', $args);
       }
       else {
@@ -89,6 +89,6 @@ class MCL_CHADO_SYNONYM extends CHADO_SYNONYM {
         return NULL;
       }
     }
-    return $mcl_synonym;
+    return $synonym;
   }
 }

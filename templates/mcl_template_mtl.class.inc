@@ -71,7 +71,7 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['screening_method']             = -1;
     $cvterms['SITE_CV']['description']                  = -1;
     $cvterms['SITE_CV']['published_symbol']             = -1;
-    $cvterms['sequence']['genetic_marker']              = -1;
+    $cvterms['sequence']['marker_locus']                = -1;
     $cvterms['sequence']['heritable_phenotypic_marker'] = -1;
     $cvterms['relationship']['located_in']              = -1;
     $cvterms['relationship']['adjacent_to']             = -1;
@@ -93,10 +93,10 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
     MCL_CHADO_TRAIT::checkTrait($this, $line['trait_name'], $line['trait_descriptor_set']);
 
     // Checks colocalized_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['genetic_marker'], '[;,]');
+    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
 
     // Checks neighboring_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['genetic_marker'], '[;,]');
+    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
 
     // Checks images.
     MCL_CHADO_IMAGE::checkImage($this, $line['image'], '[;,]');
@@ -124,10 +124,10 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
       $mtl->addProp($this, 'SITE_CV', 'published_symbol', $line['published_symbol']);
 
       // Adds colocalized_markers.
-      $mtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]");
+      $mtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]", TRUE);
 
       // Adds neighboring_markers.
-      $mtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]");
+      $mtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]", TRUE);
 
       // Adds dbxref.
       $db = MCL_CHADO_DB::getDB('DB:genbank');

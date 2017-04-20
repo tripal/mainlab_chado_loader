@@ -47,8 +47,8 @@ class MCL_CHADO_PHENOTYPE extends CHADO_PHENOTYPE {
     }
 
     // Checks for duplication.
-    $mcl_phenotype = MCL_CHADO_PHENOTYPE::byKey($args);
-    if ($mcl_phenotype) {
+    $phenotype = MCL_CHADO_PHENOTYPE::byKey($args);
+    if ($phenotype) {
       self::addMsg($mcl_tmpl, 'D', 'phenotype', $args);
     }
     else {
@@ -56,8 +56,8 @@ class MCL_CHADO_PHENOTYPE extends CHADO_PHENOTYPE {
       // Adds a new phenotype.
       $args['value']    = $value;
       $args['attr_id']  = $attr_id;
-      $mcl_phenotype = new MCL_CHADO_PHENOTYPE($args);
-      if ($mcl_phenotype->insert()) {
+      $phenotype = new MCL_CHADO_PHENOTYPE($args);
+      if ($phenotype->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'phenotype', $args);
       }
       else {
@@ -65,6 +65,6 @@ class MCL_CHADO_PHENOTYPE extends CHADO_PHENOTYPE {
         return NULL;
       }
     }
-    return $mcl_phenotype;
+    return $phenotype;
   }
 }

@@ -85,7 +85,7 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
     MCL_CHADO_CVTERM::checkCvterm($this, MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY'), $line['trait_name']);
 
     // Checks descirptor type.
-    if (!MCL_DATA_VALID_TYPE::validate('descirptor_type', $line['data_type'])) {
+    if (!MCL_DATA_VALID_TYPE::validate('descriptor_type', $line['data_type'])) {
       $this->updateMsg('E', 'Invalid descirptor type : ' . $line['data_type']);
     }
   }

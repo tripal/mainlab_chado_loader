@@ -45,9 +45,6 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       mcl_create_dir($this->csv_dir);
     }
 
-    // Resets 'columns' in job properties.
-    $this->setPropByKey('columns', array());
-
     // Resets new log files.
     if ($this->job_id) {
       $this->resetNewLogFiles();
@@ -713,6 +710,9 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         while (!feof($fdr)) {
           $line = trim(fgets($fdr));
 
+          // Removes white space : &nbsp;
+          $line = preg_replace('/\xc2\xa0/', ' ', $line);
+
           // Exits if no data in the line.
           $check = preg_replace("/[\",\s]/", '', $line);
           if ($check == '') {
@@ -902,8 +902,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       // Gets MCL_TEMPLATE object.
       $tmpl_obj = MCL_TEMPLATE::getTemplateClass($this, $csv_file);
 
-      // Runs the data error checking. Skips if the error checking has been
-      // completed.
+      // Runs the data error checking. Skips if the error checking has been completed.
       mcl_print("[$mcl_file_id] $filename", 1);
       mcl_print("- Running the data error checking", 2);
       if ($csv_file->hasPassed($this->status_int['data error']) && !$this->getForce()) {
@@ -1067,47 +1066,49 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
 
     // Adds log files  (Warning / Errror / Dup-Data) in recent directory.
     $recent_dir = $this->getRecentLogDir('recent');
-    $objects = scandir($recent_dir);
-    foreach ($objects as $object) {
-      if ($object === '.' or $object === '..') {
-        continue;
-      }
-      if (is_dir("$recent_dir/$object")) {
-        preg_match("/(\d+)-([A-Z])/", $object, $matches);
-        $status_int = $matches[1];
-        $type       = $matches[2];
-
-        // Skips new data log.
-        if ($type == 'N') {
+    if (file_exists($recent_dir)) {
+      $objects = scandir($recent_dir);
+      foreach ($objects as $object) {
+        if ($object === '.' or $object === '..') {
           continue;
         }
+        if (is_dir("$recent_dir/$object")) {
+          preg_match("/(\d+)-([A-Z])/", $object, $matches);
+          $status_int = $matches[1];
+          $type       = $matches[2];
 
-        // Initialzes the array.
-        if (!array_key_exists($type, $all_logs)) {
-          $all_logs[$type] = array();
-        }
+          // Skips new data log.
+          if ($type == 'N') {
+            continue;
+          }
 
-        $files = file_scan_directory("$recent_dir/$object", "/\.log$/");
-        $log_files = array();
-        foreach ($files as $filepath => $file) {
-          preg_match("/-([A-Za-z\_]+)\.log$/", $filepath, $matches2);
-          $key = $matches2[1];
-          $log_files []= array(
-              'key'      => $key,
-              'filepath' => $filepath,
-              'log_file' => "recent:$object:" . basename($filepath),
-          );
+          // Initialzes the array.
+          if (!array_key_exists($type, $all_logs)) {
+            $all_logs[$type] = array();
+          }
+
+          $files = file_scan_directory("$recent_dir/$object", "/\.log$/");
+          $log_files = array();
+          foreach ($files as $filepath => $file) {
+            preg_match("/-([A-Za-z\_]+)\.log$/", $filepath, $matches2);
+            $key = $matches2[1];
+            $log_files []= array(
+                'key'      => $key,
+                'filepath' => $filepath,
+                'log_file' => "recent:$object:" . basename($filepath),
+            );
+          }
+
+          // Adds log files.
+          if (!empty($log_files)) {
+            $all_logs[$type][$status_int] = $log_files;
+          }
         }
 
         // Adds log files.
         if (!empty($log_files)) {
           $all_logs[$type][$status_int] = $log_files;
         }
-      }
-
-      // Adds log files.
-      if (!empty($log_files)) {
-        $all_logs[$type][$status_int] = $log_files;
       }
     }
 

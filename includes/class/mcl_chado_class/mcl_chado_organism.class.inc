@@ -73,8 +73,8 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
         $sp = trim($sp);
 
         // Gets the orgainsm.
-        $mcl_orgainsm = MCL_CHADO_ORGANISM::getOrganism($genus, $sp);
-        if (!$mcl_orgainsm) {
+        $orgainsm = MCL_CHADO_ORGANISM::getOrganism($genus, $sp);
+        if (!$orgainsm) {
           self::updateMsg($mcl_tmpl, 'E', "(genus, species) = ($genus, $sp) not found in organism");
           $flag = FALSE;
         }
@@ -122,8 +122,8 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
     }
 
     // Checks for duplication.
-    $mcl_orgainsm = MCL_CHADO_ORGANISM::byKey($args);
-    if ($mcl_orgainsm) {
+    $orgainsm = MCL_CHADO_ORGANISM::byKey($args);
+    if ($orgainsm) {
       self::addMsg($mcl_tmpl, 'D', 'orgainsm', $args);
     }
     else {
@@ -131,8 +131,8 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
       // Adds a new orgainsm.
       $args['type_id']      = $type_id;
       $args['description']  = $description;
-      $mcl_orgainsm = new MCL_CHADO_ORGANISM($args);
-      if ($mcl_orgainsm->insert()) {
+      $orgainsm = new MCL_CHADO_ORGANISM($args);
+      if ($orgainsm->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'orgainsm', $args);
       }
       else {
@@ -140,7 +140,7 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
         return NULL;
       }
     }
-    return $mcl_orgainsm;
+    return $orgainsm;
   }
 
   /**
@@ -151,18 +151,35 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
   public static function addNA() {
 
     // Checks if it has already exists.
-    $mcl_organism = MCL_CHADO_ORGANISM::getOrganism('N/A', 'N/A');
-    if (!$mcl_organism) {
+    $organism = MCL_CHADO_ORGANISM::getOrganism('N/A', 'N/A');
+    if (!$organism) {
       $details = array(
         'genus'   => 'N/A',
         'species' => 'N/A',
       );
-      $mcl_organism = new MCL_CHADO_ORGANISM($details);
-      if (!$mcl_organism->insert()) {
+      $organism = new MCL_CHADO_ORGANISM($details);
+      if (!$organism->insert()) {
         return NULL;
       }
     }
-    return $mcl_organism;
+    return $organism;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'organismprop', 'organism_id', $this->organism_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -177,7 +194,7 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
    * @return boolean
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
-    if ($value) {
+    if ($value != '') {
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
       return $this->addProperty($mcl_tmpl, 'organismprop', 'organism_id', $this->organism_id, $type_id, $value, $separator);
     }
@@ -227,9 +244,9 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
       $eimage_ids = preg_split($this->getSepRegex($separator), $image, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($eimage_ids as $eimage_id) {
         $eimage_id = trim($eimage_id);
-        $mcl_image = MCL_CHADO_IMAGE::byKey(array('eimage_id' => $eimage_id));
-        if ($mcl_image) {
-          if (!$this->addLink($mcl_tmpl, 'organism_image', 'organism_id', $this->organism_id, 'eimage_id', $mcl_image->getEimageID())) {
+        $image = MCL_CHADO_IMAGE::byKey(array('eimage_id' => $eimage_id));
+        if ($image) {
+          if (!$this->addLink($mcl_tmpl, 'organism_image', 'organism_id', $this->organism_id, 'eimage_id', $image->getEimageID())) {
             $flag = FALSE;
           }
         }
@@ -256,8 +273,8 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
       $pub_ids = preg_split($this->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);
-        $mcl_pub = MCL_CHADO_PUB::getPub($pub_id);
-        if ($mcl_pub) {
+        $pub = MCL_CHADO_PUB::getPub($pub_id);
+        if ($pub) {
           if (!$this->addLink($mcl_tmpl, 'organism_pub', 'organism_id', $this->organism_id, 'pub_id', $pub_id)) {
             $flag = FALSE;
           }

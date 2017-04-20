@@ -48,8 +48,8 @@ class MCL_CHADO_CV extends CHADO_CV {
     if ($name) {
 
       // Gets the cv.
-      $mcl_cv = MCL_CHADO_CV::getCV($name);
-      if (!$mcl_cv) {
+      $cv = MCL_CHADO_CV::getCV($name);
+      if (!$cv) {
         self::updateMsg($mcl_tmpl, 'E', "(name) = ($name) not found in cv");
         return FALSE;
       }
@@ -77,8 +77,8 @@ class MCL_CHADO_CV extends CHADO_CV {
     if ($cv_id) {
 
       // Gets the cv.
-      $mcl_cv = MCL_CHADO_CV::byKey(array('cv_id' => $cv_id));
-      if (!$mcl_cv) {
+      $cv = MCL_CHADO_CV::byKey(array('cv_id' => $cv_id));
+      if (!$cv) {
         self::updateMsg($mcl_tmpl, 'E', "(cv_id) = ($cv_id) not found in cv");
         return FALSE;
       }
@@ -90,6 +90,17 @@ class MCL_CHADO_CV extends CHADO_CV {
       }
     }
     return TRUE;
+  }
+
+  /**
+   * Returns the cv by cv ID.
+   *
+   * @param integer $cv_id
+   *
+   * @return MCL_CHADO_CV
+   */
+  public static function getCVByID($cv_id) {
+    return MCL_CHADO_CV::bykey(array('cv_id' => $cv_id));
   }
 
   /**
@@ -119,15 +130,15 @@ class MCL_CHADO_CV extends CHADO_CV {
   public static function addNull() {
 
     // Checks if it has already exists.
-    $mcl_cv = MCL_CHADO_CV::getCV('null');
-    if (!$mcl_cv) {
+    $cv = MCL_CHADO_CV::getCV('null');
+    if (!$cv) {
       $details = array('name' => 'null');
-      $mcl_cv = new MCL_CHADO_CV($details);
-      if (!$mcl_cv->insert()) {
+      $cv = new MCL_CHADO_CV($details);
+      if (!$cv->insert()) {
         return NULL;
       }
     }
-    return $mcl_cv;
+    return $cv;
   }
 
   /**
@@ -150,16 +161,16 @@ class MCL_CHADO_CV extends CHADO_CV {
     }
 
     // Checks for duplication.
-    $mcl_cv = MCL_CHADO_CV::byKey($args);
-    if ($mcl_cv) {
+    $cv = MCL_CHADO_CV::byKey($args);
+    if ($cv) {
       self::addMsg($mcl_tmpl, 'D', 'cv', $args);
     }
     else {
 
       // Adds a new cv.
       $args['definition'] = $definition;
-      $mcl_cv = new MCL_CHADO_CV($args);
-      if ($mcl_cv->insert()) {
+      $cv = new MCL_CHADO_CV($args);
+      if ($cv->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'cv', $args);
       }
       else {
@@ -167,6 +178,6 @@ class MCL_CHADO_CV extends CHADO_CV {
         return NULL;
       }
     }
-    return $mcl_cv;
+    return $cv;
   }
 }

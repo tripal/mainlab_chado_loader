@@ -34,6 +34,18 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   }
 
   /**
+   * @see CHADO_CVTERM::delete()
+   */
+  public function delete() {
+
+    // Deletes the dbxref first.
+    db_delete('chado.dbxref')
+      ->condition('dbxref_id', $this->dbxref_id, '=')
+      ->execute();
+    parent::delete();
+  }
+
+  /**
    * Checks the existance of cvterm. If not, write the error messasge
    * to the log.
    *
@@ -47,8 +59,8 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
     if ($cv_name && $cvterm_name) {
 
       // Gets the cvterm.
-      $mcl_cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
-      if (!$mcl_cvterm) {
+      $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
+      if (!$cvterm) {
         self::updateMsg($mcl_tmpl, 'E', "(cv_name, cvterm_name) = ($cv_name, $cvterm_name) not found in cvterm");
         return FALSE;
       }
@@ -119,7 +131,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   }
 
   /**
-   * Returns the cvterm.
+   * Returns the cvterm by cv and cvterm names.
 
    * @param string $cv_name
    * @param string $cvterm_name
@@ -127,9 +139,36 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    * @return MCL_CHADO_CVTERM
    */
   public static function getCvterm($cv_name, $cvterm_name) {
-    $mcl_cv = MCL_CHADO_CV::getCV($cv_name);
-    if ($mcl_cv) {
-      return MCL_CHADO_CVTERM::bykey(array('cv_id' => $mcl_cv->getCvID(), 'name' => $cvterm_name));
+    $cv = MCL_CHADO_CV::getCV($cv_name);
+    if ($cv) {
+      return MCL_CHADO_CVTERM::bykey(array('cv_id' => $cv->getCvID(), 'name' => $cvterm_name));
+    }
+    return NULL;
+  }
+
+  /**
+   * Returns the cvterm by cvterm ID.
+
+   * @param integer $cvterm_id
+   *
+   * @return MCL_CHADO_CVTERM
+   */
+  public static function getCvtermByID($cvterm_id) {
+    return MCL_CHADO_CVTERM::bykey(array('cvterm_id' => $cvterm_id));
+  }
+
+  /**
+   * Returns the cvterm by cv ID and cvterm name.
+
+   * @param integer $cvterm_id
+   * @param string $cvterm_name
+   *
+   * @return MCL_CHADO_CVTERM
+   */
+  public static function getCvtermByCvID($cv_id, $cvterm_name) {
+    $cv = MCL_CHADO_CV::getCVByID($cv_id);
+    if ($cv) {
+      return MCL_CHADO_CVTERM::bykey(array('cv_id' => $cv_id, 'name' => $cvterm_name));
     }
     return NULL;
   }
@@ -167,23 +206,23 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   public static function addNull() {
 
     // Gets null.
-    $mcl_cv     = MCL_CHADO_CV::addNull();
-    $mcl_dbxref = MCL_CHADO_DBXREF::addNull();
+    $cv     = MCL_CHADO_CV::addNull();
+    $dbxref = MCL_CHADO_DBXREF::addNull();
 
     // Checks if it has already exists.
-    $mcl_cvterm = MCL_CHADO_CVTERM::getCvterm('null', 'null');
-    if (!$mcl_cvterm) {
+    $cvterm = MCL_CHADO_CVTERM::getCvterm('null', 'null');
+    if (!$cvterm) {
       $details = array(
         'name'      => 'null',
-        'cv_id'     => $mcl_cv->getCvID(),
-        'dbxref_id' => $mcl_dbxref->getDbxrefID(),
+        'cv_id'     => $cv->getCvID(),
+        'dbxref_id' => $dbxref->getDbxrefID(),
       );
-      $mcl_cvterm = new MCL_CHADO_CVTERM($details);
-      if (!$mcl_cvterm->insert()) {
+      $cvterm = new MCL_CHADO_CVTERM($details);
+      if (!$cvterm->insert()) {
         return NULL;
       }
     }
-    return $mcl_cvterm;
+    return $cvterm;
   }
 
   /**
@@ -221,42 +260,42 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
     }
 
     // Checks for duplication.
-    $mcl_cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
-    if ($mcl_cvterm) {
+    $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
+    if ($cvterm) {
       self::updateMsg($mcl_tmpl, 'D', "(cv.name, cvterm.name) = ($cv_name, $cvterm_name) found in cvterm");
     }
     else {
 
        // Gets db.
-      $mcl_db = MCL_CHADO_DB::getDB($db_name);
-      if (!$mcl_db) {
+      $db = MCL_CHADO_DB::getDB($db_name);
+      if (!$db) {
         self::updateMsg($mcl_tmpl, 'E', "(db.name) = ($db_name) not found in db");
         return NULL;
       }
 
       // Gets cv.
-      $mcl_cv = MCL_CHADO_CV::getCV($cv_name);
-      if (!$mcl_cv) {
+      $cv = MCL_CHADO_CV::getCV($cv_name);
+      if (!$cv) {
         self::updateMsg($mcl_tmpl, 'E', "(cv.name) = ($cv_name) not found in cv");
         return NULL;
       }
 
       // Sets the accession.
       if (!$accession) {
-        $accession = strtoupper($mcl_db->getName()) . ":$cv_name:$cvterm_name";
+        $accession = $cv->getCvID() . ":$cvterm_name";
       }
 
       // Gets dbxref.
       $args = array(
-        'db_id'     => $mcl_db->getDbID(),
+        'db_id'     => $db->getDbID(),
         'accession' => $accession,
       );
-      $mcl_dbxref = MCL_CHADO_DBXREF::byKey($args);
-      if (!$mcl_dbxref) {
+      $dbxref = MCL_CHADO_DBXREF::byKey($args);
+      if (!$dbxref) {
 
         // Adds a new dbxref.
-        $mcl_dbxref = new MCL_CHADO_DBXREF($args);
-        if ($mcl_dbxref->insert()) {
+        $dbxref = new MCL_CHADO_DBXREF($args);
+        if ($dbxref->insert()) {
           self::addMsg($mcl_tmpl, 'N', 'dbxref', $args);
         }
         else {
@@ -264,17 +303,22 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
           return NULL;
         }
       }
-
-      // Adds a new cvterm.
-      if ($mcl_dbxref) {
+      // Checks for duplication.
+      $dbxref_id = $dbxref->getDbxrefID();
+      $cvterm = MCL_CHADO_CVTERM::byKey(array('dbxref_id' => $dbxref_id));
+      if ($cvterm) {
+        self::updateMsg($mcl_tmpl, 'D', "(dbxref_id) = ($dbxref_id) found in cvterm");
+      }
+      else {
         $args = array(
-          'dbxref_id'   => $mcl_dbxref->getDbxrefID(),
-          'cv_id'       => $mcl_cv->getCvID(),
+          'dbxref_id'   => $dbxref_id,
+          'cv_id'       => $cv->getCvID(),
           'name'        => $cvterm_name,
           'definition'  => $definition,
         );
-        $mcl_cvterm = new MCL_CHADO_CVTERM($args);
-        if ($mcl_cvterm->insert()) {
+        $cvterm = new MCL_CHADO_CVTERM($args);
+        dpm($args);
+        if ($cvterm->insert()) {
           self::addMsg($mcl_tmpl, 'N', 'cvterm', $args);
         }
         else {
@@ -283,7 +327,24 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
         }
       }
     }
-    return $mcl_cvterm;
+    return $cvterm;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'cvtermprop', 'cvterm_id', $this->cvterm_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -298,9 +359,27 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    * @return boolean
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
-    if ($value) {
+    if ($value != '') {
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
       return $this->addProperty($mcl_tmpl, 'cvtermprop', 'cvterm_id', $this->cvterm_id, $type_id, $value, $separator);
+    }
+    return TRUE;
+  }
+
+  /**
+   * Updates the property.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $cv_name
+   * @param string $cvterm_name
+   * @param string $value
+   *
+   * @return boolean
+   */
+  public function updateProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value) {
+    if ($value != '') {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->updateProperty($mcl_tmpl, 'cvtermprop', 'cvterm_id', $this->cvterm_id, $type_id, $value);
     }
     return TRUE;
   }
@@ -330,7 +409,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
       // Poluplates the array with aliases.
       $alias_arr = array();
       if ($separator) {
-        $alias_arr = preg_split($this->getSepRegex($separator), $value, NULL, PREG_SPLIT_NO_EMPTY);
+        $alias_arr = preg_split($this->getSepRegex($separator), $alias, NULL, PREG_SPLIT_NO_EMPTY);
       }
       else {
         $alias_arr []= $value;
@@ -339,11 +418,10 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
       // Adds each alias.
       $args = array(
         'cvterm_id' => $this->cvterm_id,
-        'type_id' => $type_id,
+        'type_id'   => $type_id,
       );
-      $rank = 0;
       foreach ($alias_arr as $val) {
-        $args['synonym']  = $val;
+        $args['synonym']  = trim($val);
         $cvtermsynonym    = CHADO_CVTERMSYNONYM::byKey($args);
         if ($cvtermsynonym) {
           $this->addMsg($mcl_tmpl, 'D', 'cvtermsynonym', $args);
@@ -361,6 +439,52 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
       }
     }
     return $flag;
+  }
+
+  /**
+   * Updates aliases.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $cv_name
+   * @param string $cvterm_name
+   * @param string $alias
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function updateAlias(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $alias, $separator = '') {
+    if ($alias) {
+
+      // Removes the existing properties first and add new ones.
+      if (!$this->deleteAlias($cv_name, $cvterm_name)) {
+        return FALSE;
+      }
+      return $this->addAlias($mcl_tmpl, $cv_name, $cvterm_name, $alias, $separator);
+    }
+    return TRUE;
+  }
+
+  /**
+   * Deletes all aliases for this cvterm.
+   *
+   * @param string $cv_name
+   * @param string $cvterm_name
+   *
+   * @return boolean
+   */
+  public function deleteAlias($cv_name, $cvterm_name) {
+
+    // Gets type_id.
+    $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+    $args = array(
+      'cvterm_id' => $this->cvterm_id,
+      'type_id'   => $type_id,
+    );
+
+    // Deletes the aliases.
+    $sql = "DELETE FROM {chado.cvtermsynonym} WHERE cvterm_id = :cvterm_id AND type_id = :type_id";
+    db_query($sql, $args);
+    return TRUE;
   }
 
   /**

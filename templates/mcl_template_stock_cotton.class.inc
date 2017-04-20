@@ -1,9 +1,9 @@
 <?php
 /**
- * The declaration of MCL_TEMPLATE_STOCK class.
+ * The declaration of MCL_TEMPLATE_STOCK_COTTON class.
  *
  */
-class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
+class MCL_TEMPLATE_STOCK_COTTON extends MCL_TEMPLATE {
 
   /**
    *  Class data members.
@@ -46,7 +46,7 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
       'grin_id'           => array('req' => FALSE, 'width' => 10, 'desc' => "Accession ID (ACID) in the GRIN database, if it is known."),
       'subspecies'        => array('req' => FALSE, 'width' => 10, 'desc' => "Subspecies name."),
       'description'       => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the pollen parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
-      'secondary_id'      => array('req' => FALSE, 'width' => 10, 'desc' => "Alternate ID or name that is commonly used to refer to the entry."),
+      'secondary_id'      => array('req' => TRUE,  'width' => 10, 'desc' => "Alternate ID or name that is commonly used to refer to the entry."),
       'paternal_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the pollen parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
       'maternal_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the seed parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
       'mutation_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name of the mutaion parent. This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
@@ -141,11 +141,8 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
     // Gets type_id.
     $type_id = $this->cvterms['SITE_CV'][strtolower($line['germplasm_type'])];
 
-    // Updates name.
-    $name = ($line['secondary_id']) ? $line['secondary_id'] : '';
-
     // Adds a stock.
-    $stock = MCL_CHADO_STOCK::addStock($this, $line['stock_name'], $name, $organism_id, $type_id);
+    $stock = MCL_CHADO_STOCK::addStockBy2ndID($this, $line['stock_name'], $line['secondary_id'], $organism_id, $type_id);
     if ($stock) {
 
       // Gets db.
@@ -188,6 +185,26 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
 
       // Adds references.
       $stock->addReference($this, $line['reference'], "[,;]");
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::postProcess()
+   */
+  public function postProcess() {
+
+    // Adds all missing parents now.
+    $parents = $this->getTmpByKey('stock_parents');
+    foreach ((array)$parents as $stock_id => $info) {
+
+      // Gets the parent info.
+      $uniquename   = $info['uniquename'];
+      $organism_id  = $info['organism_id'];
+      $type_id      = $info['type_id'];
+
+      // Adds the parent.
+      $stock = MCL_CHADO_STOCK::byKey(array('stock_id' => $stock_id));
+      $stock->addParent($this, $uniquename, $organism_id, $type_id);
     }
   }
 }

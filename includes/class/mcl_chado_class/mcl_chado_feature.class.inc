@@ -53,9 +53,9 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     // Checks the organism_id.
     $organism_id = '';
     if ($genus && $species) {
-      $mcl_organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
-      if ($mcl_organism) {
-        $organism_id  = $mcl_organism->getOrganismID();
+      $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+      if ($organism) {
+        $organism_id  = $organism->getOrganismID();
       }
       else {
         self::updateMsg($mcl_tmpl, 'E', "$genus $species not found in organism");
@@ -93,13 +93,122 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       }
 
       // Checks the feature.
-      $mcl_feature = MCL_CHADO_FEATURE::byKey($args);
-      if (!$mcl_feature) {
-        self::updateMsg($mcl_tmpl, 'E', self::arrStr($args) . " not found in feature");
+      $checked = MCL_CHADO_FEATURE::checkFeatureAlias($mcl_tmpl, $uniquename, $genus, $species, $type_id);
+      if (!$checked) {
         $flag = FALSE;
       }
     }
     return $flag;
+  }
+
+  /**
+   * Checks the existance of feature. If not, write the error messasge
+   * to the log.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $feature
+   * @param string $genus
+   * @param string $species
+   * @param integer $type_id
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public static function checkFeatureAlias(MCL_TEMPLATE $mcl_tmpl = NULL, $feature, $genus, $species, $type_id, $separator = '') {
+    $flag = TRUE;
+
+    // Checks the organism_id.
+    $organism_id = '';
+    if ($genus && $species) {
+      $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+      if ($organism) {
+        $organism_id  = $organism->getOrganismID();
+      }
+      else {
+        self::updateMsg($mcl_tmpl, 'E', "$genus $species not found in organism");
+        return FALSE;
+      }
+    }
+
+    // Gets the uniquenames.
+    $uniquenames = preg_split(self::getSepRegex($separator), $feature, NULL, PREG_SPLIT_NO_EMPTY);
+    foreach ($uniquenames as $uniquename) {
+      $uniquename = trim($uniquename);
+
+      // Sets the arguments.
+      $args = array(
+        'uniquename'  => $uniquename,
+        'type_id'     => $type_id,
+      );
+      if ($organism_id) {
+        $args['organism_id'] = $organism_id;
+      }
+
+      // If '::' found in uniquename, update uniquename and organism_id.
+      if (preg_match("/^(.*?)\s+(.*?)::(.*?)$/", $uniquename, $matches)) {
+        $genus          = trim($matches[1]);
+        $species        = trim($matches[2]);
+        $uniquename     = trim($matches[3]);
+        $diff_organism  = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+        if ($diff_organism) {
+          $args['organism_id'] = $diff_organism->getOrganismID();
+        }
+        else {
+          self::updateMsg($mcl_tmpl, 'E', "$genus $species not found in organism");
+          $flag = FALSE;
+        }
+      }
+
+      // Checks the feature.
+      $feature = MCL_CHADO_FEATURE::byKey($args);
+      if (!$feature) {
+
+        // Search for alias.
+        $sql = "
+          SELECT COUNT(S.synonym_id)
+          FROM {chado.synonym} S
+            INNER JOIN {chado.feature_synonym} FS on FS.synonym_id = S.synonym_id
+          WHERE LOWER(S.name) = LOWER(:name)
+        ";
+        $num = db_query($sql, array(':name' => $uniquename))->fetchField();
+        if ($num > 1) {
+          self::updateMsg($mcl_tmpl, 'E', "The alias '$uniquename' is ambiguous. Please not use this alias");
+          $flag = FALSE;
+        }
+        else if ($num < 1) {
+          self::updateMsg($mcl_tmpl, 'E', self::arrStr($args) . " not found in feature");
+          $flag = FALSE;
+        }
+      }
+    }
+    return $flag;
+  }
+
+  /**
+   * Returns the feature by uniquename, genus, species and type_id.
+   *
+   * @param string $uniquename
+   * @param array $type_ids
+   *
+   * @return MCL_CHADO_FEATURE
+   */
+  public static function checkMarkerMtlQtl(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $type_ids) {
+
+    // Checks the uniquename for MTL.
+    $mtl = self::getFeature($uniquename, '', '', $type_ids['mtl']);
+    if (!$mtl) {
+
+      // Checks the uniquename for QTL.
+      $qtl = self::getFeature($uniquename, '', '', $type_ids['qtl']);
+      if (!$qtl) {
+
+        // Checks the uniquename for marker.
+        $marker = self::checkFeatureAlias($mcl_tmpl, $uniquename, '', '', $type_ids['marker']);
+        if (!$marker) {
+          $mcl_tmpl->updateMsg('E', "Error - $uniquename is not 'Genetic marker', 'QTL' or 'MTL'");
+        }
+      }
+    }
   }
 
   /**
@@ -117,9 +226,9 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     // Gets the organism_id.
     $organism_id = '';
     if ($genus && $species) {
-      $mcl_organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
-      if ($mcl_organism) {
-        $organism_id = $mcl_organism->getOrganismID();
+      $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+      if ($organism) {
+        $organism_id = $organism->getOrganismID();
       }
       else {
        return NULL;
@@ -153,9 +262,9 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     // Gets the organism_id.
     $organism_id = '';
     if ($genus && $species) {
-      $mcl_organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
-      if ($mcl_organism) {
-        $organism_id = $mcl_organism->getOrganismID();
+      $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+      if ($organism) {
+        $organism_id = $organism->getOrganismID();
       }
       else {
         return NULL;
@@ -294,6 +403,23 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
   }
 
   /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'featureprop', 'feature_id', $this->feature_id, $type_id, $value, $separator);
+    }
+    return TRUE;
+  }
+
+  /**
    * Adds a property.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -305,7 +431,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
    * @return boolean
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
-    if ($value) {
+    if ($value != '') {
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
       return $this->addProperty($mcl_tmpl, 'featureprop', 'feature_id', $this->feature_id, $type_id, $value, $separator);
     }
@@ -316,18 +442,19 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
    * Adds related feature to feature_relationship.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param MCL_CHADO_FEATURE $mcl_feature
+   * @param MCL_CHADO_FEATURE $feature
    * @param integer $type_id
+   * @param boolean $swap
    *
    * @return boolean
    */
-  public function addRelatedFeature(MCL_TEMPLATE $mcl_tmpl = NULL, $mcl_feature, $type_id, $swap = FALSE) {
-    if ($mcl_feature) {
+  public function addRelatedFeature(MCL_TEMPLATE $mcl_tmpl = NULL, $feature, $type_id, $swap = FALSE) {
+    if ($feature) {
       if ($swap) {
-        return $this->addRelationship($mcl_tmpl, 'feature_relationship', 'subject_id', $mcl_feature->getFeatureID(), 'object_id', $this->feature_id, $type_id);
+        return $this->addRelationship($mcl_tmpl, 'feature_relationship', 'subject_id', $feature->getFeatureID(), 'object_id', $this->feature_id, $type_id);
       }
       else {
-        return $this->addRelationship($mcl_tmpl, 'feature_relationship', 'subject_id', $this->feature_id, 'object_id', $mcl_feature->getFeatureID(), $type_id);
+        return $this->addRelationship($mcl_tmpl, 'feature_relationship', 'subject_id', $this->feature_id, 'object_id', $feature->getFeatureID(), $type_id);
       }
     }
     return TRUE;
@@ -342,10 +469,11 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
    * @param integer $relationship_type_id
    * @param boollean $use_organism_id
    * @param string $separator
+   * @param boolean $swap
    *
    * @return boolean
    */
-  public function addRelatedFeatures(MCL_TEMPLATE $mcl_tmpl = NULL, $features, $feature_type_id, $use_organism_id, $relationship_type_id, $separator = '') {
+  public function addRelatedFeatures(MCL_TEMPLATE $mcl_tmpl = NULL, $features, $feature_type_id, $use_organism_id, $relationship_type_id, $separator = '', $swap = FALSE) {
     $flag = TRUE;
     if ($features) {
       $uniquenames = preg_split($this->getSepRegex($separator), $features, NULL, PREG_SPLIT_NO_EMPTY);
@@ -372,10 +500,17 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
         }
 
         // Adds a feature.
-        $mcl_feature = MCL_CHADO_FEATURE::byKey($args);
-        if ($mcl_feature) {
-          if (!$this->addRelationship($mcl_tmpl, 'feature_relationship', 'subject_id', $this->feature_id, 'object_id', $mcl_feature->getFeatureID(), $relationship_type_id)) {
-            $flag = FALSE;
+        $feature = MCL_CHADO_FEATURE::byKey($args);
+        if ($feature) {
+          if ($swap) {
+            if (!$this->addRelationship($mcl_tmpl, 'feature_relationship', 'subject_id', $feature->getFeatureID(), 'object_id', $this->feature_id, $relationship_type_id)) {
+              $flag = FALSE;
+            }
+          }
+          else {
+            if (!$this->addRelationship($mcl_tmpl, 'feature_relationship', 'subject_id', $this->feature_id, 'object_id', $feature->getFeatureID(), $relationship_type_id)) {
+              $flag = FALSE;
+            }
           }
         }
       }
@@ -456,20 +591,20 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
         'type_id'     => $type_id_feature,
         'organism_id' => $this->organism_id,
       );
-      $mcl_feature = MCL_CHADO_FEATURE::byKey($args);
-      if ($mcl_feature) {
+      $feature = MCL_CHADO_FEATURE::byKey($args);
+      if ($feature) {
         $this->addMsg($mcl_tmpl, 'D', 'feature', $args);
       }
       else {
 
         // Adds a sequence.
         $args['residues'] = $seq;
-        $mcl_feature = new MCL_CHADO_FEATURE($args);
-        if ($mcl_feature->insert()) {
+        $feature = new MCL_CHADO_FEATURE($args);
+        if ($feature->insert()) {
           $this->addMsg($mcl_tmpl, 'N', 'feature', $args);
 
           // Adds a relationship.
-          $this->addRelatedFeature($mcl_tmpl, $mcl_feature, $type_id_relationship, $swap);
+          $this->addRelatedFeature($mcl_tmpl, $feature, $type_id_relationship, $swap);
         }
         else {
           $this->addMsg($mcl_tmpl, 'E', 'feature', $args);
@@ -496,9 +631,9 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       $accessions = preg_split($this->getSepRegex($separator), $dbxref, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($accessions as $accession) {
         $accession = trim($accession);
-        $mcl_dbxref = MCL_CHADO_DBXREF::addDBXref($mcl_tmpl, $db_id, $accession);
-        if ($mcl_dbxref) {
-          if (!$this->addLink($mcl_tmpl, 'feature_dbxref', 'feature_id', $this->getFeatureID(), 'dbxref_id', $mcl_dbxref->getDbxrefID())) {
+        $dbxref = MCL_CHADO_DBXREF::addDBXref($mcl_tmpl, $db_id, $accession);
+        if ($dbxref) {
+          if (!$this->addLink($mcl_tmpl, 'feature_dbxref', 'feature_id', $this->getFeatureID(), 'dbxref_id', $dbxref->getDbxrefID())) {
             $flag = FALSE;
           }
         }
@@ -635,16 +770,16 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
    * Adds synoym and feature_synoym.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param MCL_CHADO_SYNONYM $mcl_synonym
+   * @param MCL_CHADO_SYNONYM $synonym
    *
    * @return boolean
    */
-  public function addSynonym(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_SYNONYM $mcl_synonym) {
-    if ($mcl_synonym) {
+  public function addSynonym(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_SYNONYM $synonym) {
+    if ($synonym) {
 
       // Checks for duplication.
       $args = array(
-        'synonym_id'  => $mcl_synonym->getSynonymID(),
+        'synonym_id'  => $synonym->getSynonymID(),
         'feature_id'  => $this->feature_id,
         'pub_id'      => MCL_VAR::getValueByName('PUB_ID'),
       );
@@ -683,9 +818,9 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
-        $mcl_contact = MCL_CHADO_CONTACT::getContact($name);
-        if ($mcl_contact) {
-          if (!$this->addLink($mcl_tmpl, 'feature_contact', 'feature_id', $this->feature_id, 'contact_id', $mcl_contact->getContactID())) {
+        $contact = MCL_CHADO_CONTACT::getContact($name);
+        if ($contact) {
+          if (!$this->addLink($mcl_tmpl, 'feature_contact', 'feature_id', $this->feature_id, 'contact_id', $contact->getContactID())) {
             $flag = FALSE;
           }
         }
@@ -769,13 +904,13 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     if ($stock) {
 
       // Gets orgaims_id.
-      $mcl_organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
-      if ($mcl_organism) {
+      $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+      if ($organism) {
 
         $uniquenames = preg_split($this->getSepRegex($separator), $stock, NULL, PREG_SPLIT_NO_EMPTY);
         foreach ($uniquenames as $uniquename) {
           $uniquename = trim($uniquename);
-          $organism_id = $mcl_organism->getOrganismID();
+          $organism_id = $organism->getOrganismID();
 
           // If '::' found in uniquename, update uniquename and organism_id.
           if (preg_match("/^(.*?)\s+(.*?)::(.*?)$/", $uniquename, $matches)) {
@@ -787,9 +922,9 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
           }
 
           // Adds a stock.
-          $mcl_stock = MCL_CHADO_STOCK::byKey(array('uniquename' => $uniquename, 'organism_id' => $organism_id));
+          $stock = MCL_CHADO_STOCK::byKey(array('uniquename' => $uniquename, 'organism_id' => $organism_id));
           if ($mcl_stock) {
-            if (!$this->addLink($mcl_tmpl, 'feature_stock', 'feature_id', $this->feature_id, 'stock_id', $mcl_stock->getStockID(), $type_id)) {
+            if (!$this->addLink($mcl_tmpl, 'feature_stock', 'feature_id', $this->feature_id, 'stock_id', $stock->getStockID(), $type_id)) {
               $flag = FALSE;
             }
           }
@@ -859,9 +994,9 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       $eimage_ids = preg_split($this->getSepRegex($separator), $image, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($eimage_ids as $eimage_id) {
         $eimage_id = trim($eimage_id);
-        $mcl_image = MCL_CHADO_IMAGE::byKey(array('eimage_id' => $eimage_id));
-        if ($mcl_image) {
-          if (!$this->addLink($mcl_tmpl, 'feature_image', 'feature_id', $this->feature_id, 'eimage_id', $mcl_image->getEimageID())) {
+        $image = MCL_CHADO_IMAGE::byKey(array('eimage_id' => $eimage_id));
+        if ($image) {
+          if (!$this->addLink($mcl_tmpl, 'feature_image', 'feature_id', $this->feature_id, 'eimage_id', $image->getEimageID())) {
             $flag = FALSE;
           }
         }
@@ -888,8 +1023,8 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       $pub_ids = preg_split($this->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);
-        $mcl_pub = MCL_CHADO_PUB::getPub($pub_id);
-        if ($mcl_pub) {
+        $pub = MCL_CHADO_PUB::getPub($pub_id);
+        if ($pub) {
           if (!$this->addLink($mcl_tmpl, 'feature_pub', 'feature_id', $this->feature_id, 'pub_id', $pub_id)) {
             $flag = FALSE;
           }

@@ -55,8 +55,8 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
       'dominance_effect'            => array('req' => FALSE, 'width' => 10, 'desc' => "The deviation of the heterozygote phenotype from the mean of the homozygotes."),
       'additivity_dominance_ratio'  => array('req' => FALSE, 'width' => 10, 'desc' => "The average phenotype effect of substituting a q allele for a Q allele dominance effect The deviation of the heterozygote phenotype from the mean of the homozygotes."),
       'direction'                   => array('req' => FALSE, 'width' => 10, 'desc' => "	The direction of additive effect on the phenotype."),
-      'colocalized_marker'          => array('req' => FALSE, 'width' => 10, 'desc' => "Marker that are mapped within the interval defined by the QTL. Multiple markers can be added, separated by a semicolon (;)."),
-      'neighboring_marker'          => array('req' => FALSE, 'width' => 10, 'desc' => "Marker that is mapped in the nearest flanking position outside the interval defined by the QTL. Used to estimate QTL position if no appropriate colocalized markers are found. Multiple markers can be added, separated by a semicolon (;)."),
+      'colocalized_marker'          => array('req' => FALSE, 'width' => 10, 'desc' => "Marker locus that are mapped within the interval defined by the QTL. Multiple markers can be added, separated by a semicolon (;)."),
+      'neighboring_marker'          => array('req' => FALSE, 'width' => 10, 'desc' => "Marker locus that is mapped in the nearest flanking position outside the interval defined by the QTL. Used to estimate QTL position if no appropriate colocalized markers are found. Multiple markers can be added, separated by a semicolon (;)."),
       'screening_method'            => array('req' => FALSE, 'width' => 10, 'desc' => "Any specific method for the phenotypic inspection."),
       'comments'                    => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments."),
       'mean'                        => array('req' => FALSE, 'width' => 10, 'desc' => "Mean value of the phenotype (if one QTL has multiple mean values based on the condition and/or population, enter them in QTL_trait_Data sheet."),
@@ -97,7 +97,7 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['comments']                   = -1;
     $cvterms['SITE_CV']['population_low_value']       = -1;
     $cvterms['SITE_CV']['population_high_value']      = -1;
-    $cvterms['sequence']['genetic_marker']            = -1;
+    $cvterms['sequence']['marker_locus']              = -1;
     $cvterms['sequence']['qtl']                       = -1;
     $cvterms['relationship']['located_in']            = -1;
     $cvterms['relationship']['adjacent_to']           = -1;
@@ -122,10 +122,10 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
     MCL_CHADO_LOCATION::checkSite($this, $line['site_name']);
 
     // Checks colocalized_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], '', '', $this->cvterms['sequence']['genetic_marker'], '[;,]');
+    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], '', '', $this->cvterms['sequence']['marker_locus'], '[;,]');
 
     // Checks neighboring_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], '', '', $this->cvterms['sequence']['genetic_marker'], '[;,]');
+    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], '', '', $this->cvterms['sequence']['marker_locus'], '[;,]');
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
@@ -177,10 +177,10 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
       $qtl->addSite($this, $line['site_name']);
 
       // Adds colocalized markers.
-      $qtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['genetic_marker'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]");
+      $qtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]", TRUE);
 
       // Adds neighboring markers.
-      $qtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['genetic_marker'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]");
+      $qtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]", TRUE);
 
       // Adds stocks.
       $qtl->addStock($this, $line['source'], $line['genus'], $line['species'], $this->cvterms['SITE_CV']['source'], "[,;]");

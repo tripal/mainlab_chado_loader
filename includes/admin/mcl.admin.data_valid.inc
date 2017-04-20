@@ -87,7 +87,7 @@ function _mcl_get_mcl_data_valid_type_form(&$form) {
     // Creates 'Delete' link.
     $confirm_attr = array(
       'attributes' => array(
-        'id' => 'delete_data_valid_type_' . $data_valid_type_id,
+        'id'    => 'delete_data_valid_type_' . $data_valid_type_id,
         'class' => array('use-ajax', 'mcl-confirm'),
       )
     );
@@ -229,21 +229,16 @@ function _mcl_get_mcl_data_valid_form(&$form, $target_data_valid_type_id = '') {
       $label      = 'Add cvterm ID';
     }
     $form['data_valid'][$id_fieldset][$id_value] = array(
-      '#type'         => 'textfield',
-      '#title'        => $title,
-      '#description'  => $desc,
-      '#attributes'   => array('style' => 'width:250px;'),
+      '#type'           => 'textfield',
+      '#title'          => $title,
+      '#description'    => $desc,
+      '#default_value'  => '',
+      '#attributes'     => array('style' => 'width:250px;'),
     );
     $form['data_valid'][$id_fieldset][$id_add_btn] = array(
       '#type'   => 'submit',
       '#name'   => $id_add_btn,
       '#value'  => $label,
-      '#ajax'   => array(
-        'callback' => "mcl_admin_data_valid_form_ajax_callback",
-        'wrapper'  => 'mcl-admin-data-valid-form',
-        'effect'   => 'fade',
-        'method'   => 'replace',
-      ),
     );
   }
 }
@@ -255,65 +250,6 @@ function _mcl_get_mcl_data_valid_form(&$form, $target_data_valid_type_id = '') {
  * @param $form_state
  */
 function mcl_admin_data_valid_form_ajax_callback($form, &$form_state) {
-
-  // Checks for errors.
-  if (form_get_errors()) {
-    return $form;
-  }
-
-  // Gets the trigger element.
-  $trigger_elem = $form_state['triggering_element']['#name'];
-
-  // If "data_valid_type_btn" button is clicked.
-  if ($trigger_elem == "data_valid_type_btn") {
-
-    // Gets the new data valid type.
-    $type     = trim($form_state['values']['data_valid_type']['data_valid_types']['add_data_valid_type']['type']);
-    $cv_name  = trim($form_state['values']['data_valid_type']['data_valid_types']['add_data_valid_type']['cv_name']);
-
-    // Sets the type.
-    $details = array('type' => $type);
-
-    // Gets cv_id.
-    if ($cv_name) {
-      $cv = MCL_CHADO_CV::getCV($cv_name);
-      $details['cv_id'] = $cv->getCvID();
-    }
-    $mcl_data_valid_type = new MCL_DATA_VALID_TYPE($details);
-    if (!$mcl_data_valid_type->insert()) {
-      drupal_set_message("Failed to add a new type : $type");
-    }
-    _mcl_get_mcl_data_valid_type_form($form);
-  }
-
-  // If "data_valid_btn" button is clicked.
-  else if (preg_match("/data_valid_btn_(\d+)_(\d+)/", $trigger_elem, $matches)) {
-    $data_valid_type_id = $matches[1];
-    $cv_id              = $matches[2];
-
-    // Gets the value.
-    $id_fieldset  = 'fs_' . $data_valid_type_id;
-    $id_value     = 'value_' . $data_valid_type_id;
-    $value        = trim($form_state['values']['data_valid'][$id_fieldset][$id_value]);
-
-    // Add the value.
-    $details = array(
-      'data_valid_type_id' => $data_valid_type_id,
-      'name' => $value,
-    );
-    if ($cv_id) {
-      $cvterm = MCL_CHADO_CVTERM::byKey(array('cvterm_id' => $value));
-      $details['name']      = $cvterm->getName();
-      $details['cvterm_id'] = $cvterm->getCvtermID();
-    }
-    $data_valid = new PUBLIC_MCL_DATA_VALID($details);
-    if ($data_valid->insert()) {
-      _mcl_get_mcl_data_valid_form($form, $data_valid_type_id);
-    }
-    else {
-      drupal_set_message("Failed to add a new value : $value");
-    }
-  }
   return $form;
 }
 
@@ -392,8 +328,8 @@ function mcl_admin_data_valid_form_validate($form, &$form_state) {
         return;
       }
       $key = array(
-        'cv_id' => $cv_id,
-        'cvterm_id'  => $value,
+        'cv_id'     => $cv_id,
+        'cvterm_id' => $value,
       );
       $cvterm = MCL_CHADO_CVTERM::byKey($key);
       if (!$cvterm) {
@@ -411,6 +347,61 @@ function mcl_admin_data_valid_form_validate($form, &$form_state) {
  * @ingroup mcl_admin
  */
 function mcl_admin_data_valid_form_submit($form, &$form_state) {
-  $form_state['rebuild'] = TRUE;
+
+  // Gets the trigger element.
+  $trigger_elem = $form_state['triggering_element']['#name'];
+
+  // If "data_valid_type_btn" button is clicked.
+  if ($trigger_elem == "data_valid_type_btn") {
+
+    // Gets the new data valid type.
+    $type     = trim($form_state['values']['data_valid_type']['data_valid_types']['add_data_valid_type']['type']);
+    $cv_name  = trim($form_state['values']['data_valid_type']['data_valid_types']['add_data_valid_type']['cv_name']);
+
+    // Sets the type.
+    $details = array('type' => $type);
+
+    // Gets cv_id.
+    if ($cv_name) {
+      $cv = MCL_CHADO_CV::getCV($cv_name);
+      $details['cv_id'] = $cv->getCvID();
+    }
+    $mcl_data_valid_type = new MCL_DATA_VALID_TYPE($details);
+    if ($mcl_data_valid_type->insert()) {
+      drupal_set_message("A new type added : $type");
+    }
+    else {
+      drupal_set_message("Failed to add a new type : $type");
+    }
+  }
+
+  // If "data_valid_btn" button is clicked.
+  else if (preg_match("/data_valid_btn_(\d+)_(\d+)/", $trigger_elem, $matches)) {
+    $data_valid_type_id = $matches[1];
+    $cv_id              = $matches[2];
+
+    // Gets the value.
+    $id_fieldset  = 'fs_' . $data_valid_type_id;
+    $id_value     = 'value_' . $data_valid_type_id;
+    $value        = trim($form_state['values']['data_valid'][$id_fieldset][$id_value]);
+
+    // Add the value.
+    $details = array(
+      'data_valid_type_id' => $data_valid_type_id,
+      'name' => $value,
+    );
+    if ($cv_id) {
+      $cvterm = MCL_CHADO_CVTERM::byKey(array('cvterm_id' => $value));
+      $details['name']      = $cvterm->getName();
+      $details['cvterm_id'] = $cvterm->getCvtermID();
+    }
+    $data_valid = new PUBLIC_MCL_DATA_VALID($details);
+    if ($data_valid->insert()) {
+      drupal_set_message("A new value added : $value");
+    }
+    else {
+      drupal_set_message("Failed to add a new value : $value");
+    }
+  }
 }
 ?>

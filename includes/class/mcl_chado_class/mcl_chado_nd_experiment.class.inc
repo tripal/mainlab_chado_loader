@@ -79,7 +79,7 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
   }
 
   /**
-   * Returns parent by cross number.
+   * Returns the cross by cross number.
    *
    * @param integer $dataset_name
    * @param string $cross_number
@@ -148,7 +148,7 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
     $chado_nd_experimentprop = CHADO_ND_EXPERIMENTPROP::byKey($args);
     if ($chado_nd_experimentprop) {
       self::updateMsg($mcl_tmpl, 'D', "nd_experiment of the dup_value ($dup_value) for $cvterm_id already exists");
-      $mcl_nd_experiment = MCL_CHADO_ND_EXPERIMENT::byKey(array('nd_experiment_id' => $chado_nd_experimentprop->getNdExperimentID()));
+      $nd_experiment = MCL_CHADO_ND_EXPERIMENT::byKey(array('nd_experiment_id' => $chado_nd_experimentprop->getNdExperimentID()));
     }
     else {
 
@@ -157,13 +157,13 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
         'type_id'           => $type_id,
         'nd_geolocation_id' => $nd_geolocation_id,
       );
-      $mcl_nd_experiment = new MCL_CHADO_ND_EXPERIMENT($args);
-      if ($mcl_nd_experiment->insert()) {
+      $nd_experiment = new MCL_CHADO_ND_EXPERIMENT($args);
+      if ($nd_experiment->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'nd_experiment', $args);
 
         // Adds a new nd_experimentprop.
         $args = array(
-          'nd_experiment_id'  => $mcl_nd_experiment->getNdExperimentID(),
+          'nd_experiment_id'  => $nd_experiment->getNdExperimentID(),
           'type_id'           => $cvterm_id,
           'value'             => $dup_value,
         );
@@ -181,7 +181,24 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
         return NULL;
       }
     }
-    return $mcl_nd_experiment;
+    return $nd_experiment;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'nd_experimentprop', 'nd_experiment_id', $this->nd_experiment_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -196,9 +213,27 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
    * @return boolean
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
-    if ($value) {
+    if ($value != '') {
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
       return $this->addProperty($mcl_tmpl, 'nd_experimentprop', 'nd_experiment_id', $this->nd_experiment_id, $type_id, $value, $separator);
+    }
+    return TRUE;
+  }
+
+  /**
+   * Updates the property.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $cv_name
+   * @param string $cvterm_name
+   * @param string $value
+   *
+   * @return boolean
+   */
+  public function updateProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value) {
+    if ($value != '') {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->updateProperty($mcl_tmpl, 'nd_experimentprop', 'nd_experiment_id', $this->nd_experiment_id, $type_id, $value);
     }
     return TRUE;
   }
@@ -211,11 +246,50 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
    *
    * @return boolean
    */
-  public function addStock(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_STOCK $mcl_stock, $type_id) {
-    if ($mcl_stock && $type_id) {
-      return $this->addLink($mcl_tmpl, 'nd_experiment_stock', 'nd_experiment_id', $this->nd_experiment_id, 'stock_id', $mcl_stock->getStockID(), $type_id);
+  public function addStock(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_STOCK $stock, $type_id) {
+    if ($stock && $type_id) {
+      return $this->addLink($mcl_tmpl, 'nd_experiment_stock', 'nd_experiment_id', $this->nd_experiment_id, 'stock_id', $stock->getStockID(), $type_id);
     }
     return TRUE;
+  }
+
+  /**
+   * Updates the stock_id in nd_experiment_stock.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $stock_id
+   *
+   * @return boolean
+   */
+  public function updateStockByID(MCL_TEMPLATE $mcl_tmpl = NULL, $stock_id, $type_id) {
+    if ($type_id) {
+
+      // Sets properties.
+      $args = array(
+        'nd_experiment_id'  => $this->nd_experiment_id,
+        'type_id'           => $type_id,
+      );
+      $nes = CHADO_ND_EXPERIMENT_STOCK::byKey($args);
+      if ($nes) {
+
+        // Updates the relationship.
+        if ($stock_id) {
+          $nes->setStockID($stock_id);
+          return $nes->update();
+        }
+
+        // Removes the relationship.
+        else {
+          return $nes->delete();
+        }
+      }
+      else {
+        $args['stock_id'] = $stock_id;
+        $nes = new CHADO_ND_EXPERIMENT_STOCK($args);
+        return $nes->insert();
+      }
+    }
+    return FALSE;
   }
 
   /**
@@ -226,9 +300,9 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
    *
    * @return boolean
    */
-  public function addPhenotype(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_PHENOTYPE $mcl_phenotype) {
-    if ($mcl_phenotype) {
-      return $this->addLink($mcl_tmpl, 'nd_experiment_phenotype', 'nd_experiment_id', $this->nd_experiment_id, 'phenotype_id', $mcl_phenotype->getPhenotypeID());
+  public function addPhenotype(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_PHENOTYPE $phenotype) {
+    if ($phenotype) {
+      return $this->addLink($mcl_tmpl, 'nd_experiment_phenotype', 'nd_experiment_id', $this->nd_experiment_id, 'phenotype_id', $phenotype->getPhenotypeID());
     }
     return TRUE;
   }
@@ -241,9 +315,9 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
    *
    * @return boolean
    */
-  public function addGenotype(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_GENOTYPE $mcl_genotype) {
-    if ($mcl_genotype) {
-      return $this->addLink($mcl_tmpl, 'nd_experiment_genotype', 'nd_experiment_id', $this->nd_experiment_id, 'genotype_id', $mcl_genotype->getGenotypeID());
+  public function addGenotype(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_GENOTYPE $genotype) {
+    if ($genotype) {
+      return $this->addLink($mcl_tmpl, 'nd_experiment_genotype', 'nd_experiment_id', $this->nd_experiment_id, 'genotype_id', $genotype->getGenotypeID());
     }
     return TRUE;
   }
@@ -282,9 +356,9 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
       $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
-        $mcl_contact = MCL_CHADO_CONTACT::getContact($name);
-        if ($mcl_contact) {
-          if (!$this->addLink($mcl_tmpl, 'nd_experiment_contact', 'nd_experiment_id', $this->nd_experiment_id, 'contact_id', $mcl_contact->getContactID())) {
+        $contact = MCL_CHADO_CONTACT::getContact($name);
+        if ($contact) {
+          if (!$this->addLink($mcl_tmpl, 'nd_experiment_contact', 'nd_experiment_id', $this->nd_experiment_id, 'contact_id', $contact->getContactID())) {
             $flag = FALSE;
           }
         }
@@ -311,8 +385,8 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
       $pub_ids = preg_split($this->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);
-        $mcl_pub = MCL_CHADO_PUB::getPub($pub_id);
-        if ($mcl_pub) {
+        $pub = MCL_CHADO_PUB::getPub($pub_id);
+        if ($pub) {
           if (!$this->addLink($mcl_tmpl, 'nd_experiment_pub', 'nd_experiment_id', $this->nd_experiment_id, 'pub_id', $pub_id)) {
             $flag = FALSE;
           }

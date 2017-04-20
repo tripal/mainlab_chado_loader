@@ -1,9 +1,9 @@
 <?php
 /**
- * The declaration of MCL_TEMPLATE_SITE class.
+ * The declaration of MCL_TEMPLATE_SITE_BIMS class.
  *
  */
-class MCL_TEMPLATE_SITE extends MCL_TEMPLATE {
+class MCL_TEMPLATE_SITE_BIMS extends MCL_TEMPLATE {
 
   /**
    *  Class data members.
@@ -40,6 +40,7 @@ class MCL_TEMPLATE_SITE extends MCL_TEMPLATE {
   public function defineHeaders() {
     $headers = array(
       'site_name'       => array('req' => TRUE,  'width' => 10, 'desc' => "Curator-assigned name of the site."),
+      'site_long_name'  => array('req' => FALSE, 'width' => 10, 'desc' => "long name of the site."),
       'latitude'        => array('req' => FALSE, 'width' => 10, 'desc' => "The decimal latitude coordinate of the georeference, using positive and negative sign to indicate N and S, respectively."),
       'longitude'       => array('req' => FALSE, 'width' => 10, 'desc' => "The decimal longitude coordinate of the georeference, using positive and negative sign to indicate E and W, respectively."),
       'altitude'        => array('req' => FALSE, 'width' => 10, 'desc' => "The altitude (elevation) of the location in meters. If the altitude is only known as a range, this is the average, and altitude_dev will hold half of the width of the range."),
@@ -100,7 +101,11 @@ class MCL_TEMPLATE_SITE extends MCL_TEMPLATE {
     if ($line['geodetic_datum']) {
       $loc_info['geodetic_datum'] = $line['geodetic_datum'];
     }
-    $location = MCL_CHADO_LOCATION::addLocation($this, $line['site_name'], $loc_info);
+
+    // Sets the site name [program_id + site_name].
+    $program_id = $this->getJob()->getParamByKey('program_id');
+    $site_name = $program_id . '.' . $line['site_name'];
+    $location = MCL_CHADO_LOCATION::addLocation($this, $site_name, $loc_info);
     if ($location) {
 
       // Adds properties.

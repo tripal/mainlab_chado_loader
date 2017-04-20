@@ -42,6 +42,7 @@ class MCL_TEMPLATE_CVTERM extends MCL_TEMPLATE {
       'db_name'     => array('req' => TRUE,   'width' => 10, 'desc' => "Name of the db."),
       'cv_name'     => array('req' => TRUE,   'width' => 10, 'desc' => "Name of the control vocabulary."),
       'cvterm_name' => array('req' => TRUE,   'width' => 10, 'desc' => "Name of the cvterm."),
+      'alias'       => array('req' => FALSE,  'width' => 15, 'desc' => "Alias of the cvterm."),
       'accession'   => array('req' => TRUE,   'width' => 10, 'desc' => "Accession of the cvterm."),
       'definition'  => array('req' => FALSE,  'width' => 15, 'desc' => "Definition of the cvterm."),
     );
@@ -53,6 +54,7 @@ class MCL_TEMPLATE_CVTERM extends MCL_TEMPLATE {
    */
   public function defineCvterms() {
     $cvterms = array();
+    $cvterms['SITE_CV']['alias'] = -1;
     return $cvterms;
   }
 
@@ -75,5 +77,9 @@ class MCL_TEMPLATE_CVTERM extends MCL_TEMPLATE {
 
     // Adds a cvterm.
     $cvterm = MCL_CHADO_CVTERM::addCvterm($this, $line['db_name'], $line['cv_name'], $line['cvterm_name'], $line['definition'], $line['accession']);
+    if ($cvterm) {
+      // Adds aliases.
+      $cvterm->addAlias($this, 'SITE_CV', 'alias', $line['alias'], '[,;]');
+    }
   }
 }

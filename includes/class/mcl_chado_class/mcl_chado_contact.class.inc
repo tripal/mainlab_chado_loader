@@ -51,8 +51,8 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
       // Gets the contacts.
       $names = preg_split(self::getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
-        $mcl_contact = MCL_CHADO_CONTACT::getContact(trim($name));
-        if (!$mcl_contact) {
+        $contact = MCL_CHADO_CONTACT::getContact(trim($name));
+        if (!$contact) {
           self::updateMsg($mcl_tmpl, 'E', "(name) = ($name) not found in contact");
           $flag = FALSE;
         }
@@ -93,8 +93,8 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
     }
 
     // Checks for duplication.
-    $mcl_contact = MCL_CHADO_CONTACT::byKey($args);
-    if ($mcl_contact) {
+    $contact = MCL_CHADO_CONTACT::byKey($args);
+    if ($contact) {
       self::addMsg($mcl_tmpl, 'D', 'contact', $args);
     }
     else {
@@ -102,8 +102,8 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
       // Adds a new contact.
       $args['type_id']      = $type_id;
       $args['description']  = $description;
-      $mcl_contact = new MCL_CHADO_CONTACT($args);
-      if ($mcl_contact->insert()) {
+      $contact = new MCL_CHADO_CONTACT($args);
+      if ($contact->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'contact', $args);
       }
       else {
@@ -111,7 +111,24 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
         return NULL;
       }
     }
-    return $mcl_contact;
+    return $contact;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'contactprop', 'contact_id', $this->contact_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -126,7 +143,7 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
    * @return boolean
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
-    if ($value) {
+    if ($value != '') {
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
       return $this->addProperty($mcl_tmpl, 'contactprop', 'contact_id', $this->contact_id, $type_id, $value, $separator);
     }

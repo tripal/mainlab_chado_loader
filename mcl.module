@@ -15,7 +15,7 @@ function mcl_init() {
 
   // Registers autoloader.
   require_once "$module_path/includes/class/mcl_class_loader.class.inc";
-  $mcl_autoloader = new MCL_CLASS_LOADER($module_path);
+  $mcl_autoloader = new MCL_CLASS_LOADER();
   $mcl_autoloader->register();
 
   // Includes .inc file.
@@ -64,7 +64,6 @@ function mcl_access($access_args) {
 * Implementation of hook_theme().
 */
 function mcl_theme () {
-  $template_path = drupal_get_path('module', 'mcl') . '/theme/templates';
   return array(
     'mcl_admin_template_form' => array('render element' => 'form'),
   );
@@ -418,6 +417,22 @@ function mcl_download_template_excel($args) {
   $excel = new MCL_EXCEL($details);
   $excel->create($type);
   return TRUE;
+}
+
+/**
+ * Adds additional ajax commands to be returned by the bims_ajax_render_alter hook().
+ * This is useful in the case of ajax callbacks on forms where the form still needs
+ * to be returned as usual via the form callback hook but ajax commands also need
+ * to be executed
+ *
+ * @param $commands
+ *   A single Drupal compatible ajax command created by calling ajax_command_invoke().
+ */
+function mcl_add_ajax_command($command) {
+  if(!array_key_exists('mcl-ajax-commands', $_SESSION)) {
+    $_SESSION['mcl-ajax-commands'] = array();
+  }
+  $_SESSION['mcl-ajax-commands'][] = $command;
 }
 
 /************************************************/

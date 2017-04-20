@@ -1,9 +1,9 @@
 <?php
 /**
- * The declaration of MCL_TEMPLATE_STOCK_COTTON class.
+ * The declaration of MCL_TEMPLATE_STOCK_BIMS class.
  *
  */
-class MCL_TEMPLATE_STOCK_COTTON extends MCL_TEMPLATE {
+class MCL_TEMPLATE_STOCK_BIMS extends MCL_TEMPLATE {
 
   /**
    *  Class data members.
@@ -46,7 +46,7 @@ class MCL_TEMPLATE_STOCK_COTTON extends MCL_TEMPLATE {
       'grin_id'           => array('req' => FALSE, 'width' => 10, 'desc' => "Accession ID (ACID) in the GRIN database, if it is known."),
       'subspecies'        => array('req' => FALSE, 'width' => 10, 'desc' => "Subspecies name."),
       'description'       => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the pollen parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
-      'secondary_id'      => array('req' => TRUE,  'width' => 10, 'desc' => "Alternate ID or name that is commonly used to refer to the entry."),
+      'secondary_id'      => array('req' => FALSE, 'width' => 10, 'desc' => "Alternate ID or name that is commonly used to refer to the entry."),
       'paternal_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the pollen parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
       'maternal_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the seed parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
       'mutation_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name of the mutaion parent. This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
@@ -61,6 +61,7 @@ class MCL_TEMPLATE_STOCK_COTTON extends MCL_TEMPLATE {
       'comments'          => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments on the stock."),
       'image'             => array('req' => FALSE, 'width' => 10, 'desc' => "Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
       'reference'         => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id if any publication is associated with the stock."),
+      '##stockprop'       => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by cvterm name of the stockprop type_id."),
     );
 
     // Adds labels.
@@ -108,6 +109,12 @@ class MCL_TEMPLATE_STOCK_COTTON extends MCL_TEMPLATE {
    */
   public function runErrorCheckDataLine($line) {
 
+    // Checks program_id.
+    $program_id = $this->getJob()->getParamByKey('program_id');
+    if (!$program_id) {
+      $this->updateMsg('E', "program_id not found in job.param");
+    }
+
     // Checks DB for GRIN.
     MCL_CHADO_DB::checkDB($this, 'GRIN');
 
@@ -141,14 +148,21 @@ class MCL_TEMPLATE_STOCK_COTTON extends MCL_TEMPLATE {
     // Gets type_id.
     $type_id = $this->cvterms['SITE_CV'][strtolower($line['germplasm_type'])];
 
+    // Updates name.
+    $name = ($line['secondary_id']) ? $line['secondary_id'] : '';
+
+    // Gets the program_id.
+    $program_id = $this->getJob()->getParamByKey('program_id');
+
+    // Sets the uniquename [program_id + stock_name].
+    $uniquename = $program_id . '.' . $line['stock_name'];
+
     // Adds a stock.
-    $stock = MCL_CHADO_STOCK::addStockBy2ndID($this, $line['stock_name'], $line['secondary_id'], $organism_id, $type_id);
+    $stock = MCL_CHADO_STOCK::addStock($this, $uniquename, $line['stock_name'], $organism_id, $type_id);
     if ($stock) {
 
-      // Gets db.
+      // Gets db of GRIN and add a dbxref.
       $db = MCL_CHADO_DB::getDB('GRIN');
-
-      // Adds a dbxref.
       $dbxref = MCL_CHADO_DBXREF::addDBXref($this, $db->getDbID(), $line['grin_id']);
       if ($dbxref) {
 
@@ -175,16 +189,46 @@ class MCL_TEMPLATE_STOCK_COTTON extends MCL_TEMPLATE {
       $stock->addAlias($this, $line['alias'], "[,;]");
 
       // Adds parents.
-      $stock->addParent($this, $line['paternal_parent'], '', $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
-      $stock->addParent($this, $line['maternal_parent'], '', $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
-      $stock->addParent($this, $line['mutation_parent'], '', $this->cvterms['SITE_CV']['is_a_mutation_parent_of']);
-      $stock->addParent($this, $line['selfing_parent'], '', $this->cvterms['SITE_CV']['is_a_selfing_parent_of']);
+      if ($line['paternal_parent']) {
+        $stock->addParent($this, $program_id . '.' . $line['paternal_parent'], '', $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
+      }
+      if ($line['maternal_parent']) {
+        $stock->addParent($this, $program_id . '.' . $line['maternal_parent'], '', $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
+      }
+      if ($line['mutation_parent']) {
+        $stock->addParent($this, $program_id . '.' . $line['mutation_parent'], '', $this->cvterms['SITE_CV']['is_a_mutation_parent_of']);
+      }
+      if ($line['selfing_parent']) {
+        $stock->addParent($this, $program_id . '.' . $line['selfing_parent'], '', $this->cvterms['SITE_CV']['is_a_selfing_parent_of']);
+      }
 
       // Adds images.
       $stock->addImage($this, $line['image'], "[,;]");
 
       // Adds references.
       $stock->addReference($this, $line['reference'], "[,;]");
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::postProcess()
+   */
+  public function postProcess() {
+
+    // Gets the program_id.
+    $program_id = $this->getJob()->getParamByKey('program_id');
+
+    // Adds all missing parents now.
+    $parents = $this->getTmpByKey('stock_parents');
+    foreach ((array)$parents as $stock_id => $info) {
+      // Gets the parent info.
+      $uniquename   = $info['uniquename'];
+      $organism_id  = $info['organism_id'];
+      $type_id      = $info['type_id'];
+
+      // Adds the parent.
+      $stock = MCL_CHADO_STOCK::byKey(array('stock_id' => $stock_id));
+      $stock->addParent($this, $program_id . '.' . $uniquename, $organism_id, $type_id);
     }
   }
 }

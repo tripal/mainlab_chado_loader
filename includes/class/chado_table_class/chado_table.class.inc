@@ -254,7 +254,7 @@ class CHADO_TABLE  {
    * @return boolean
    */
   public function addPropertyRanked(MCL_TEMPLATE $mcl_tmpl = NULL, $table_name, $target_field, $target_id, $type_id, $value, $rank) {
-    if ($value) {
+    if ($value != '') {
 
       // Checks duplication before adding a new property.
       $args = array(
@@ -280,6 +280,45 @@ class CHADO_TABLE  {
         }
       }
     }
+  }
+
+  /**
+   * Updates one or more properties
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $table_name
+   * @param string $target_field
+   * @param integer $target_id
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function updateProperty(MCL_TEMPLATE $mcl_tmpl = NULL, $table_name, $target_field, $target_id, $type_id, $value) {
+    if ($value || $value == '0') {
+
+      // Gets the table class.
+      $args = array(
+        $target_field => $target_id,
+        'type_id'     => $type_id,
+      );
+      $class_name = strtoupper('CHADO_' . $table_name);
+      $obj = $class_name::byKey($args);
+
+
+      // If the property exists, update it. Otherwise add a new one.
+      if ($obj) {
+        $obj->setValue($value);
+        return $obj->update();
+      }
+      else {
+        $args['value'] = $value;
+        $obj = new $class_name($args);
+        return $obj->insert();
+      }
+    }
+    return FALSE;
   }
 
   /**

@@ -54,8 +54,8 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
     if ($cv_name && $cvterm_name) {
 
       // Gets the cvterm.
-      $mcl_cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
-      if (!$mcl_cvterm) {
+      $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
+      if (!$cvterm) {
         self::updateMsg($mcl_tmpl, 'E', "(cv_name, cvterm_name) = ($cv_name, $cvterm_name) not found in cvterm");
         return FALSE;
       }
@@ -77,9 +77,9 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
     if (!$cv_name) {
       $cv_name = MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY');
     }
-    $mcl_cv = MCL_CHADO_CV::getCV($cv_name);
-    if ($mcl_cv) {
-      return MCL_CHADO_CVTERM::bykey(array('cv_id' => $mcl_cv->getCvID(), 'name' => $cvterm_name));
+    $cv = MCL_CHADO_CV::getCV($cv_name);
+    if ($cv) {
+      return MCL_CHADO_CVTERM::bykey(array('cv_id' => $cv->getCvID(), 'name' => $cvterm_name));
     }
     return NULL;
   }
@@ -120,9 +120,9 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
       $categories = preg_split("/[,;]/", $trait_category, NULL, PREG_SPLIT_NO_EMPTY);
       $cv_name = MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY');
       foreach ($categories as $category) {
-        $mcl_category = MCL_CHADO_CVTERM::getCvterm($cv_name, $category);
-        if ($mcl_category) {
-          if (!$this->addRelationship($mcl_tmpl, 'cvterm_relationship', 'subject_id', $this->cvterm_id, 'object_id', $mcl_category->getCvtermID(), $type_id)) {
+        $category = MCL_CHADO_CVTERM::getCvterm($cv_name, $category);
+        if ($category) {
+          if (!$this->addRelationship($mcl_tmpl, 'cvterm_relationship', 'subject_id', $this->cvterm_id, 'object_id', $category->getCvtermID(), $type_id)) {
             $flag = FALSE;
           }
         }

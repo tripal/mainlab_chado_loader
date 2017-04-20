@@ -53,8 +53,8 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
       }
 
       // Gets the library.
-      $mcl_library = MCL_CHADO_LIBRARY::getLibrary($uniquename, $type_id, $organism_id);
-      if (!$mcl_library) {
+      $library = MCL_CHADO_LIBRARY::getLibrary($uniquename, $type_id, $organism_id);
+      if (!$library) {
          self::updateMsg($mcl_tmpl, 'E', "(uniquename, type_id, organism_id) = ($uniquename, $type_id, $organism_id) not found in library");
          return FALSE;
       }
@@ -114,16 +114,16 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
     }
 
     // Checks for duplication.
-    $mcl_library = MCL_CHADO_LIBRARY::byKey($args);
-    if ($mcl_library) {
+    $library = MCL_CHADO_LIBRARY::byKey($args);
+    if ($library) {
       self::addMsg($mcl_tmpl, 'D', 'library', $args);
     }
     else {
 
       // Adds a new library.
       $args['name']  = $uniquename;
-      $mcl_library = new MCL_CHADO_LIBRARY($args);
-      if ($mcl_library->insert()) {
+      $library = new MCL_CHADO_LIBRARY($args);
+      if ($library->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'library', $args);
       }
       else {
@@ -131,7 +131,24 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
         return NULL;
       }
     }
-    return $mcl_library;
+    return $library;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'libraryprop', 'library_id', $this->library_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -146,7 +163,7 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    * @return boolean
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
-    if ($value) {
+    if ($value != '') {
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
       return $this->addProperty($mcl_tmpl, 'libraryprop', 'library_id', $this->library_id, $type_id, $value, $separator);
     }
@@ -157,16 +174,16 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
    * Adds synoym and library_synoym.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param MCL_CHADO_SYNONYM $mcl_synonym
+   * @param MCL_CHADO_SYNONYM $synonym
    *
    * @return boolean
    */
-  public function addSynonym(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_SYNONYM $mcl_synonym) {
-    if ($mcl_synonym) {
+  public function addSynonym(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_SYNONYM $synonym) {
+    if ($synonym) {
 
       // Checks for duplication.
       $args = array(
-        'synonym_id'  => $mcl_synonym->getSynonymID(),
+        'synonym_id'  => $synonym->getSynonymID(),
         'library_id'  => $this->library_id,
         'pub_id'      => MCL_VAR::getValueByName('PUB_ID'),
       );
@@ -205,9 +222,9 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
       $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
-        $mcl_contact = MCL_CHADO_CONTACT::byKey(array('name' => $name));
-        if ($mcl_contact) {
-          if (!$this->addLink($mcl_tmpl, 'library_contact', 'library_id', $this->library_id, 'contact_id', $mcl_contact->getContactID())) {
+        $contact = MCL_CHADO_CONTACT::byKey(array('name' => $name));
+        if ($contact) {
+          if (!$this->addLink($mcl_tmpl, 'library_contact', 'library_id', $this->library_id, 'contact_id', $contact->getContactID())) {
             $flag = FALSE;
           }
         }
@@ -234,8 +251,8 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
       $pub_ids = preg_split($this->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);
-        $mcl_pub = MCL_CHADO_PUB::getPub($pub_id);
-        if ($mcl_pub) {
+        $pub = MCL_CHADO_PUB::getPub($pub_id);
+        if ($pub) {
           $this->addLink($mcl_tmpl, 'library_pub', 'library_id', $this->library_id, 'pub_id', $pub_id);
         }
         else {

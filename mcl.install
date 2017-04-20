@@ -360,7 +360,7 @@ function mcl_populate_table_defaults() {
 
   // Registers autoloader.
   require_once "$module_path/includes/class/mcl_class_loader.class.inc";
-  $bims_autoloader = new MCL_CLASS_LOADER($module_path);
+  $bims_autoloader = new MCL_CLASS_LOADER();
   $bims_autoloader->register();
 
   // Populates mcl_var table.
@@ -370,7 +370,7 @@ function mcl_populate_table_defaults() {
   mcl_populate_mcl_templates();
 
   // Populates mcl_data_type table.
-  mcl_populate_mcl_data_type();
+  mcl_populate_mcl_data_valid_type();
 }
 
 /**
@@ -413,14 +413,13 @@ function mcl_populate_mcl_templates() {
 
   // Default template types.
   $template_types = array(
-    'COLUMN',
     'DB',
     'CV',
+    'TRAIT',
     'CVTERM',
     'ORGANISM',
     'CONTACT',
     'LIBRARY',
-    'TRAIT',
     'DATASET',
     'IMAGE',
     'DESCRIPTOR',
@@ -431,7 +430,6 @@ function mcl_populate_mcl_templates() {
     'MARKER',
     'MTL',
     'QTL',
-    'PROGENY',
     'MAP',
     'MAP_POSITION',
     'FIELD_BOOK',
@@ -492,14 +490,16 @@ function mcl_populate_mcl_data_valid_type() {
 
   // Adds descriptor format types.
   $data_types['descriptor_format'] = array(
-    'numeric',
-    'date',
-    'percent',
+    'audio',
     'boolean',
     'categorical',
-    'text',
+    'counter',
+    'date',
+    'multicat',
+    'numeric',
+    'percent',
     'photo',
-    'audio',
+    'text',
   );
 
   // Adds descriptor types.
@@ -557,9 +557,12 @@ function mcl_populate_mcl_data_valid_type() {
     );
 
     // Gets cv_id.
-    $cv_id= '';
+    $cv_id = '';
     if ($cv_name) {
       $cv = MCL_CHADO_CV::getCV($cv_name);
+      if (!$cv) {
+        continue;
+      }
       $cv_id = $cv->getCvID();
       $details['cv_id'] = $cv_id;
     }
@@ -607,7 +610,7 @@ function mcl_update_7019() {
   // Registers autoloader.
   $module_path = drupal_get_path('module', 'mcl');
   require_once "$module_path/includes/class/mcl_class_loader.class.inc";
-  $bims_autoloader = new MCL_CLASS_LOADER($module_path);
+  $bims_autoloader = new MCL_CLASS_LOADER();
   $bims_autoloader->register();
 
   $transaction = db_transaction();
@@ -624,16 +627,6 @@ function mcl_update_7019() {
       // Populate tables.
       if (!mcl_populate_mcl_data_valid_type()) {
         throw new Exception("Failed to populate data valid type");
-      }
-    }
-
-    // Adds a new template type.
-    $mcl_template_type = MCL_TEMPLATE_TYPE::byKey(array('type' => 'COLUMN'));
-    if (!$mcl_template_type) {
-      $details = array('type' => 'COLUMN', 'rank' => 10);
-      $mcl_template_type = new MCL_TEMPLATE_TYPE($details);
-      if (!$mcl_template_type->insert()) {
-        throw new Exception("Failed to add a template type");
       }
     }
   }

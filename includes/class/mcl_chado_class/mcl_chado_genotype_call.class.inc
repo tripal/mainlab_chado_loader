@@ -49,15 +49,15 @@ class MCL_CHADO_GENOTYPE_CALL extends CHADO_GENOTYPE_CALL {
     }
 
     // Checks for duplication.
-    $mcl_genotype_call = MCL_CHADO_GENOTYPE_CALL::byKey($args);
-    if ($mcl_genotype_call) {
+    $genotype_call = MCL_CHADO_GENOTYPE_CALL::byKey($args);
+    if ($genotype_call) {
       self::addMsg($mcl_tmpl, 'D', 'genotype_call', $args);
     }
     else {
 
       // Adds a new genotype.
-      $mcl_genotype_call = new MCL_CHADO_GENOTYPE_CALL($args);
-      if ($mcl_genotype_call->insert()) {
+      $genotype_call = new MCL_CHADO_GENOTYPE_CALL($args);
+      if ($genotype_call->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'genotype_call', $args);
       }
       else {
@@ -65,6 +65,6 @@ class MCL_CHADO_GENOTYPE_CALL extends CHADO_GENOTYPE_CALL {
         return NULL;
       }
     }
-    return $mcl_genotype_call;
+    return $genotype_call;
   }
 }

@@ -166,7 +166,6 @@ class CHADO_ND_GEOLOCATIONPROP  extends CHADO_TABLE {
       $fields['value']             = $this->value;
       $fields['rank']              = (is_numeric($this->rank)) ? $this->rank : 0;
 
-
       // Updates the record.
       db_update('chado.nd_geolocationprop')
         ->fields($fields)

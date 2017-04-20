@@ -88,28 +88,12 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     MCL_CHADO_FEATUREMAP::checkMap($this, $line['map_name']);
 
     // Checks feature. It must be generic marker, MTL or QTL.
-    $marker_qtl_mtl = $line['marker_qtl_mtl'];
-
-    // Gets genetic marker.
-    $feature = MCL_CHADO_FEATURE::getFeatureAlias($marker_qtl_mtl, $genus, $species, $this->cvterms['sequence']['genetic_marker']);
-    if (!$feature) {
-
-      // Gets the QTL.
-      $args = array(
-        'uniquename'  => $marker_qtl_mtl,
-        'type_id'     => $this->cvterms['sequence']['qtl'],
-      );
-      $feature = MCL_CHADO_FEATURE::byKey($args);
-      if (!$feature) {
-
-        // Gets the MTL.
-        $args['type_id'] = $this->cvterms['sequence']['heritable_phenotypic_marker'];
-        $feature = MCL_CHADO_FEATURE::byKey($args);
-        if (!$feature) {
-          $this->updateMsg('E', "Error - $marker_qtl_mtl is not 'Marker, 'QTL' or 'MTL'");
-        }
-      }
-    }
+    $type_ids = array(
+      'marker'  => $this->cvterms['sequence']['genetic_marker'],
+      'qtl'     => $this->cvterms['sequence']['qtl'],
+      'mtl'     => $this->cvterms['sequence']['heritable_phenotypic_marker'],
+    );
+    MCL_CHADO_FEATURE::checkMarkerMtlQtl($this, $line['marker_qtl_mtl'], $type_ids);
   }
 
   /**
@@ -187,7 +171,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     $bin_name = $line['bin_name'];
     if ($bin_name) {
       $uniquename = $map->getName() . '.' . $bin_name;
-      $bin = MCL_CHADO_FEATURE::addFeature($this, $uniquename, '', $this->cvterms['SITE_CV']['bin'], $organism_id);
+      $bin = MCL_CHADO_FEATURE::addFeature($this, $uniquename, '', $this->cvterms['SITE_CV']['bin'], $organism_id_lg);
       if ($bin) {
 
         // Adds a relationship.

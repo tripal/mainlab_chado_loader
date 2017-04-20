@@ -121,9 +121,11 @@ class MCL_TEMPLATE_GENOTYPE_SNP_MARKER_COLUMN extends MCL_TEMPLATE {
   private function _checkMarkers($line) {
 
     // This should be called once.
-    if ($line['line_no'] != 3 || $this->getJob()->getParamByKey('marker_cols')) {
+    if ($line['line_no'] != 3) {
       return;
     }
+    //$this->getJob()->getParamByKey('marker_cols')
+    //$this->getJob()->getForce()) {
 
     // Gets feature_id for the markers.
     $markers = array();

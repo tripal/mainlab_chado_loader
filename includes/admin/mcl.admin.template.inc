@@ -101,14 +101,16 @@ function mcl_admin_template_form_submit($form, &$form_state) {
 
 
     // Updates the visibility (public or private) of templates.
-    foreach ($form['templates'] as $template_id => $info) {
-      if (!preg_match("/^(\d+)$/", $template_id)) {
-        continue;
+    if (array_key_exists('templates', $form)) {
+      foreach ((array)$form['templates'] as $template_id => $info) {
+        if (!preg_match("/^(\d+)$/", $template_id)) {
+          continue;
+        }
+        $template = MCL_TEMPLATE::byKey(array('template_id' => $template_id));
+        $public = $form_state['values']['templates'][$template_id];
+        $template->setPublic($public);
+        $template->update();
       }
-      $template = MCL_TEMPLATE::byKey(array('template_id' => $template_id));
-      $public = $form_state['values']['templates'][$template_id];
-      $template->setPublic($public);
-      $template->update();
     }
 
     // Scans the template directory and add new templates or remove non-existance
@@ -130,54 +132,56 @@ function theme_mcl_admin_template_form($variables) {
   $layout.= "<div style='width:100%;'>" . drupal_render($form['template_list']) . '</div>';
 
   // Gets the template directory.
-  $template_path = drupal_get_path('module', 'mcl') . '/includes/class/template/module';
+  $template_path = drupal_get_path('module', 'mcl') . '/templates';
 
   // Gets all templates and populates the table with the templates.
   $rows = array();
-  foreach ($form['templates'] as $template_id => $info) {
-    if (!preg_match("/^(\d+)$/", $template_id)) {
-      continue;
+  if (array_key_exists('templates', $form)) {
+    foreach ((array)$form['templates'] as $template_id => $info) {
+      if (!preg_match("/^(\d+)$/", $template_id)) {
+        continue;
+      }
+      $template = MCL_TEMPLATE::byKey(array('template_id' => $template_id));
+
+      // Checks the existance of the class file.
+      $class_file = 'mcl_template_' . strtolower($template->getTemplate()) . '.class.inc';
+      $class_exists = (file_exists("$template_path/$class_file")) ? 'exists' : 'not exist';
+
+      // Gets the definition.
+      $description = '<em>N/A</em>';
+      if ($class_exists == 'exists') {
+        $template = MCL_TEMPLATE::getTemplateByID($template_id);
+        $description = $template->defineDescription();
+      }
+
+      $row = array(
+        drupal_render($form['templates'][$template_id]),
+        $template->getTemplateType(FALSE),
+        $template->getTemplate(),
+        $class_exists,
+        $description,
+      );
+      $rows []= $row;
     }
-    $template = MCL_TEMPLATE::byKey(array('template_id' => $template_id));
-
-    // Checks the existance of the class file.
-    $class_file = 'mcl_template_' . strtolower($template->getTemplate()) . '.class.inc';
-    $class_exists = (file_exists("$template_path/$class_file")) ? 'exists' : 'not exist';
-
-    // Gets the definition.
-    $description = '<em>N/A</em>';
-    if ($class_exists == 'exists') {
-      $template = MCL_TEMPLATE::getTemplateByID($template_id);
-      $description = $template->defineDescription();
-    }
-
-     $row = array(
-      drupal_render($form['templates'][$template_id]),
-      $template->getTemplateType(FALSE),
-      $template->getTemplate(),
-      $class_exists,
-      $description,
-    );
-    $rows []= $row;
   }
 
-   // Sets the headers.
-   $headers = array(
-   array('data' => 'Public', 'style' => 'width:10px'),
-   array('data' => 'Template Type', 'style' => 'width:15%'),
-   array('data' => 'Template', 'style' => 'width:10%'),
-   array('data' => 'Class File', 'style' => 'width:8%'),
-   'Description',
-   );
+  // Sets the headers.
+  $headers = array(
+    array('data' => 'Public', 'style' => 'width:10px'),
+    array('data' => 'Template Type', 'style' => 'width:15%'),
+    array('data' => 'Template', 'style' => 'width:10%'),
+    array('data' => 'Class File', 'style' => 'width:8%'),
+    'Description',
+  );
 
-   $table_vars = array(
-     'header'      => $headers,
-     'rows'        => $rows,
-     'attributes'  => array(),
-   );
+  $table_vars = array(
+    'header'      => $headers,
+    'rows'        => $rows,
+    'attributes'  => array(),
+  );
 
-   // Adds the template table.
-   $layout .= theme('table', $table_vars);
-   $layout .= drupal_render_children($form);
-   return $layout;
+  // Adds the template table.
+  $layout .= theme('table', $table_vars);
+  $layout .= drupal_render_children($form);
+  return $layout;
 }

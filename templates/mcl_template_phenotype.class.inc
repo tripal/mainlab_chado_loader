@@ -56,6 +56,8 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
       'data_year'         => array('req' => FALSE, 'width' => 10, 'desc' => "Phenotyping date if only year is known."),
       'evaluation_date'   => array('req' => FALSE, 'width' => 10, 'desc' => "Date of phenotype evaluation."),
       'pick_date'         => array('req' => FALSE, 'width' => 10, 'desc' => "Date of the sample collection if the collection is done on a different date than the phenotype evaluation."),
+      'previous_entry'    => array('req' => FALSE, 'width' => 10, 'desc' => "stock ID of the previous entry."),
+      'barcode'           => array('req' => FALSE, 'width' => 10, 'desc' => "Barcode"),
       'fiber_pkg'         => array('req' => FALSE, 'width' => 10, 'desc' => "Group of samples for phenotyping, can contain samples from multiple germplasm."),
       'storage_time'      => array('req' => FALSE, 'width' => 10, 'desc' => "Time between collection and phenotyping."),
       'storage_regime'    => array('req' => FALSE, 'width' => 10, 'desc' => "The condition of sample storage between the collection and phenotyping."),
@@ -89,9 +91,10 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['evaluation_date']    = -1;
     $cvterms['SITE_CV']['storage_time']       = -1;
     $cvterms['SITE_CV']['storage_regime']     = -1;
+    $cvterms['SITE_CV']['previous_entry']     = -1;
+    $cvterms['SITE_CV']['barcode']            = -1;
     $cvterms['SITE_CV']['fiber_pkg']          = -1;
     $cvterms['SITE_CV']['comments']           = -1;
-    $cvterms['SITE_CV']['trait_descriptor']   = -1;
     $cvterms['SITE_CV']['source']             = -1;
     $cvterms['SITE_CV']['previous_entry']     = -1;
 
@@ -195,12 +198,13 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
       $sample->addProp($this, 'SITE_CV', 'plant_date', $line['plant_date']);
       $sample->addProp($this, 'SITE_CV', 'pick_date', $line['pick_date']);
       $sample->addProp($this, 'SITE_CV', 'storage_time', $line['storage_time']);
+      $sample->addProp($this, 'SITE_CV', 'barcode', $line['barcode']);
       $sample->addProp($this, 'SITE_CV', 'fiber_pkg', $line['fiber_pkg']);
       $sample->addProp($this, 'SITE_CV', 'storage_regime', $line['storage_regime']);
       $sample->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
       // Adds previous-entry.
-      $sample->addPreviousEntry($this, $line['##previous-entry']);
+      $sample->addPreviousEntry($this, $line['previous-entry']);
 
       // Adds phenotyping data for each descriptor.
       $descriptors = $this->getJob()->getParamByKey('descriptors');
@@ -212,7 +216,7 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
         }
 
         // Adds a phenotype.
-        $uniquename = substr($descriptor . '_' . $line[$descriptor], 1);
+        $uniquename = $descriptor . '_' . $line[$descriptor];
         $phenotype = MCL_CHADO_PHENOTYPE::addPhenotype($this, $uniquename, $cvterm_id, $line[$descriptor]);
 
         // Adds a nd_experiment.
@@ -246,18 +250,19 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
   private function _checkDescriptors($line, $dataset_name) {
 
     // This should be called once.
-    if ($line['line_no'] != 3 || $this->getJob()->getParamByKey('descriptors')) {
+    if ($line['line_no'] != 3) {
       return;
     }
+    //$this->getJob()->getParamByKey('descriptors')
+    //$this->getJob()->getForce()) {
 
-    // Gets the project ID and check for trait_descriptor.
-    $dataset    = MCL_CHADO_DATASET::getDataset($line['dataset_name']);
-    $project_id = $dataset->getProjectID();
-    $cv_name    = $dataset->getProp('SITE_CV', 'trait_descriptor');
-    if (!$cv_name) {
-      $this->updateMsg('E', "$dataset_name does not have trait_descriptor as a project property");
+    // Gets the cv for the descriptors.
+    $cv = $this->getCvByPrefix('#');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist for prefix '#'.");
       return;
     }
+    $cv_id = $cv->getCvID();
 
     // Go through headers stord in the line array.
     $descriptors = array();
@@ -265,7 +270,7 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
       if (preg_match("/^#[A-Za-z0-9\_]/", $column)) {
 
         $cvterm_name = str_replace('#', '', $column);
-        $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
+        $cvterm = MCL_CHADO_CVTERM::getCvtermByCvID($cv_id, $cvterm_name);
         if ($cvterm) {
           $descriptors[$column] = $cvterm->getCvtermID();
         }

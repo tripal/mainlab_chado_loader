@@ -544,7 +544,7 @@ CREATE TABLE bims_mview_descriptor (
     min_value character varying(255),
     max_value character varying(255),
     categories text,
-    unit character varying(255),
+    data_unit character varying(255),
     prop text,
     definition text
 );
@@ -1072,6 +1072,48 @@ CREATE SEQUENCE blocked_ips_iid_seq
 --
 
 ALTER SEQUENCE blocked_ips_iid_seq OWNED BY blocked_ips.iid;
+
+
+--
+-- Name: book; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE book (
+    mlid bigint DEFAULT 0 NOT NULL,
+    nid bigint DEFAULT 0 NOT NULL,
+    bid bigint DEFAULT 0 NOT NULL,
+    CONSTRAINT book_bid_check CHECK ((bid >= 0)),
+    CONSTRAINT book_mlid_check CHECK ((mlid >= 0)),
+    CONSTRAINT book_nid_check CHECK ((nid >= 0))
+);
+
+
+--
+-- Name: TABLE book; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE book IS 'Stores book outline information. Uniquely connects each node in the outline to a link in menu_links';
+
+
+--
+-- Name: COLUMN book.mlid; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN book.mlid IS 'The book page''s menu_links.mlid.';
+
+
+--
+-- Name: COLUMN book.nid; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN book.nid IS 'The book page''s node.nid.';
+
+
+--
+-- Name: COLUMN book.bid; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN book.bid IS 'The book ID is the book.nid of the top-level page.';
 
 
 --
@@ -1934,6 +1976,89 @@ CREATE SEQUENCE comment_cid_seq
 --
 
 ALTER SEQUENCE comment_cid_seq OWNED BY comment.cid;
+
+
+--
+-- Name: contact; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE contact (
+    cid integer NOT NULL,
+    category character varying(255) DEFAULT ''::character varying NOT NULL,
+    recipients text NOT NULL,
+    reply text NOT NULL,
+    weight integer DEFAULT 0 NOT NULL,
+    selected smallint DEFAULT 0 NOT NULL,
+    CONSTRAINT contact_cid_check CHECK ((cid >= 0))
+);
+
+
+--
+-- Name: TABLE contact; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE contact IS 'Contact form category settings.';
+
+
+--
+-- Name: COLUMN contact.cid; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN contact.cid IS 'Primary Key: Unique category ID.';
+
+
+--
+-- Name: COLUMN contact.category; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN contact.category IS 'Category name.';
+
+
+--
+-- Name: COLUMN contact.recipients; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN contact.recipients IS 'Comma-separated list of recipient e-mail addresses.';
+
+
+--
+-- Name: COLUMN contact.reply; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN contact.reply IS 'Text of the auto-reply message.';
+
+
+--
+-- Name: COLUMN contact.weight; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN contact.weight IS 'The category''s weight.';
+
+
+--
+-- Name: COLUMN contact.selected; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN contact.selected IS 'Flag to indicate whether or not category is selected by default. (1 = Yes, 0 = No)';
+
+
+--
+-- Name: contact_cid_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE contact_cid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: contact_cid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE contact_cid_seq OWNED BY contact.cid;
 
 
 --
@@ -3648,14 +3773,33 @@ ALTER SEQUENCE gensas_files_file_id_seq OWNED BY gensas_files.file_id;
 --
 
 CREATE TABLE gensas_gff3 (
-    id character varying(200) NOT NULL,
     job_id character varying(200) NOT NULL,
-    parent character varying(200),
     prop text,
-    type character varying(200) NOT NULL,
+    id character varying(255) NOT NULL,
+    type character varying(255) NOT NULL,
     start integer,
+    parent character varying(255),
     landmark character varying(1024) NOT NULL
 );
+
+
+--
+-- Name: gensas_gff3_location_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE gensas_gff3_location_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gensas_gff3_location_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE gensas_gff3_location_seq OWNED BY gensas_gff3.start;
 
 
 --
@@ -4399,8 +4543,9 @@ CREATE TABLE gensas_user_tool (
 
 CREATE TABLE history (
     uid integer DEFAULT 0 NOT NULL,
-    nid integer DEFAULT 0 NOT NULL,
-    "timestamp" integer DEFAULT 0 NOT NULL
+    nid bigint DEFAULT 0 NOT NULL,
+    "timestamp" integer DEFAULT 0 NOT NULL,
+    CONSTRAINT history_nid_check CHECK ((nid >= 0))
 );
 
 
@@ -6922,32 +7067,19 @@ ALTER SEQUENCE taxonomy_vocabulary_vid_seq OWNED BY taxonomy_vocabulary.vid;
 --
 
 CREATE TABLE tmp (
+    id integer NOT NULL,
     col1 character varying,
     col2 character varying,
     col3 character varying,
-    col4 character varying,
-    id integer NOT NULL
+    col4 character varying
 );
 
 
 --
--- Name: tmp2; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+-- Name: tmp_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE TABLE tmp2 (
-    col1 character varying,
-    col2 character varying,
-    col3 character varying,
-    col4 character varying,
-    id integer NOT NULL
-);
-
-
---
--- Name: tmp2_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE tmp2_id_seq
+CREATE SEQUENCE tmp_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -6956,29 +7088,10 @@ CREATE SEQUENCE tmp2_id_seq
 
 
 --
--- Name: tmp2_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tmp_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE tmp2_id_seq OWNED BY tmp2.id;
-
-
---
--- Name: tmp3_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE tmp3_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: tmp3_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE tmp3_id_seq OWNED BY tmp.id;
+ALTER SEQUENCE tmp_id_seq OWNED BY tmp.id;
 
 
 --
@@ -7046,6 +7159,88 @@ CREATE SEQUENCE url_alias_pid_seq
 --
 
 ALTER SEQUENCE url_alias_pid_seq OWNED BY url_alias.pid;
+
+
+--
+-- Name: user_restrictions; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE user_restrictions (
+    urid integer NOT NULL,
+    mask character varying(255) DEFAULT ''::character varying NOT NULL,
+    type character varying(255) DEFAULT ''::character varying NOT NULL,
+    subtype character varying(255) DEFAULT ''::character varying NOT NULL,
+    status smallint DEFAULT 0 NOT NULL,
+    expire integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: TABLE user_restrictions; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE user_restrictions IS 'Stores user restrictions.';
+
+
+--
+-- Name: COLUMN user_restrictions.urid; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN user_restrictions.urid IS 'Primary Key: Unique user restriction ID.';
+
+
+--
+-- Name: COLUMN user_restrictions.mask; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN user_restrictions.mask IS 'Text mask used for filtering restrictions.';
+
+
+--
+-- Name: COLUMN user_restrictions.type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN user_restrictions.type IS 'Type of access rule: name, mail, or any value defined from a third-party module.';
+
+
+--
+-- Name: COLUMN user_restrictions.subtype; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN user_restrictions.subtype IS 'Sub-type of access rule.';
+
+
+--
+-- Name: COLUMN user_restrictions.status; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN user_restrictions.status IS 'Whether the restriction is to allow (1), or deny access (0).';
+
+
+--
+-- Name: COLUMN user_restrictions.expire; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN user_restrictions.expire IS 'A Unix timestamp indicating when the restriction expires.';
+
+
+--
+-- Name: user_restrictions_urid_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE user_restrictions_urid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_restrictions_urid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE user_restrictions_urid_seq OWNED BY user_restrictions.urid;
 
 
 --
@@ -7640,6 +7835,13 @@ ALTER TABLE ONLY comment ALTER COLUMN cid SET DEFAULT nextval('comment_cid_seq':
 
 
 --
+-- Name: cid; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY contact ALTER COLUMN cid SET DEFAULT nextval('contact_cid_seq'::regclass);
+
+
+--
 -- Name: dfid; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7937,14 +8139,7 @@ ALTER TABLE ONLY taxonomy_vocabulary ALTER COLUMN vid SET DEFAULT nextval('taxon
 -- Name: id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY tmp ALTER COLUMN id SET DEFAULT nextval('tmp3_id_seq'::regclass);
-
-
---
--- Name: id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY tmp2 ALTER COLUMN id SET DEFAULT nextval('tmp2_id_seq'::regclass);
+ALTER TABLE ONLY tmp ALTER COLUMN id SET DEFAULT nextval('tmp_id_seq'::regclass);
 
 
 --
@@ -7952,6 +8147,13 @@ ALTER TABLE ONLY tmp2 ALTER COLUMN id SET DEFAULT nextval('tmp2_id_seq'::regclas
 --
 
 ALTER TABLE ONLY url_alias ALTER COLUMN pid SET DEFAULT nextval('url_alias_pid_seq'::regclass);
+
+
+--
+-- Name: urid; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY user_restrictions ALTER COLUMN urid SET DEFAULT nextval('user_restrictions_urid_seq'::regclass);
 
 
 --
@@ -8225,6 +8427,22 @@ ALTER TABLE ONLY blocked_ips
 
 
 --
+-- Name: book_nid_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY book
+    ADD CONSTRAINT book_nid_key UNIQUE (nid);
+
+
+--
+-- Name: book_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY book
+    ADD CONSTRAINT book_pkey PRIMARY KEY (mlid);
+
+
+--
 -- Name: cache_block_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -8334,6 +8552,22 @@ ALTER TABLE ONLY cache_views
 
 ALTER TABLE ONLY comment
     ADD CONSTRAINT comment_pkey PRIMARY KEY (cid);
+
+
+--
+-- Name: contact_category_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY contact
+    ADD CONSTRAINT contact_category_key UNIQUE (category);
+
+
+--
+-- Name: contact_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY contact
+    ADD CONSTRAINT contact_pkey PRIMARY KEY (cid);
 
 
 --
@@ -8609,11 +8843,11 @@ ALTER TABLE ONLY gensas_expire
 
 
 --
--- Name: gensas_gff3_id_job_id_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+-- Name: gensas_gff3_job_id_id_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY gensas_gff3
-    ADD CONSTRAINT gensas_gff3_id_job_id_key UNIQUE (id, job_id);
+    ADD CONSTRAINT gensas_gff3_job_id_id_key UNIQUE (job_id, id);
 
 
 --
@@ -9321,6 +9555,14 @@ ALTER TABLE ONLY url_alias
 
 
 --
+-- Name: user_restrictions_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY user_restrictions
+    ADD CONSTRAINT user_restrictions_pkey PRIMARY KEY (urid);
+
+
+--
 -- Name: users_name_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -9385,6 +9627,13 @@ ALTER TABLE ONLY watchdog
 
 
 --
+-- Name: authmap_uid_module_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX authmap_uid_module_idx ON authmap USING btree (uid, module);
+
+
+--
 -- Name: batch_token_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -9417,6 +9666,13 @@ CREATE INDEX block_role_rid_idx ON block_role USING btree (rid);
 --
 
 CREATE INDEX blocked_ips_blocked_ip_idx ON blocked_ips USING btree (ip);
+
+
+--
+-- Name: book_bid_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX book_bid_idx ON book USING btree (bid);
 
 
 --
@@ -9543,6 +9799,13 @@ CREATE INDEX comment_comment_status_pid_idx ON comment USING btree (pid, status)
 --
 
 CREATE INDEX comment_comment_uid_idx ON comment USING btree (uid);
+
+
+--
+-- Name: contact_list_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX contact_list_idx ON contact USING btree (weight, category);
 
 
 --
@@ -10099,6 +10362,13 @@ CREATE INDEX gensas_expire_idx1_gensas_expire_idx ON gensas_expire USING btree (
 
 
 --
+-- Name: gensas_gff3_landmark_job_id_id_key; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX gensas_gff3_landmark_job_id_id_key ON gensas_gff3 USING btree (job_id, id, landmark);
+
+
+--
 -- Name: gensas_job_cmd_idx_gensas_job_cmd_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -10635,6 +10905,34 @@ CREATE INDEX url_alias_alias_language_pid_idx ON url_alias USING btree (alias, l
 --
 
 CREATE INDEX url_alias_source_language_pid_idx ON url_alias USING btree (source, language, pid);
+
+
+--
+-- Name: user_restrictions_expire_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX user_restrictions_expire_idx ON user_restrictions USING btree (expire);
+
+
+--
+-- Name: user_restrictions_status_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX user_restrictions_status_idx ON user_restrictions USING btree (status);
+
+
+--
+-- Name: user_restrictions_subtype_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX user_restrictions_subtype_idx ON user_restrictions USING btree (substr((subtype)::text, 1, 32));
+
+
+--
+-- Name: user_restrictions_type_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX user_restrictions_type_idx ON user_restrictions USING btree (substr((type)::text, 1, 32));
 
 
 --

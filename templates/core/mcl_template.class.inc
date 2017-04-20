@@ -16,6 +16,7 @@ class MCL_TEMPLATE extends PUBLIC_MCL_TEMPLATE {
   protected $job            = NULL;
   protected $line_no        = NULL;
   protected $stats          = NULL;
+  private   $tmp            = array();
 
   /**
    * @see PUBLIC_MCL_TEMPLATE::__construct()
@@ -214,7 +215,8 @@ DESC;
   public static function updateTemplates($remove = FALSE, $refresh = FALSE) {
 
     // Gets the template folder.
-    $template_dir = drupal_get_path('module', 'mcl') . '/includes/class/template/module';
+    $class_loader = new MCL_CLASS_LOADER();
+    $template_dir = $class_loader->getTemplatePath();
 
     // Removes all templates from the table.
     if ($refresh) {
@@ -226,6 +228,12 @@ DESC;
     $files = file_scan_directory($template_dir, "/\.inc$/");
     $template_class = array();
     foreach ($files as $filepath => $file) {
+
+      // Skips files in /templates/core directory.
+      if (preg_match("/\/templates\/core/", $filepath)) {
+        continue;
+      }
+
       if (preg_match("/^mcl_template_(.*)\.class$/", $file->name, $matches)) {
         $template_name = $matches[1];
         $template_class[$template_name] = TRUE;
@@ -367,11 +375,6 @@ DESC;
    */
   public static function validateTemplate($template) {
 
-    // Updates the template name.
-    if (MCL_TEMPLATE::isColumnTemplate($template)) {
-      $template = 'COLUMN';
-    }
-
     // Checks if a template for this template exists.
     $mcl_template = MCL_TEMPLATE::byKey(array('template' => $template));
     if ($mcl_template) {
@@ -395,11 +398,6 @@ DESC;
    */
   public static function getRank($template) {
 
-    // Updates the template name.
-    if (preg_match("/^([A-Za-z0-9\_]+)_column$/", $template, $matches)) {
-      $template = $matches[1];
-    }
-
     // Gets the rank of the template.
     $mcl_template = MCL_TEMPLATE::byKey(array('template' => $template));
     return $mcl_template->template_type->getRank();
@@ -415,13 +413,8 @@ DESC;
    */
   public static function getTemplateClass(MCL_JOB_UPLOAD $job, MCL_FILE_CSV $csv) {
 
-    // Gets and updates the template.
-    $template = $csv->getTemplate();
-    if (MCL_TEMPLATE::isColumnTemplate($template)) {
-      $template = 'column';
-    }
-
     // Gets the child class object of MCL_TEMPLATE.
+    $template = $csv->getTemplate();
     $class_name = 'MCL_TEMPLATE_' . strtoupper($template);
     $mcl_template = $class_name::byKey(array('template' => $template));
     if ($mcl_template) {
@@ -640,9 +633,15 @@ DESC;
    *
    * @param string $key
    * @param string $msg
+   * @param boolean $flag_line_no
    */
-  public function updateMsg($key, $msg) {
-    $this->job->updateMsg($key, $msg, $this->line_no);
+  public function updateMsg($key, $msg, $flag_line_no = TRUE) {
+    if ($flag_line_no) {
+      $this->job->updateMsg($key, $msg, $this->line_no);
+    }
+    else {
+      $this->job->updateMsg($key, $msg);
+    }
   }
 
   /**
@@ -889,9 +888,38 @@ DESC;
             continue;
           }
 
-          // Sets column #.
-          if (array_key_exists($column_name, $this->headers) || preg_match($regex, $column_name)) {
+          // Updates the header column array.
+          if (array_key_exists($column_name, $this->headers)) {
             $this->headers[$column_name]['col'] = $i;
+          }
+
+          // Handles the special coulmns.
+          else if (preg_match($regex, $column_name, $matches)) {
+            $this->headers[$column_name]['col'] = $i;
+            $prefix   = $matches[0];
+            $prefix_len  = strlen($prefix);
+
+            // Type 1 : double special character + cvterm.name.
+            if ($prefix_len == 2) {
+
+              // Gets cv_id.
+              $cv_id = $this->getCvByPrefix($prefix);
+              if ($cv) {
+
+                // Gets the cvterm.
+                $cvterm_name = substr($column_name, $prefix_len);
+                $cvterm = MCL_CHADO_CVTERM::getCvtermByCvID($cv_id, $cvterm_name);
+                if ($cvterm) {
+                  $this->headers[$column_name]['cvterm_id'] = $cvterm->getCvtermID();
+                }
+                else {
+                  $this->updateMsg('E', "Error : $cvterm_name not found in cvterm table.");
+                }
+              }
+              else {
+                $this->updateMsg('E', "Error : cv could not found for $prefix.");
+              }
+            }
           }
         }
       }
@@ -918,6 +946,28 @@ DESC;
     }
     fclose($fh);
     return $this->isPassed();
+  }
+
+  /**
+   * Returns cv.cv_id from the parameter of this job if found. Otherwise,
+   * returns cv_id of 'SITE_CV'.
+   *
+   * @param string $prefix
+   *
+   * @return MCL_CHADO_CV
+   */
+  public function getCvByPrefix($prefix) {
+
+    // Returns cv_id for this prefix if it found in job param array.
+    $cv_id_map = $this->getJob()->getParamByKey('cv_id_map');
+    if (is_array($cv_id_map) && array_key_exists($this->template, $cv_id_map)) {
+      if (array_key_exists($prefix, $cv_id_map[$this->template])) {
+        return MCL_CHADO_CV::getCVByID($cv_id_map[$this->template][$prefix]);
+      }
+    }
+
+    // Returns MCL_CHADO_CV for 'SITE_TRAIT_ONTOLOGY'.
+    return MCL_CHADO_CV::getCV('SITE_TRAIT_ONTOLOGY');
   }
 
   /**
@@ -1017,6 +1067,9 @@ DESC;
       }
     }
     fclose($fh);
+
+    // Calls postProcess().
+    $this->postProcess();
     return $this->isPassed();
   }
 
@@ -1030,27 +1083,51 @@ DESC;
   }
 
   /**
-   * Adds custom columns.
+   * The function to be called after uploading data.
+   */
+  public function postProcess() {
+    // Defined in child class.
+  }
+
+  /**
+   * Returns the special columns that start with the provided prefix.
+   *
+   * @param string $prefix
+   *
+   * @return array
+   */
+  public function getSpecialColumns($prefix) {
+
+    // Sets the regular expression.
+    $separator = "\\";
+    $regex = '/^' . $separator . implode($separator, str_split($prefix)) . '.+/';
+
+    // Gets the matced columns.
+    $columns = array();
+    foreach ($this->headers as $column_name => $prop) {
+      if (preg_match($regex, $column_name)) {
+        $columns[$column_name] = $prop;
+      }
+    }
+    return $columns;
+  }
+
+  /**
+   * Adds special columns.
    *
    * @param string $prefix
    * @param MCL_TEMPLATE $mcl_template
    * @param array $line
    */
-  public function addCustomColumns($prefix, MCL_TEMPLATE $mcl_template, $line) {
+  public function addSpecialColumns($prefix, MCL_TEMPLATE $mcl_template, $line) {
 
-    // Checks if a column-template exists.
-    $columns    = $this->job->getPropByKey('columns');
-    $column_arr = array();
-    if (array_key_exists($this->getTemplate(), $columns)) {
-      $column_arr = $columns[$this->getTemplate()];
-    }
-
-    // Uploads a custom columns for this line.
-    if (!empty($column_arr)) {
-      foreach ($column_arr as $cvterm_name => $cv_name) {
-        $value = $line[$prefix . $cvterm_name];
-        if ($value) {
-          $mcl_template->addProp($this, $cv_name, $cvterm_name, $value);
+    // Gets the special columns.
+    $columns  = $this->getSpecialColumns($prefix);
+    if (!empty($columns)) {
+      foreach ($columns as $column_name => $prop) {
+        $value = $line[$column_name];
+        if ($value != '') {
+          $mcl_template->addPropByID($this, $prop['cvterm_id'], $value);
         }
       }
     }
@@ -1067,7 +1144,7 @@ DESC;
    * @param string $separator
    */
   public function addProperty($table_name, $target_field, $target_id, $type_id, $value, $separator = '') {
-    if ($value) {
+    if ($value != '') {
 
       // Checks duplication before adding a new property.
       $args = array(
@@ -1112,7 +1189,7 @@ DESC;
    * @param integer $rank
    */
   public function addPropertyRanked($table_name, $target_field, $target_id, $type_id, $value, $rank) {
-    if ($value) {
+    if ($value != '') {
 
       // Checks duplication before adding a new property.
       $args = array(
@@ -1343,15 +1420,6 @@ DESC;
     return empty($data_str);
   }
 
-  /**
-   * Returns if this is a column-template.
-   *
-   * @return boolean
-   */
-  public static function isColumnTemplate($template) {
-    return preg_match("/_column$/i", $template);
-  }
-
   /*
    * Defines getters and setters below.
    */
@@ -1448,5 +1516,29 @@ DESC;
    */
   public function setLineNo($line_no) {
     $this->line_no = $line_no;
+  }
+
+  /**
+   * Retrieves the value of the provided key in $this->tmp.
+   *
+   * @param string $key
+   *
+   * @return string
+   */
+  public function getTmpByKey($key) {
+    if (array_key_exists($key, $this->tmp)) {
+      return $this->tmp[$key];
+    }
+    return NULL;
+  }
+
+  /**
+   * Updates the value of the provided key in $this->tmp.
+   *
+   * @param string $template_type
+   * @param string $value
+   */
+  public function setTmpByKey($key, $value) {
+    $this->tmp[$key] = $value;
   }
 }

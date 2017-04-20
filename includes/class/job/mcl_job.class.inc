@@ -14,6 +14,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   protected $user_dir     = NULL;
   protected $job_dir      = NULL;
   protected $log_dir      = NULL;
+  protected $std_dir      = NULL;
   protected $file_dir     = NULL;
   protected $pid          = NULL;
 
@@ -88,6 +89,10 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     if ($log_dir) {
       $this->log_dir = $log_dir;
     }
+    $std_dir = $this->getPropByKey('std_dir');
+    if ($std_dir) {
+      $this->std_dir = $std_dir;
+    }
     $file_dir = $this->getPropByKey('file_dir');
     if ($file_dir) {
       $this->file_dir = $file_dir;
@@ -142,11 +147,13 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
       $this->user_dir = "$working_dir/$username";
       $this->job_dir  = $this->user_dir . '/' . $this->job_id;
       $this->log_dir  = $this->job_dir . '/logs';
+      $this->std_dir  = $this->job_dir . '/std';
       $this->file_dir = $this->job_dir . '/files';
       $this->setPropByKey('working_dir', $this->user_dir);
       $this->setPropByKey('user_dir', $this->user_dir);
       $this->setPropByKey('job_dir', $this->job_dir);
       $this->setPropByKey('log_dir', $this->log_dir);
+      $this->setPropByKey('std_dir', $this->std_dir);
       $this->setPropByKey('file_dir', $this->file_dir);
       $this->setPropByKey('pid', $this->pid);
       $this->update();
@@ -154,6 +161,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
       // Creates directories.
       mcl_create_dir($this->job_dir);
       mcl_create_dir($this->log_dir);
+      mcl_create_dir($this->std_dir);
       mcl_create_dir($this->file_dir);
     }
     else {
@@ -197,18 +205,27 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
    * Returns jobs that belong to the user.
    *
    * @parma integer $user_id
+   * @parma string $type
    *
    * @return array of MCL_UPLOAD_JOB
    */
 
-  public static function getJobsByUser($user_id) {
+  public static function getJobsByUser($user_id, $type = NULL) {
     $sql = "
       SELECT J.job_id, J.class_name
       FROM {mcl_job} J
       WHERE J.user_id = :user_id
-      ORDER BY J.submit_date DESC
     ";
-    $results = db_query($sql, array(':user_id' => $user_id));
+    $args =array (':user_id' => $user_id);
+
+    // Adds conditions.
+    if ($type) {
+      $sql .= ' AND J.type = :type';
+      $args[':type'] = $type;
+    }
+
+    $sql .= ' ORDER BY J.submit_date DESC';
+    $results = db_query($sql, $args);
     $mcl_jobs = array();
     while ($obj = $results->fetchObject()) {
       $class_name = $obj->class_name;
@@ -256,6 +273,17 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     if (array_key_exists($type, $this->msgs)) {
       $this->msgs[$type] = '';
     }
+  }
+
+  /**
+   * Returns the name of the std file.
+   *
+   * @param string $ext
+   *
+   * @return string
+   */
+  public function getStdFile($ext) {
+    return $this->getStdDir() . '/mcl-' . date("Y-m-d-G-i-s") . '.' . $ext;
   }
 
   /**
@@ -352,7 +380,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   }
 
   /**
-   * Changes the working directory. Needs to update job_dir, log_dir
+   * Changes the working directory. Needs to update job_dir, log_dir, std_dir
    * and file_dir.
    *
    * @param string $working_dir
@@ -364,6 +392,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     $this->setWorkingDir($working_dir);
     $this->setJobDir($job_dir);
     $this->setLogDir("$job_dir/logs");
+    $this->setStdDir("$job_dir/std");
     $this->setFileDir("$job_dir/files");
     return $this->update();
   }
@@ -534,6 +563,25 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   public function setLogDir($log_dir) {
     $this->log_dir = $log_dir;
     $this->setPropByKey('log_dir', $log_dir);
+  }
+
+  /**
+   * Retrieves the directory of the std files.
+   *
+   * @retrun string
+   */
+  public function getStdDir() {
+    return $this->std_dir;
+  }
+
+  /**
+   * Updates the directory of the std files.
+   *
+   * @param string $std_dir
+   */
+  public function setStdDir($std_dir) {
+    $this->std_dir = $std_dir;
+    $this->setPropByKey('std_dir', $std_dir);
   }
 
   /**

@@ -43,7 +43,6 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
       'type'                  => array('req' => TRUE,  'width' => 12, 'desc' => "Breeding, growing (for cultivar performance data), diversity (for study of genetic diversity) or QTL."),
       'sub_type'              => array('req' => FALSE, 'width' => 12, 'desc' => "To specify whether the markers used were SSR or SNP when the dataset is SSR or SNP genotyping data."),
       'super_dataset'         => array('req' => FALSE, 'width' => 16, 'desc' => "Larger dataset that this sub_dataset belngs to."),
-      'trait_descriptor_set'  => array('req' => FALSE, 'width' => 16, 'desc' => "The name of the trait descriptor set that each dataset or breeder uses. This is a required column if a type of a dataset is 'breeding'."),
       'pi'                    => array('req' => FALSE, 'width' => 12, 'desc' => "Principal Investigator (eg. breeder, corresponding author of the QTL paper) of the Dataset.   It should match a 'contact_name' column in 'Contact' sheet."),
       'crop'                  => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the crop for the dataset."),
       'comments'              => array('req' => FALSE, 'width' => 15, 'desc' => "Any comments for the dataset."),
@@ -63,7 +62,6 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
   public function defineCvterms() {
     $cvterms = array();
     $cvterms['SITE_CV']['project_type']       = -1;
-    $cvterms['SITE_CV']['trait_descriptor']   = -1;
     $cvterms['SITE_CV']['sub_type']           = -1;
     $cvterms['SITE_CV']['description']        = -1;
     $cvterms['SITE_CV']['comments']           = -1;
@@ -77,12 +75,6 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::runErrorCheckDataLine()
    */
   public function runErrorCheckDataLine($line) {
-
-    // Checks 'trait_descriptor_set' column. The column becomes required column
-    // if dataset type is 'breeding'.
-    if ($line['type'] == 'breeding') {
-      MCL_CHADO_CV::checkCV($this, $line['trait_descriptor_set']);
-    }
 
     // Checks super_datatset.
     MCL_CHADO_DATASET::checkDataset($this, $line['super_datatset']);
@@ -105,7 +97,6 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
 
       // Adds properties.
       $dataset->addProp($this, 'SITE_CV', 'project_type', $line['type']);
-      $dataset->addProp($this, 'SITE_CV', 'trait_descriptor', $line['trait_descriptor_set']);
       $dataset->addProp($this, 'SITE_CV', 'sub_type', $line['sub_type']);
       $dataset->addProp($this, 'SITE_CV', 'description', $line['description']);
       $dataset->addProp($this, 'SITE_CV', 'crop', $line['crop']);

@@ -81,20 +81,20 @@ class MCL_CHADO_PUB extends CHADO_PUB {
   public static function addNull() {
 
     // Gets null cvterm.
-    $mcl_cvterm = MCL_CHADO_CVTERM::addNull();
+    $cvterm = MCL_CHADO_CVTERM::addNull();
 
     // Checks if it has already exists.
-    $mcl_pub = MCL_CHADO_PUB::byKey(array('uniquename' => 'null'));
-    if (!$mcl_pub) {
+    $pub = MCL_CHADO_PUB::byKey(array('uniquename' => 'null'));
+    if (!$pub) {
       $details = array(
         'uniquename'  => 'null',
-        'type_id'     => $mcl_cvterm->getCvtermID(),
+        'type_id'     => $cvterm->getCvtermID(),
       );
-      $mcl_pub = new MCL_CHADO_PUB($details);
-      if (!$mcl_pub->insert()) {
+      $pub = new MCL_CHADO_PUB($details);
+      if (!$pub->insert()) {
         return NULL;
       }
     }
-    return $mcl_pub;
+    return $pub;
   }
 }

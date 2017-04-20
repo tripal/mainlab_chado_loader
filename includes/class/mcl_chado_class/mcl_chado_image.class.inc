@@ -58,8 +58,8 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
           continue;
         }
         $args = array('eimage_id' => $eimage_id);
-        $mcl_image = MCL_CHADO_IMAGE::byKey($args);
-        if (!$mcl_image) {
+        $image = MCL_CHADO_IMAGE::byKey($args);
+        if (!$image) {
           self::addMsg($mcl_tmpl, 'E', 'eimage', $args);
           $flag = FALSE;
         }
@@ -93,14 +93,14 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
     }
 
     // Checks for duplication.
-    $mcl_image = MCL_CHADO_IMAGE::byKey($args);
-    if ($mcl_image) {
+    $image = MCL_CHADO_IMAGE::byKey($args);
+    if ($image) {
       self::updateMsg($mcl_tmpl, 'D', 'eimage', $args);
     }
     else {
       // Adds a new image.
-      $mcl_image = new MCL_CHADO_IMAGE($args);
-      if ($mcl_image->insert()) {
+      $image = new MCL_CHADO_IMAGE($args);
+      if ($image->insert()) {
         self::updateMsg($mcl_tmpl, 'N', 'eimage', $args);
       }
       else {
@@ -108,7 +108,24 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
         return NULL;
       }
     }
-    return $mcl_image;
+    return $image;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'eimageprop', 'eimage_id', $this->eimage_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -123,7 +140,7 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
    * @return boolean
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
-    if ($value) {
+    if ($value != '') {
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
       return $this->addProperty($mcl_tmpl, 'eimageprop', 'eimage_id', $this->eimage_id, $type_id, $value, $separator);
     }

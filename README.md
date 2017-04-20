@@ -9,7 +9,7 @@ The Mainlab Chado Loader is created by Main Bioinformatics Lab (Main Lab) at Was
  - Drupal 7.x
 
 ## Version
-1.0.0
+2.0.0
 
 ##Download
 The MainLab Chado Loader module can be download from GitHub:
@@ -76,7 +76,7 @@ After downloading the module, extract it into your site's module directory
       The file name should be 'mcl_template_stock_gdr.inc'
       ```
       ii. Place the newly created class file under the template directory.
-      The template directory is 'mcl/include/class/template/module/'.
+      The template directory is 'mcl/templates'.
   
     b. Go to the admin page.
     

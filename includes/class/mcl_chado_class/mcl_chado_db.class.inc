@@ -47,8 +47,8 @@ class MCL_CHADO_DB extends CHADO_DB {
     if ($db) {
 
       // Gets the db.
-      $mcl_db = MCL_CHADO_DB::getDB($db);
-      if (!$mcl_db) {
+      $db = MCL_CHADO_DB::getDB($db);
+      if (!$db) {
         self::updateMsg($mcl_tmpl, 'E', "(name) = ($db) not found in db");
         return FALSE;
       }
@@ -80,15 +80,15 @@ class MCL_CHADO_DB extends CHADO_DB {
   public static function addNull() {
 
     // Checks if it has already exists.
-    $mcl_db = MCL_CHADO_DB::getDB('null');
-    if (!$mcl_db) {
+    $db = MCL_CHADO_DB::getDB('null');
+    if (!$db) {
       $details = array('name' => 'null');
-      $mcl_db = new MCL_CHADO_DB($details);
-      if (!$mcl_db->insert()) {
+      $db = new MCL_CHADO_DB($details);
+      if (!$db->insert()) {
         return NULL;
       }
     }
-    return $mcl_db;
+    return $db;
   }
 
   /**
@@ -113,8 +113,8 @@ class MCL_CHADO_DB extends CHADO_DB {
     }
 
     // Checks for duplication.
-    $mcl_db = MCL_CHADO_DB::byKey($args);
-    if ($mcl_db) {
+    $db = MCL_CHADO_DB::byKey($args);
+    if ($db) {
       self::addMsg($mcl_tmpl, 'D', 'db', $args);
     }
     else {
@@ -123,8 +123,8 @@ class MCL_CHADO_DB extends CHADO_DB {
       $args['urlprefix']  = $prefix_url;
       $args['url']        = $url;
       $args['definition'] = $definition;
-      $mcl_db = new MCL_CHADO_DB($args);
-      if ($mcl_db->insert()) {
+      $db = new MCL_CHADO_DB($args);
+      if ($db->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'db', $args);
       }
       else {
@@ -132,6 +132,6 @@ class MCL_CHADO_DB extends CHADO_DB {
         return NULL;
       }
     }
-    return $mcl_db;
+    return $db;
   }
 }

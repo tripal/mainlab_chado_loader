@@ -81,9 +81,9 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       $args = array(
         'description' => $description,
       );
-      $mcl_location = MCL_CHADO_LOCATION::byKey($args);
-      if ($mcl_location) {
-        $nd_geolocation_id = $mcl_location->getNdGeolocationID();
+      $location = MCL_CHADO_LOCATION::byKey($args);
+      if ($location) {
+        $nd_geolocation_id = $location->getNdGeolocationID();
       }
       else {
         return NULL;
@@ -136,9 +136,9 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       $args = array(
         'description' => $site_name,
       );
-      $mcl_location = MCL_CHADO_LOCATION::byKey($args);
-      if ($mcl_location) {
-        $nd_geolocation_id = $mcl_location->getNdGeolocationID();
+      $location = MCL_CHADO_LOCATION::byKey($args);
+      if ($location) {
+        $nd_geolocation_id = $location->getNdGeolocationID();
       }
       else {
         return NULL;
@@ -155,15 +155,15 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
   public static function addNA() {
 
     // Checks if it has already exists.
-    $mcl_location = MCL_CHADO_LOCATION::byKey(array('description' => 'Not Available'));
-    if (!$mcl_location) {
+    $location = MCL_CHADO_LOCATION::byKey(array('description' => 'Not Available'));
+    if (!$location) {
       $details = array('description' => 'Not Available');
-      $mcl_location = new MCL_CHADO_LOCATION($details);
-      if (!$mcl_location->insert()) {
+      $location = new MCL_CHADO_LOCATION($details);
+      if (!$location->insert()) {
         return NULL;
       }
     }
-    return $mcl_location;
+    return $location;
   }
 
   /**
@@ -202,8 +202,8 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
     }
 
     // Checks for duplication.
-    $mcl_location = MCL_CHADO_LOCATION::byKey($args);
-    if ($mcl_location) {
+    $location = MCL_CHADO_LOCATION::byKey($args);
+    if ($location) {
       self::addMsg($mcl_tmpl, 'D', 'nd_geolocation', $args);
     }
     else {
@@ -215,8 +215,8 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       }
 
       // Adds a new location.
-      $mcl_location = new MCL_CHADO_LOCATION($args);
-      if ($mcl_location->insert()) {
+      $location = new MCL_CHADO_LOCATION($args);
+      if ($location->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'nd_geolocation', $args);
       }
       else {
@@ -224,7 +224,24 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
         return NULL;
       }
     }
-    return $mcl_location;
+    return $location;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'nd_geolocationprop', 'nd_geolocation_id', $this->nd_geolocation_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -239,9 +256,27 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    * @return boolean
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
-    if ($value) {
+    if ($value != '') {
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
       return $this->addProperty($mcl_tmpl, 'nd_geolocationprop', 'nd_geolocation_id', $this->nd_geolocation_id, $type_id, $value, $separator);
+    }
+    return TRUE;
+  }
+
+  /**
+   * Updates the property.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $cv_name
+   * @param string $cvterm_name
+   * @param string $value
+   *
+   * @return boolean
+   */
+  public function updateProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value) {
+    if ($value != '') {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->updateProperty($mcl_tmpl, 'nd_geolocationprop', 'nd_geolocation_id', $this->nd_geolocation_id, $type_id, $value);
     }
     return TRUE;
   }

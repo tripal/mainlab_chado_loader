@@ -52,8 +52,8 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
       $names = preg_split(self::getSepRegex($separator), $map, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
-        $mcl_map = MCL_CHADO_FEATUREMAP::getMap($name);
-        if (!$mcl_map) {
+        $map = MCL_CHADO_FEATUREMAP::getMap($name);
+        if (!$map) {
           self::updateMsg($mcl_tmpl, 'E', "(name) = ($name) not found in featuremap");
           $flag = FALSE;
         }
@@ -74,8 +74,8 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
   public static function checkMapUnit(MCL_TEMPLATE $mcl_tmpl = NULL, $map_unit) {
 
     // Gets cvterm for the map unit.
-    $mcl_cvterm = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $map_unit);
-    if (!$mcl_cvterm) {
+    $cvterm = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $map_unit);
+    if (!$cvterm) {
       self::updateMsg($mcl_tmpl, 'E', "(map_unit) = ($map_unit) not found in cvterm");
       return FALSE;
     }
@@ -114,8 +114,8 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
     }
 
     // Checks for duplication.
-    $mcl_featuremap = MCL_CHADO_FEATUREMAP::byKey($args);
-    if ($mcl_featuremap) {
+    $featuremap = MCL_CHADO_FEATUREMAP::byKey($args);
+    if ($featuremap) {
       self::addMsg($mcl_tmpl, 'D', 'featuremap', $args);
     }
     else {
@@ -130,8 +130,8 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
       // Adds a new map.
       $args['unittype_id'] = $cvterm->getCvtermID();
       $args['description'] = $description;
-      $mcl_featuremap = new MCL_CHADO_FEATUREMAP($args);
-      if ($mcl_featuremap->insert()) {
+      $featuremap = new MCL_CHADO_FEATUREMAP($args);
+      if ($featuremap->insert()) {
         self::addMsg($mcl_tmpl, 'N', 'featuremap', $args);
       }
       else {
@@ -139,7 +139,24 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
         return NULL;
       }
     }
-    return $mcl_featuremap;
+    return $featuremap;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'featuremapprop', 'featuremap_id', $this->featuremap_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -154,7 +171,7 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
    * @return boolean
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
-    if ($value) {
+    if ($value != '') {
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
       return $this->addProperty($mcl_tmpl, 'featuremapprop', 'featuremap_id', $this->featuremap_id, $type_id, $value, $separator);
     }
@@ -179,9 +196,9 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
         $sp = trim($sp);
 
         // Gets the organism.
-        $mcl_organism = MCL_CHADO_ORGANISM::getOrganism($genus, $sp);
-        if ($mcl_organism) {
-          if (!$this->addLink($mcl_tmpl, 'featuremap_organism', 'featuremap_id', $this->featuremap_id, 'organism_id', $mcl_organism->getOrganismID())) {
+        $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $sp);
+        if ($organism) {
+          if (!$this->addLink($mcl_tmpl, 'featuremap_organism', 'featuremap_id', $this->featuremap_id, 'organism_id', $organism->getOrganismID())) {
             $flag = FALSE;
           }
         }
@@ -231,9 +248,9 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
         }
 
         // Gets the stock and add it.
-        $mcl_stock = MCL_CHADO_STOCK::byKey($args);
-        if ($mcl_stock) {
-          if (!$this->addLink($mcl_tmpl, 'featuremap_stock', 'featuremap_id', $this->featuremap_id, 'stock_id', $mcl_stock->getStockID())) {
+        $stock = MCL_CHADO_STOCK::byKey($args);
+        if ($stock) {
+          if (!$this->addLink($mcl_tmpl, 'featuremap_stock', 'featuremap_id', $this->featuremap_id, 'stock_id', $stock->getStockID())) {
             $flag = FALSE;
           }
         }
@@ -261,9 +278,9 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
       $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
-        $mcl_contact = MCL_CHADO_CONTACT::getContact($name);
-        if ($mcl_contact) {
-          if (!$this->addLink($mcl_tmpl, 'featuremap_contact', 'featuremap_id', $this->featuremap_id, 'contact_id', $mcl_contact->getContactID())) {
+        $contact = MCL_CHADO_CONTACT::getContact($name);
+        if ($contact) {
+          if (!$this->addLink($mcl_tmpl, 'featuremap_contact', 'featuremap_id', $this->featuremap_id, 'contact_id', $contact->getContactID())) {
             $flag = FALSE;
           }
         }
@@ -290,8 +307,8 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
       $pub_ids = preg_split($this->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);
-        $mcl_pub = MCL_CHADO_PUB::getPub($pub_id);
-        if ($mcl_pub) {
+        $pub = MCL_CHADO_PUB::getPub($pub_id);
+        if ($pub) {
           if (!$this->addLink($mcl_tmpl, 'featuremap_pub', 'featuremap_id', $this->featuremap_id, 'pub_id', $pub_id)) {
             $flag = FALSE;
           }

@@ -80,6 +80,23 @@ class MCL_CHADO_FEATUREPOS extends CHADO_FEATUREPOS {
   }
 
   /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'featureposprop', 'featurepos_id', $this->featurepos_id, $type_id, $value, $separator);
+    }
+    return TRUE;
+  }
+
+  /**
    * Adds a property.
    *
    * @param MCL_TEMPLATE $mcl_tmpl

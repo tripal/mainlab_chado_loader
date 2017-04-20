@@ -149,23 +149,29 @@ class MCL_DATA_VALID_TYPE extends PUBLIC_MCL_DATA_VALID_TYPE {
    * @return boolean
    */
   public static function validate($data_valid_type, $value) {
-    if ($value) {
+    if ($value != '') {
+
       // Gets data_valid_type_id.
       $mcl_data_valid_type  = MCL_DATA_VALID_TYPE::byKey(array('type' => $data_valid_type));
-      $data_valid_type_id   = $mcl_data_valid_type->getDataValidTypeID();
+      if (!$mcl_data_valid_type) {
+        return FALSE;
+      }
+      else {
+        $data_valid_type_id = $mcl_data_valid_type->getDataValidTypeID();
 
-      // Checks the value.
-      $sql = "
-        SELECT COUNT(data_valid_id)
-        FROM {mcl_data_valid}
-        WHERE data_valid_type_id = :data_valid_type_id AND LOWER(name) = LOWER(:name)
-      ";
-      $args = array(
-        ':data_valid_type_id' => $data_valid_type_id,
-        ':name' => $value,
-      );
-      $num = db_query($sql, $args)->fetchField();
-      return ($num) ? TRUE : FALSE;
+        // Checks the value.
+        $sql = "
+          SELECT COUNT(data_valid_id)
+          FROM {mcl_data_valid}
+          WHERE data_valid_type_id = :data_valid_type_id AND LOWER(name) = LOWER(:name)
+        ";
+        $args = array(
+          ':data_valid_type_id' => $data_valid_type_id,
+          ':name' => $value,
+        );
+        $num = db_query($sql, $args)->fetchField();
+        return ($num) ? TRUE : FALSE;
+      }
     }
     return TRUE;
   }
