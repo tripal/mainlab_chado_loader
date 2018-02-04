@@ -35,7 +35,7 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
   }
 
   /**
-   * Checks the existance of dataset. If not, write the error messasge
+   * Checks the existence of dataset. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -57,7 +57,7 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
   }
 
   /**
-   * Checks the existance of dataset by ID. If not, write the error messasge
+   * Checks the existence of dataset by ID. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl

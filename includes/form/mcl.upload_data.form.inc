@@ -209,13 +209,13 @@ function _mcl_get_add_job_form(&$form, MCL_USER $mcl_user) {
   $form['add_upload_job']['no_transaction_cb'] = array(
     '#type'           => 'checkbox',
     '#title'          => 'No transaction',
-    '#description'    => "Check if the size of your uploading file are large.",
+    '#description'    => "Check if the size of your uploading file is large.",
     '#default_value'  => FALSE,
   );
   $form['add_upload_job']['add_btn'] = array(
     '#type'   => 'submit',
     '#name'   => 'add_btn',
-    '#value'  => 'Add a uploading job',
+    '#value'  => 'Add an uploading job',
   );
 }
 
@@ -325,19 +325,19 @@ function mcl_upload_data_form_submit($form, &$form_state) {
         $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_no_transaction > /dev/null 2>/dev/null  & ";
         $pid = exec($cmd, $output, $return_var);
         if ($return_var) {
-          drupal_set_message("Failed to add a uploading job");
+          drupal_set_message("Failed to add an uploading job");
         }
       }
       else {
-        drupal_set_message("Failed to add a uploading job : Error on updating job property");
+        drupal_set_message("Failed to add an uploading job : Error on updating job property");
       }
     }
     else {
-      drupal_set_message("Failed to add a uploading job : Error on adding a file");
+      drupal_set_message("Failed to add an uploading job : Error on adding a file");
     }
   }
   else {
-    drupal_set_message("Failed to add a uploading job : Error on adding a job");
+    drupal_set_message("Failed to add an uploading job : Error on adding a job");
   }
 
   // Re-direct to "Data Uploading" page.

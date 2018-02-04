@@ -79,7 +79,7 @@ function mcl_job_view_form($form, &$form_state, $job_id = NULL) {
       $form['job_rerun']['no_transaction_cb'] = array(
         '#type'           => 'checkbox',
         '#title'          => 'No transaction',
-        '#description'    => "Check if the size of your uploading file are large.",
+        '#description'    => "Check if the size of your uploading file is large.",
         '#default_value'  => $default,
       );
       $form['job_rerun']['rerun_btn'] = array(

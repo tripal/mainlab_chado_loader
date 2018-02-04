@@ -47,7 +47,7 @@ function mcl_admin_config_form($form, &$form_state) {
 
   // MCL Library directory.
   $form['config_path']['mcl_library_dir'] = array(
-    '#title'          => t('MCL Library Directasory'),
+    '#title'          => t('MCL Library Directory'),
     '#type'           => t('textfield'),
     '#description'    => t("Please specify the library directory for MCL."),
     '#required'       => TRUE,

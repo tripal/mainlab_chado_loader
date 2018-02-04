@@ -40,7 +40,7 @@ class MCL_TEMPLATE_GENOTYPE_SSR extends MCL_TEMPLATE {
   public function defineHeaders() {
     $headers = array(
       'dataset_name'  => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the genotyping dataset. It should match a dataset_name in 'Dataset' sheet."),
-      'stock_name'    => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the stock genotyped. It should match an 'stock_name' of the 'Stock' sheet."),
+      'stock_name'    => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the stock genotyped. It should match a 'stock_name' of the 'Stock' sheet."),
       'genus'         => array('req' => TRUE,  'width' => 10, 'desc' => "Genus of the stock"),
       'species'       => array('req' => TRUE,  'width' => 10, 'desc' => "Species of the stock"),
       'sample_id'     => array('req' => TRUE,  'width' => 10, 'desc' => "ID of a sample. Normally it is the same as ID unless the user want to keep tract of genotype of a specific sample."),

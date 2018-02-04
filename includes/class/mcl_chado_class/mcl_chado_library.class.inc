@@ -34,7 +34,7 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
   }
 
   /**
-   * Checks the existance of library. If not, write the error messasge
+   * Checks the existence of library. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl

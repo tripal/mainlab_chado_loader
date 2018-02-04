@@ -46,7 +46,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   }
 
   /**
-   * Checks the existance of cvterm. If not, write the error messasge
+   * Checks the existence of cvterm. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -209,7 +209,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
     $cv     = MCL_CHADO_CV::addNull();
     $dbxref = MCL_CHADO_DBXREF::addNull();
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $cvterm = MCL_CHADO_CVTERM::getCvterm('null', 'null');
     if (!$cvterm) {
       $details = array(

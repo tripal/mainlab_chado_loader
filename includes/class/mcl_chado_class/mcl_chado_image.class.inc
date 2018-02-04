@@ -35,7 +35,7 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
   }
 
   /**
-   * Checks the existance of eimage. If not, write the error messasge
+   * Checks the existence of eimage. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl

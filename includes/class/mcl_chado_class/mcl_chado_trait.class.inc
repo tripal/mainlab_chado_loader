@@ -34,7 +34,7 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
   }
 
   /**
-   * Checks the existance of trait. If not, write the error messasge
+   * Checks the existence of trait. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl

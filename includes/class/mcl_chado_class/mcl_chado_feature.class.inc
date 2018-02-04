@@ -35,7 +35,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
   }
 
   /**
-   * Checks the existance of feature. If not, write the error messasge
+   * Checks the existence of feature. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -102,7 +102,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
   }
 
   /**
-   * Checks the existance of feature. If not, write the error messasge
+   * Checks the existence of feature. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl

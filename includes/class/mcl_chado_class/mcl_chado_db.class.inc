@@ -35,7 +35,7 @@ class MCL_CHADO_DB extends CHADO_DB {
   }
 
   /**
-   * Checks the existance of db. If not, write the error messasge
+   * Checks the existence of db. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -79,7 +79,7 @@ class MCL_CHADO_DB extends CHADO_DB {
    */
   public static function addNull() {
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $db = MCL_CHADO_DB::getDB('null');
     if (!$db) {
       $details = array('name' => 'null');

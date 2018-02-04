@@ -40,7 +40,7 @@ class MCL_TEMPLATE_TRAIT extends MCL_TEMPLATE {
   public function defineHeaders() {;
     $headers = array(
       'trait_name'      => array('req' => TRUE,  'width' => 20, 'desc' => "Trait ontology term for the database or crop. QTLs, MTLs and phenotypic descriptors used in breeding programs can be associated with trait names."),
-      'trait_category'  => array('req' => FALSE, 'width' => 20, 'desc' => "The root term of the Plant Tait Ontology for the trait name. Choose one from the list (biochemical trait | growth and development trait | anatomy and morphology trait | quality trait | stature or vigor trait | sterility or fertility trait | stress trait | yield trait)."),
+      'trait_category'  => array('req' => FALSE, 'width' => 20, 'desc' => "The root term of the Plant Trait Ontology for the trait name. Choose one from the list (biochemical trait | growth and development trait | anatomy and morphology trait | quality trait | stature or vigor trait | sterility or fertility trait | stress trait | yield trait)."),
       'abbreviation'    => array('req' => FALSE, 'width' => 14, 'desc' => "Abbreviation of the trait ontology term (trait_name)."),
       'definition'      => array('req' => FALSE, 'width' => 50, 'desc' => "Definition of trait ontology term (trait_name)."),
     );

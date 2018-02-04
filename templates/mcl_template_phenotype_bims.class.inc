@@ -52,7 +52,7 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
       'evaluator'       => array('req' => FALSE, 'width' => 10, 'desc' => "Person who did the phenotyping. Multiple person can be entered with ';' in between. It should match 'contact_name' of the Contact sheet."),
       'site_name'       => array('req' => FALSE, 'width' => 10, 'desc' => "Site information where the stock for the phenotyping is planted. It should match 'site_name' in the 'Site' sheet."),
       'rep'             => array('req' => FALSE, 'width' => 10, 'desc' => "Any repetition number."),
-      'rootstock'       => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the rootstock if the plant are grafted to a rootstock. It should match an 'stock_name' column of the 'Stock' sheet."),
+      'rootstock'       => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the rootstock if the plant is grafted to a rootstock. It should match a 'stock_name' column of the 'Stock' sheet."),
       'plot'            => array('req' => FALSE, 'width' => 10, 'desc' => "Plot name."),
       'row'             => array('req' => FALSE, 'width' => 10, 'desc' => "Row."),
       'position'        => array('req' => FALSE, 'width' => 10, 'desc' => "Position of the plant."),

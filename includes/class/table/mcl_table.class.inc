@@ -41,7 +41,7 @@ class MCL_TABLE {
       'DATE'    => array('timestamp', 'timestamp_without_time_zone'),
     );
 
-    // Sets contraints.
+    // Sets constraints.
     $this->constraints = array('unique', 'foreign');
   }
 

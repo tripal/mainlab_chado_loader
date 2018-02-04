@@ -54,7 +54,7 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
   }
 
   /**
-   * Checks the existance of orgainsm. If not, write the error messasge
+   * Checks the existence of orgainsm. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -150,7 +150,7 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
    */
   public static function addNA() {
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $organism = MCL_CHADO_ORGANISM::getOrganism('N/A', 'N/A');
     if (!$organism) {
       $details = array(

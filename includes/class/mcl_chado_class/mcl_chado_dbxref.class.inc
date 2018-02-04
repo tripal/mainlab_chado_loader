@@ -44,7 +44,7 @@ class MCL_CHADO_DBXREF extends CHADO_DBXREF {
     // Gets null db.
     $db = MCL_CHADO_DB::addNull();
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $dbxref = MCL_CHADO_DBXREF::byKey(array('accession' => 'local:null'));
     if (!$dbxref) {
       $details = array(

@@ -35,7 +35,7 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
   }
 
   /**
-   * Checks the existance of stock. If not, write the error messasge
+   * Checks the existence of stock. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl

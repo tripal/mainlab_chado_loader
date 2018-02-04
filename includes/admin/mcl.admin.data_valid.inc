@@ -145,7 +145,7 @@ function _mcl_get_mcl_data_valid_type_form(&$form) {
  */
 function _mcl_get_mcl_data_valid_form(&$form, $target_data_valid_type_id = '') {
 
-  // Gets the site varibles.
+  // Gets the site variables.
   $data_valid_types = MCL_DATA_VALID_TYPE::getDataValidTypes(FALSE);
   foreach ($data_valid_types as $data_valid_type) {
     $data_valid_type_id = $data_valid_type->getDataValidTypeID();

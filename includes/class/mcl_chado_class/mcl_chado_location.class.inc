@@ -154,7 +154,7 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    */
   public static function addNA() {
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $location = MCL_CHADO_LOCATION::byKey(array('description' => 'Not Available'));
     if (!$location) {
       $details = array('description' => 'Not Available');

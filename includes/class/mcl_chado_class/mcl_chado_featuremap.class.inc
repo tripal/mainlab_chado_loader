@@ -35,7 +35,7 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
   }
 
   /**
-   * Checks the existance of featuremap. If not, write the error messasge
+   * Checks the existence of featuremap. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl

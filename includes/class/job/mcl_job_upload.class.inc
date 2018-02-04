@@ -20,7 +20,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
   public function __construct($details = array()) {
     parent::__construct($details);
 
-    // Adds status for a uploading job.
+    // Adds status for an uploading job.
     $this->status_label['20']         = 'copying';
     $this->status_label['30']         = 'syntax error';
     $this->status_label['40']         = 'data error';
@@ -746,7 +746,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       else {
         $class_name = 'MCL_TEMPLATE_' . strtoupper($template);
         $msg = "\nThe sheet name '$template' is not a valid template name.\nIt could be the following reason.\n\n";
-        $msg .= "  1. wrong spell.\n";
+        $msg .= "  1. wrong spelling.\n";
         $msg .= "  2. $class_name is not defined.\n\n";
         $msg .= "'$template' is skipped.\n\n";
         $this->updateMsg('W', $msg);

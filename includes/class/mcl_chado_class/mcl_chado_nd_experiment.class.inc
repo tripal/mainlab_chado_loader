@@ -35,7 +35,7 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
   }
 
   /**
-   * Checks the existance of contact. If not, write the error messasge
+   * Checks the existence of contact. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl

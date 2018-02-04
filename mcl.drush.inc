@@ -93,7 +93,7 @@ function mcl_drush_command() {
     ),
   );
   $items['mcl-submit-uploading-job'] = array(
-    'description' => t('Submits a uploading job.'),
+    'description' => t('Submits an uploading job.'),
     'arguments' => array(
       'username'  => t('Drupal user name.'),
       'filepath'  => t('The filename of the uploading file with path.'),
@@ -481,7 +481,7 @@ function drush_mcl_delete_jobs($job_ids) {
 function drush_mcl_test_template() {
 
   // Gets all templates to be tested. If the filepath option is provided,
-  // the listed tempate in the file are tested.
+  // the listed templates in the file are tested.
   $templates = MCL_TEMPLATE::getTemplates();
   $filepath = drush_get_option('filepath');
   if ($filepath) {
@@ -561,7 +561,7 @@ function drush_mcl_get_template($template) {
 }
 
 /**
- * Callback for submitting a uploading job.
+ * Callback for submitting an uploading job.
  *
  * @param string $username
  * @param string $filepath
@@ -593,10 +593,10 @@ function drush_mcl_submit_uploading_job($username, $filepath) {
   // Gets MCL_USER.
   $mcl_user = MCL_USER::byKey(array('name' => $username));
 
-  // Prepares a uploading job.
+  // Prepares an uploading job.
   $mcl_job = mcl_prepare_uploading_job($mcl_user, $filepath, $working_dir, $job_name, FALSE);
   if ($mcl_job) {
-    mcl_print("Error : Failed to prepare a uploading job", 1, 3);
+    mcl_print("Error : Failed to prepare an uploading job", 1, 3);
     exit;
   }
 
@@ -664,10 +664,10 @@ function drush_mcl_upload_data($username, $filepath) {
   // Gets MCL_USER.
   $mcl_user = MCL_USER::byKey(array('name' => $username));
 
-  // Prepares a uploading job.
+  // Prepares an uploading job.
   $mcl_job = mcl_prepare_uploading_job($mcl_user, $filepath, $move_input, $trans, $working_dir, $job_name, $param);
   if (!$mcl_job) {
-    mcl_print("Error : Failed to prepare a uploading job", 1, 3);
+    mcl_print("Error : Failed to prepare an uploading job", 1, 3);
     exit;
   }
 
@@ -713,7 +713,7 @@ function drush_mcl_upload_data($username, $filepath) {
 }
 
 /**
- * Prepares for a uploading job.
+ * Prepares for an uploading job.
  *
  * 1. Checks arguments.
  * 2. Copies an input file to job folder.
@@ -744,7 +744,7 @@ function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $
     $name = $job_name;
   }
 
-  // Prepares for a uploading job.
+  // Prepares for an uploading job.
   $transaction = db_transaction();
   try {
 
@@ -952,7 +952,7 @@ function mcl_check_working_dir($working_dir) {
   // Checks the working directory.
   if ($working_dir) {
 
-    // Checks the existance.
+    // Checks the existence.
     if (!file_exists($working_dir)) {
       mcl_print("Error : The working directory ($working_dir) dose not exist", 1, 3);
       return FALSE;

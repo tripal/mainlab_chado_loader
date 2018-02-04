@@ -735,7 +735,7 @@ DESC;
         // Ignore the column name starting with '#', '@' or '$'.
           $column_name = strtolower($column_name_orig);
           if (!array_key_exists($column_name, $this->headers) && !preg_match($regex, $column_name)) {
-            $this->updateMsg('W', "Invalid header : '$column_name_orig' is not valid header name, so this column would be ignored.");
+            $this->updateMsg('W', "Invalid header : '$column_name_orig' is not a valid header name, so this column would be ignored.");
           }
           else {
 

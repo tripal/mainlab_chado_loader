@@ -35,7 +35,7 @@ class MCL_CHADO_CV extends CHADO_CV {
   }
 
   /**
-   * Checks the existance of cv by name. If not, write the error messasge
+   * Checks the existence of cv by name. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -64,7 +64,7 @@ class MCL_CHADO_CV extends CHADO_CV {
   }
 
   /**
-   * Checks the existance of cv by cv_id. If not, write the error messasge
+   * Checks the existence of cv by cv_id. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -129,7 +129,7 @@ class MCL_CHADO_CV extends CHADO_CV {
    */
   public static function addNull() {
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $cv = MCL_CHADO_CV::getCV('null');
     if (!$cv) {
       $details = array('name' => 'null');
