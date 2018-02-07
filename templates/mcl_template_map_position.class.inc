@@ -39,7 +39,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $headers = array(
-      'marker_qtl_mtl'      => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the marker, QTL or MTL. Please provide the detailr data in 'Marker', 'QTL', or 'MTL' sheet."),
+      'marker_qtl_mtl'      => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the marker, QTL or MTL. Please provide the detailed data in 'Marker', 'QTL', or 'MTL' sheet."),
       'locus_name'          => array('req' => FALSE, 'width' => 10, 'desc' => "When a RFLP (eg. AA07) corresponds to more than one locus, the marker name (eg. AA07) is recorded in marker/qtl/mtl column and the specific name for each map position (eg. AA07A, AA07B) is recorded in this 'locus_name' column. Use AA07 as a marker name and the loci names as aliases for the marker name in 'Marker' Sheet. When a MTL is mapped to multiple locations, use the MTL_name in 'MTL' sheet in 'marker/qtl/mtl' column and the locus name of the specific map position in 'locus_name'' colum."),
       'map_name'            => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the genetic map."),
       'linkage_group'       => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the linkage group."),

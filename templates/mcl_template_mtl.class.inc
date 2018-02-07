@@ -47,7 +47,7 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
       'gb_id'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Associated genbank ID if available."),
       'alias'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Other names used for the trait. Multiple aliases, separated by comma, can be added."),
       'screening_method'      => array('req' => FALSE, 'width' => 10, 'desc' => "Any specific method for the phenotypic inspection."),
-      'description'           => array('req' => FALSE, 'width' => 10, 'desc' => "Desctiption for the trait. The more detail, the better. You can describe the phenotype of the various cultivar and provide the pictures."),
+      'description'           => array('req' => FALSE, 'width' => 10, 'desc' => "Description for the trait. The more detail, the better. You can describe the phenotype of the various cultivar and provide the pictures."),
       'published_symbol'      => array('req' => FALSE, 'width' => 10, 'desc' => "Published symbol for the MTL."),
       'colocalized_marker'    => array('req' => FALSE, 'width' => 10, 'desc' => "Molecular marker that colocalizes with the MTL."),
       'neighboring_marker'    => array('req' => FALSE, 'width' => 10, 'desc' => "Molecular marker that is mapped near MTL. Multiple markers can be added, separated by a semicolon (;)."),

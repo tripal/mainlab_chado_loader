@@ -217,7 +217,7 @@ class CHADO_TABLE  {
       }
       else {
 
-        // Poluplates the array with values.
+        // Populates the array with values.
         $value_arr = preg_split($this->getSepRegex($separator), $value, NULL, PREG_SPLIT_NO_EMPTY);
 
         // Adds each property.

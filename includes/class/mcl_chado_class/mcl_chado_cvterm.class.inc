@@ -406,7 +406,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
       }
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
 
-      // Poluplates the array with aliases.
+      // Populates the array with aliases.
       $alias_arr = array();
       if ($separator) {
         $alias_arr = preg_split($this->getSepRegex($separator), $alias, NULL, PREG_SPLIT_NO_EMPTY);

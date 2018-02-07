@@ -38,13 +38,13 @@ class MCL_CHADO_FEATUREPOS extends CHADO_FEATUREPOS {
    * Adds a featurepos.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param MCL_CHADO_FEATRUE $target_feature
-   * @param MCL_CHADO_FEATRUEMAP $map
-   * @param MCL_CHADO_FEATRUE $linkage_group
+   * @param MCL_CHADO_FEATURE $target_feature
+   * @param MCL_CHADO_FEATUREMAP $map
+   * @param MCL_CHADO_FEATURE $linkage_group
    *
    * @return MCL_CHADO_FEATUREPOS
    */
-  public static function addFeaturepos(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_FEATRUE $feature, MCL_CHADO_FEATRUEMAP $map, MCL_CHADO_FEATRUE $map_feature) {
+  public static function addFeaturepos(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_FEATURE $feature, MCL_CHADO_FEATUREMAP $map, MCL_CHADO_FEATURE $map_feature) {
 
     // Sets the arguments.
     $args = array(
