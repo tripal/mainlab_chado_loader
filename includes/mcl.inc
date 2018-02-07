@@ -28,17 +28,48 @@ function mcl_check_settings() {
  * @param string $msg
  * @param integer $indent
  */
-function mcl_print($msg, $indent = 0, $line_feed = 1, $period_flag = TRUE) {
+function mcl_print($msg, $indent = 0, $line_feed = 0.1, $period_flag = TRUE) {
 
-  // Adds indents.
+  // Sets new lines.
+  $before = 0;
+  $after  = $line_feed;
+  if (preg_match("/(\d+).(\d+)/", $line_feed, $matches)) {
+    $before  = $matches[1];
+    $after   = $matches[2];
+  }
+  $nl_before  = str_repeat("\n", $before);
+  $nl_after   = str_repeat("\n", $after);
+
+  // Sets indents.
   $space = str_repeat(' ', $indent  * 4);
-
-  // Adds new lines.
-  $new_lines = str_repeat("\n", $line_feed);
 
   // Adds a period.
   $period = ($period_flag) ? '.' : '';
-  print $space . $msg . $period . $new_lines;
+  if ($GLOBALS['verbose']) {
+    print $nl_before . $space . $msg . $period . $nl_after;
+  }
+}
+
+/**
+ * Returns if the given string is real number format.
+ *
+ * @param string $string
+ *
+ * @return boolean
+ */
+function mcl_is_real($string) {
+  return preg_match("/^-?(?:\d+|\d*\.\d+)$/", $string);
+}
+
+/**
+ * Returns if the given string is real number format.
+ *
+ * @param string $string
+ *
+ * @return boolean
+ */
+function mcl_is_int($string) {
+  return is_int(intval($string));
 }
 
 /**
@@ -183,7 +214,7 @@ function mcl_format_bytes($bytes, $precision = 2) {
 function mcl_download_log($job_id) {
 
   // Gets MCL_UPLOAD_JOB.
-  $mcl_job = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
+  $mcl_job = MCL_JOB_UPLOAD::byID($job_id);
   $log_root_dir = dirname($mcl_job->getLogDir());
 
   // Sets zip path and name.
@@ -244,7 +275,7 @@ function mcl_download_file($file_id) {
 function mcl_view_log($job_id, $filepath_str) {
 
   // Gets MCL_UPLOAD_JOB.
-  $mcl_job = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
+  $mcl_job = MCL_JOB_UPLOAD::byID($job_id);
 
   $filepath = $mcl_job->getLogDir() . '/' . str_replace(':', '/', $filepath_str);
 

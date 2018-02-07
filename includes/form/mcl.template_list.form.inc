@@ -70,6 +70,7 @@ function _mcl_get_template_table() {
       continue;
     }
 
+
     // Checks if class has been defined.
     $link_details  = '<em>Not Defined</em>';
     $link_download = '<em>N/A</em>';

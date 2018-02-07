@@ -44,9 +44,19 @@ function mcl_form($form, &$form_state) {
   $items = array();
   $items[] = l('Templates', '/mcl/template_list');
   $items[] = l('Upload Data', '/mcl/upload_data');
+  $form['mcl']['page_link'] = array(
+    '#markup' => theme('item_list', array('items' => $items)),
+  );
 
-  // Adds the link to the list of drush commands.
+  // Admin menu.
   if (user_access('admin_mcl')) {
+    $form['mcl']['mcl_admin'] = array(
+      '#type'         => 'fieldset',
+      '#collapsed'    => TRUE,
+      '#collapsible'  => TRUE,
+      '#title'        => 'Admin Menu',
+    );
+    $items = array();
     $items[] = l('Drush commands', '/mcl/drush');
     $items []= array(
       'data' => 'Data Queries',
@@ -61,10 +71,10 @@ function mcl_form($form, &$form_state) {
         ),
       ),
     );
+    $form['mcl']['mcl_admin']['page_link'] = array(
+      '#markup' => theme('item_list', array('items' => $items)),
+    );
   }
-  $form['mcl']['page_link'] = array(
-    '#markup' => theme('item_list', array('items' => $items)),
-  );
 
   // Sets form properties.
   $form['#prefix'] = '<div id="mcl-form">';

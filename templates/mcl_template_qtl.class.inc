@@ -55,8 +55,8 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
       'dominance_effect'            => array('req' => FALSE, 'width' => 10, 'desc' => "The deviation of the heterozygote phenotype from the mean of the homozygotes."),
       'additivity_dominance_ratio'  => array('req' => FALSE, 'width' => 10, 'desc' => "The average phenotype effect of substituting a q allele for a Q allele dominance effect The deviation of the heterozygote phenotype from the mean of the homozygotes."),
       'direction'                   => array('req' => FALSE, 'width' => 10, 'desc' => "	The direction of additive effect on the phenotype."),
-      'colocalized_marker'          => array('req' => FALSE, 'width' => 10, 'desc' => "Marker locus that are mapped within the interval defined by the QTL. Multiple markers can be added, separated by a semicolon (;)."),
-      'neighboring_marker'          => array('req' => FALSE, 'width' => 10, 'desc' => "Marker locus that is mapped in the nearest flanking position outside the interval defined by the QTL. Used to estimate QTL position if no appropriate colocalized markers are found. Multiple markers can be added, separated by a semicolon (;)."),
+      'colocalized_marker'          => array('req' => FALSE, 'width' => 10, 'desc' => "Marker locus that are mapped within the interval defined by the QTL. Multiple loci can be added, separated by a semicolon (;)."),
+      'neighboring_marker'          => array('req' => FALSE, 'width' => 10, 'desc' => "Marker locus that is mapped in the nearest flanking position outside the interval defined by the QTL. Used to estimate QTL position if no appropriate colocalized loci are found. Multiple loci can be added, separated by a semicolon (;)."),
       'screening_method'            => array('req' => FALSE, 'width' => 10, 'desc' => "Any specific method for the phenotypic inspection."),
       'comments'                    => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments."),
       'mean'                        => array('req' => FALSE, 'width' => 10, 'desc' => "Mean value of the phenotype (if one QTL has multiple mean values based on the condition and/or population, enter them in QTL_trait_Data sheet."),
@@ -122,10 +122,10 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
     MCL_CHADO_LOCATION::checkSite($this, $line['site_name']);
 
     // Checks colocalized_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], '', '', $this->cvterms['sequence']['marker_locus'], '[;,]');
+//    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
 
     // Checks neighboring_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], '', '', $this->cvterms['sequence']['marker_locus'], '[;,]');
+//    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');

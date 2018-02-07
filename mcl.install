@@ -165,6 +165,7 @@ function mcl_add_table_mcl_template_type(&$schema) {
       'rank' => array(
         'type' => 'int',
         'not null' => TRUE,
+        'default' => 0,
       ),
     ),
     'primary key' => array('template_type_id'),
@@ -392,7 +393,7 @@ function mcl_populate_mcl_var() {
     'SITE_TRAIT_ONTOLOGY'   => array('type' => 'SITE',    'value' => 'rosaceae_trait_ontology',          'desc' => 'CV.name for site specific trait ontology'),
     'CVTERM_ID'             => array('type' => 'DEFAULT', 'value' => $null_cvterm->getCvtermID(),        'desc' => 'dummy cvterm ID. It is used for type_id of NULL pub.'),
     'PUB_ID'                => array('type' => 'DEFAULT', 'value' => $null_pub->getPubID(),              'desc' => 'dummy pub ID. It is used for chado.cvterm_feature.pub_id.'),
-    'ORGANISM_ID'           => array('type' => 'DEFAULT', 'value' => $na_organism->getOrganismID(),      'desc' => 'dummy organism ID. It is used for organims ID of a linkage group.'),
+    'ORGANISM_ID'           => array('type' => 'DEFAULT', 'value' => $na_organism->getOrganismID(),      'desc' => 'dummy organism ID. It is used for organism ID of a linkage group.'),
     'ND_GEOLOCATION_ID'     => array('type' => 'DEFAULT', 'value' => $na_location->getNdGeolocationID(), 'desc' => 'chado.nd_geolocation.nd_geolocation_id for "Not Available"'),
   );
 
@@ -413,6 +414,7 @@ function mcl_populate_mcl_templates() {
 
   // Default template types.
   $template_types = array(
+    'ORGANISM',
     'DB',
     'CV',
     'TRAIT',
@@ -488,20 +490,6 @@ function mcl_populate_mcl_data_valid_type() {
     'company',
   );
 
-  // Adds descriptor format types.
-  $data_types['descriptor_format'] = array(
-    'audio',
-    'boolean',
-    'categorical',
-    'counter',
-    'date',
-    'multicat',
-    'numeric',
-    'percent',
-    'photo',
-    'text',
-  );
-
   // Adds descriptor types.
   $data_types['descriptor_type'] = array(
     'qualitative',
@@ -523,7 +511,8 @@ function mcl_populate_mcl_data_valid_type() {
     'tbd',
     'landrace',
     'germplasm',
-    'species'
+    'species',
+    'breeding_germplasm',
   );
 
   // Add location types.
@@ -626,7 +615,7 @@ function mcl_update_7019() {
 
       // Populate tables.
       if (!mcl_populate_mcl_data_valid_type()) {
-        throw new Exception("Failed to populate data valid type");
+        throw new Exception("Failed to populate mcl_data_valid_type table");
       }
     }
   }

@@ -18,7 +18,7 @@ function mcl_admin_global_var_form($form, &$form_state) {
     '#type'         => 'fieldset',
     '#collapsed'    => FALSE,
     '#collapsible'  => TRUE,
-    '#title'        => 'Site varibles',
+    '#title'        => 'Site variables',
   );
   $form['site_var']['table'] = array(
     '#markup' => _mcl_get_mcl_global_vars_table('SITE'),
@@ -29,10 +29,10 @@ function mcl_admin_global_var_form($form, &$form_state) {
     '#type'         => 'fieldset',
     '#collapsed'    => FALSE,
     '#collapsible'  => TRUE,
-    '#title'        => 'Default varibles',
+    '#title'        => 'Default variables',
   );
 
-  // Adds default varibles.
+  // Adds default variables.
   $form['default_var']['table'] = array(
     '#markup' => _mcl_get_mcl_global_vars_table('DEFAULT'),
   );
@@ -42,7 +42,7 @@ function mcl_admin_global_var_form($form, &$form_state) {
     '#type'         => 'fieldset',
     '#collapsed'    => TRUE,
     '#collapsible'  => TRUE,
-    '#title'        => 'Add a new varibles',
+    '#title'        => 'Add a new variable',
   );
   $form['add_var']['type'] = array(
     '#type'         => 'select',
@@ -92,7 +92,7 @@ function mcl_admin_global_var_form($form, &$form_state) {
  */
 function _mcl_get_mcl_global_vars_table($type) {
 
-  // Gets the site varibles.
+  // Gets the site variables.
   $mcl_vars = MCL_VAR::getGlobalVars($type);
   $rows = array();
   foreach ($mcl_vars as $mcl_var) {

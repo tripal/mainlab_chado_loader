@@ -5,12 +5,12 @@
  */
 class MCL_USER extends PUBLIC_MCL_USER {
 
- /**
-  *  Data members for MCL_USER.
-  */
+  /**
+   * Class data members.
+   */
   protected $prop_arr = NULL;
 
- /**
+  /**
    * @see PUBLIC_MCL_USER::__construct()
    */
   public function __construct($details = array()) {
@@ -159,6 +159,104 @@ class MCL_USER extends PUBLIC_MCL_USER {
     // Converts into URL
     $user_url = 'public://mcl/user/' . $this->getName();
     return $user_url;
+  }
+
+  /**
+   * Returns the path of the provided type in the user space.
+   *
+   * @param string $type
+   * @param boolean $create
+   *
+   * @return string
+   */
+  public function getPath($type, $create = FALSE) {
+
+    // Gets the user directory.
+    $dir = $this->getUserDir();
+
+    // Gets the path of the provided type.
+    if ($type == 'user') {}
+    else if ($type == 'job') {
+      $dir .= '/job';
+    }
+    else if ($type == 'tmp') {
+      $dir .= '/tmp';
+    }
+    else {
+      return '';
+    }
+
+    // Creates the path if not exists.
+    if ($create && !file_exists($dir)) {
+      mcl_create_dir($dir);
+    }
+    return $dir;
+  }
+
+  /**
+   * Returns the URL of the provided type in the user space.
+   *
+   * @param string $type
+   *
+   * @return string
+   */
+  public function getURL($type) {
+
+    // Gets the URL of the user directory.
+    $url = $this->getUserDirURL();
+
+    // Gets the path of the provided type.
+    if ($type == 'user') {}
+    else if ($type == 'job') {
+      $url .= '/job';
+    }
+    else if ($type == 'tmp') {
+      $url .= '/tmp';
+    }
+    else {
+      return '';
+    }
+    return $url;
+  }
+
+  /**
+   * Returns the email option of the provided type. If it is empty,
+   * creates and assigns 'FALSE' as the default options.
+   *
+   * @param string $type
+   */
+  public function getEmailOption() {
+    $options = $this->getPropByKey('email_options');
+    if (!is_array($options)) {
+      $options = array();
+    }
+    if (!array_key_exists($type, $options)) {
+      $options[$type] = FALSE;
+      $this->updateEmailOption($type, FALSE);
+    }
+    return $options[$type];
+  }
+
+  /**
+   * Updates the email option of the provided type.
+   *
+   * @param string $type
+   * @param string $value
+   *
+   * @return boolean
+   */
+  public function updateEmailOption($type, $value) {
+
+    // Gets the email options
+    $options = $this->getPropByKey('email_options');
+    if (!is_array($options)) {
+      $options = array();
+    }
+
+    // Sets the option value and update the email options.
+    $options[$type] = $value;
+    $this->setPropByKey('email_options', $options);
+    return $this->update();
   }
 
   /*

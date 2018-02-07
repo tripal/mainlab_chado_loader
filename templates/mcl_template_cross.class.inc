@@ -97,7 +97,7 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
     $nd_geolocation_id = MCL_CHADO_LOCATION::getLocationIDBySite($line['site_name']);
 
     // Gets dataset.
-    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset_name']);
+    $dataset = MCL_CHADO_DATASET::byName($line['dataset_name']);
 
     // Adds a cross.
     $dup_key = $dataset->getProjectID() . '_' . $line['cross_number'];

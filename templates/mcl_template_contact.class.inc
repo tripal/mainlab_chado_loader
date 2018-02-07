@@ -66,11 +66,7 @@ class MCL_TEMPLATE_CONTACT extends MCL_TEMPLATE {
    */
   public function defineCvterms() {
     $cvterms = array();
-    $cvterms['SITE_CV']['person']        = -1;
     $cvterms['SITE_CV']['institution']   = -1;
-    $cvterms['SITE_CV']['organization']  = -1;
-    $cvterms['SITE_CV']['database']      = -1;
-    $cvterms['SITE_CV']['company']       = -1;
     $cvterms['SITE_CV']['lab']           = -1;
     $cvterms['SITE_CV']['first_name']    = -1;
     $cvterms['SITE_CV']['last_name']     = -1;
@@ -103,12 +99,10 @@ class MCL_TEMPLATE_CONTACT extends MCL_TEMPLATE {
         $this->updateMsg('E', "type : first_name and last_name must be not empty");
       }
     }
-    else {
 
-      // Checks for the contact type.
-      if (!MCL_DATA_VALID_TYPE::validate('contact_type', $type)) {
-        $this->updateMsg('E', "Invalid contact type : $type");
-      }
+    // Checks for the contact type.
+    if (!MCL_DATA_VALID_TYPE::validate('contact_type', $type)) {
+      $this->updateMsg('E', "Invalid contact type : $type");
     }
   }
 
@@ -117,8 +111,10 @@ class MCL_TEMPLATE_CONTACT extends MCL_TEMPLATE {
    */
   public function uploadDataLine($line) {
 
+    // Gets contact type.
+    $type_id = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $line['type'])->getCvtermID();
+
     // Adds a contact.
-    $type_id = $this->cvterms['SITE_CV'][$line['type']];
     $contact = MCL_CHADO_CONTACT::addContact($this, $line['contact_name'], $type_id, $line['description']);
     if ($contact) {
 

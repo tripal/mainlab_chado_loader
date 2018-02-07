@@ -293,7 +293,6 @@ DESC;
    *  It holds information about this template.
    */
   public function getTemplateInfo() {
-    $tmp = $this->defineHeaders();
 
     // Adds info. for header definition.
     $def_sheet = array();
@@ -308,7 +307,7 @@ DESC;
 
     // Sets data.
     $data = array();
-    foreach ($tmp as $heading => $prop) {
+    foreach ($this->headers as $heading => $prop) {
       $name = array(
         'col'   => 'A',
         'type'  => 'text',
@@ -324,7 +323,6 @@ DESC;
         'type'  => 'text',
         'value' => $prop['desc'],
       );
-
       $data[] = array($name, $req, $def);
     }
     $def_sheet['data'] = $data;
@@ -337,7 +335,7 @@ DESC;
     $headers = array();
     $col_char = 'A';
     $regex = $this->getRegExSpCol();
-    foreach ($tmp as $heading => $prop) {
+    foreach ($this->headers as $heading => $prop) {
       $label  = $heading;
       $header = array();
       if (preg_match($regex, $heading)) {
@@ -434,8 +432,11 @@ DESC;
    */
   public static function getByTemplate($template) {
 
-    // Gets the template.
+    // Checks the template.
     $mcl_template = MCL_TEMPLATE::byKey(array('template' => $template));
+    if (!$mcl_template) {
+      return NULL;
+    }
 
     // Gets the child class object of MCL_TEMPLATE.
     $class_name = 'MCL_TEMPLATE_' . strtoupper($template);
@@ -487,11 +488,11 @@ DESC;
   }
 
   /**
-   * Updates the headers. All headers to be lowercase.
+   * Updates all the headers to be lowercase.
    *
    * @return boolean
    */
-  public function updateHeaders() {
+  public function lowerHeaders() {
     $headers = $this->defineHeaders();
     $updated_headers = array();
     foreach ($headers as $header => $prop) {
@@ -560,21 +561,23 @@ DESC;
 
     // Populates the rows with the headers.
     $rows = array();
-    foreach ($this->headers as $name => $info) {
+    foreach ($this->headers as $heading => $prop) {
 
       // Shows a label if exists.
-      if (array_key_exists('label', $info)) {
-        $name = $info['label'];
+      if (array_key_exists('label', $prop)) {
+        $heading = $prop['label'];
       }
-      $name = ($info['req']) ? "$star $name" : $name;
+      $heading = ($prop['req']) ? "$star $heading" : $heading;
 
       // If the column is special colmn, make it italic.
       if (preg_match($regex, $name)) {
-        $name = "<em>$name</em>";
+        $heading = "<em>$heading</em>";
       }
-      $row = array($name, $info['desc']);
+      $row = array($heading, $prop['desc']);
       $rows []= $row;
     }
+
+    // Creates a table.
     $table_vars = array(
       'header'      => array('Column', 'Description'),
       'rows'        => $rows,
@@ -635,9 +638,14 @@ DESC;
    * @param string $msg
    * @param boolean $flag_line_no
    */
-  public function updateMsg($key, $msg, $flag_line_no = TRUE) {
+  public function updateMsg($key, $msg, $flag_line_no = TRUE, $line_no = '') {
     if ($flag_line_no) {
-      $this->job->updateMsg($key, $msg, $this->line_no);
+      if ($line_no == '') {
+        $this->job->updateMsg($key, $msg, $this->line_no);
+      }
+      else {
+        $this->job->updateMsg($key, $msg, $line_no);
+      }
     }
     else {
       $this->job->updateMsg($key, $msg);
@@ -706,13 +714,20 @@ DESC;
         continue;
       }
 
-      // Skips the template line.
+      // Skips the template line if exists.
       if ($template_flag) {
         $template_flag = FALSE;
+
+        // If the line does not start with '#', it does not have tempalte line.
+        // So set the header flag on.
+        if (preg_match("/^#/", $line)) {
+          continue;
+        }
+        $header_flag = TRUE;
       }
 
       // Handles the headers line.
-      else if ($header_flag) {
+      if ($header_flag) {
         $header_flag = FALSE;
 
         // Tokenizes the line.
@@ -732,9 +747,17 @@ DESC;
           }
 
           // Checks if column has valid name and saves the position of the column.
-        // Ignore the column name starting with '#', '@' or '$'.
+          // Ignore the column name starting with '#', '@', '~' or '$'.
+          // Don't skip if it is a valid column specified in the job parameter.
+          $valid_columns = $this->job->getParamByKey('valid_columns');
+          if (empty($valid_columns)) {
+            $valid_columns = array();
+          }
+          else {
+            $valid_columns = array_map('strtolower', $valid_columns);
+          }
           $column_name = strtolower($column_name_orig);
-          if (!array_key_exists($column_name, $this->headers) && !preg_match($regex, $column_name)) {
+          if (!array_key_exists($column_name, $this->headers) && !preg_match($regex, $column_name) && !in_array($column_name, $valid_columns)) {
             $this->updateMsg('W', "Invalid header : '$column_name_orig' is not valid header name, so this column would be ignored.");
           }
           else {
@@ -753,7 +776,7 @@ DESC;
 
         // Checks if required columns exists.
         foreach ($this->headers as $column => $prop) {
-          if ($prop['req'] && (!array_key_exists('col', $prop) || $prop['col'] < 0)) {
+          if (!$prop['var'] && $prop['req'] && (!array_key_exists('col', $prop) || $prop['col'] < 0)) {
             $this->updateMsg('E', "Error : Required column [$column] does not exists.");
           }
         }
@@ -816,11 +839,11 @@ DESC;
    */
   private function _tokenizeLine($line, $headers = FALSE) {
 
-    // Tokenizes the line.
-    $columns = preg_split('/","/', $line);
+    // Tokenizes the CSV line.
+    $columns = str_getcsv($line);
     $data_str = '';
     foreach ($columns as &$column) {
-      $column = trim($column, '"');
+      $column = trim(trim($column, '"'));
       if ($headers) {
         $column = trim(strtolower(str_replace('*', '', $column)));
       }
@@ -851,15 +874,27 @@ DESC;
       return FALSE;
     }
 
+    // Gets the valid column specified in the job parameter.
+    $valid_columns = $this->job->getParamByKey('valid_columns');
+    if (empty($valid_columns)) {
+      $valid_columns = array();
+    }
+    else {
+      $valid_columns = array_map('strtolower', $valid_columns);
+    }
+
     // Gets the regular expression for special columns.
     $regex = $this->getRegExSpCol();
 
-    // Opens the input file.
+    // Gets the input file.
     $infile = $this->csv->getFilePath();
+
+    // Opens the input file.
     if (!($fh = fopen($infile, 'r'))) {
       $this->updateMsg('E', "Error : Fail to open the input file : $infile.");
       return FALSE;
     }
+    $data_lines = array();
     while(!feof($fh)) {
       $line_no++;
       $line = trim(fgets($fh));
@@ -867,13 +902,20 @@ DESC;
         continue;
       }
 
-      // Skips the template line.
+      // Skips the template line if exists..
       if ($template_flag) {
         $template_flag = FALSE;
+
+        // If the line does not start with '#', it does not have tempalte line.
+        // So set the header flag on.
+        if (preg_match("/^#/", $line)) {
+          continue;
+        }
+        $header_flag = TRUE;
       }
 
       // Handles the headers line.
-      else if ($header_flag) {
+      if ($header_flag) {
         $header_flag = FALSE;
 
         // Tokenizes the line.
@@ -896,19 +938,19 @@ DESC;
           // Handles the special coulmns.
           else if (preg_match($regex, $column_name, $matches)) {
             $this->headers[$column_name]['col'] = $i;
-            $prefix   = $matches[0];
-            $prefix_len  = strlen($prefix);
+            $prefix = $matches[0];
+            $prefix_len = strlen($prefix);
 
             // Type 1 : double special character + cvterm.name.
             if ($prefix_len == 2) {
 
               // Gets cv_id.
-              $cv_id = $this->getCvByPrefix($prefix);
+              $cv = $this->getCvByPrefix($prefix);
               if ($cv) {
 
                 // Gets the cvterm.
                 $cvterm_name = substr($column_name, $prefix_len);
-                $cvterm = MCL_CHADO_CVTERM::getCvtermByCvID($cv_id, $cvterm_name);
+                $cvterm = MCL_CHADO_CVTERM::getCvtermByCvID($cv->getCvID(), $cvterm_name);
                 if ($cvterm) {
                   $this->headers[$column_name]['cvterm_id'] = $cvterm->getCvtermID();
                 }
@@ -917,9 +959,14 @@ DESC;
                 }
               }
               else {
-                $this->updateMsg('E', "Error : cv could not found for $prefix.");
+                $this->updateMsg('E', "Error : cv could not found for the prefix ($prefix).");
               }
             }
+          }
+
+          // Handles the valid columns provided in the job paramters.
+          else if (in_array($column_name, $valid_columns)) {
+            $this->headers[$column_name]['col'] = $i;
           }
         }
       }
@@ -942,10 +989,18 @@ DESC;
         }
         $this->setLineNo($line_no);
         $this->runErrorCheckDataLine($line_arr);
+        $data_lines []= $line_arr;
       }
     }
     fclose($fh);
+    if (!$this->isPassed()) {
+      return FALSE;
+    }
+
+    // Runs the pre-process.
+    $this->preProcess($data_lines);
     return $this->isPassed();
+
   }
 
   /**
@@ -960,9 +1015,11 @@ DESC;
 
     // Returns cv_id for this prefix if it found in job param array.
     $cv_id_map = $this->getJob()->getParamByKey('cv_id_map');
-    if (is_array($cv_id_map) && array_key_exists($this->template, $cv_id_map)) {
-      if (array_key_exists($prefix, $cv_id_map[$this->template])) {
-        return MCL_CHADO_CV::getCVByID($cv_id_map[$this->template][$prefix]);
+    if (is_array($cv_id_map)) {
+      if (array_key_exists($this->template, $cv_id_map)) {
+        if (array_key_exists($prefix, $cv_id_map[$this->template])) {
+          return MCL_CHADO_CV::byID($cv_id_map[$this->template][$prefix]);
+        }
       }
     }
 
@@ -1019,10 +1076,17 @@ DESC;
       // Skips the template line.
       if ($template_flag) {
         $template_flag = FALSE;
+
+        // If the line does not start with '#', it does not have tempalte line.
+        // So set the header flag on.
+        if (preg_match("/^#/", $line)) {
+          continue;
+        }
+        $header_flag = TRUE;
       }
 
       // Handles the headers line.
-      else if ($header_flag) {
+      if ($header_flag) {
         $header_flag = FALSE;
 
         // Tokenizes the line.
@@ -1083,6 +1147,16 @@ DESC;
   }
 
   /**
+   * The function to be called before data error checking. It returns
+   * FLASE if it need to stop the job.
+   *
+   * @param array $data_lines
+   */
+  public function preProcess($data_lines) {
+    // Defined in child class.
+  }
+
+  /**
    * The function to be called after uploading data.
    */
   public function postProcess() {
@@ -1119,7 +1193,7 @@ DESC;
    * @param MCL_TEMPLATE $mcl_template
    * @param array $line
    */
-  public function addSpecialColumns($prefix, MCL_TEMPLATE $mcl_template, $line) {
+  public function addSpecialColumns($prefix, $mcl_template, $line) {
 
     // Gets the special columns.
     $columns  = $this->getSpecialColumns($prefix);
@@ -1158,7 +1232,7 @@ DESC;
       }
       else {
 
-        // Poluplates the array with values.
+        // Populates the array with values.
         $value_arr = preg_split(CHADO_TABLE::getSepRegex($separator), $value, NULL, PREG_SPLIT_NO_EMPTY);
 
         // Adds each property.
@@ -1316,16 +1390,6 @@ DESC;
         }
       }
     }
-  }
-
-  /**
-   * Tests templates.
-   *
-   * @param array $templates
-   * @param string $tmp_dir
-   */
-  public function testTemplates($templates, $tmp_dir) {
-    foreach ($templates as $template) {}
   }
 
   /**

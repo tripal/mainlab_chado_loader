@@ -41,7 +41,7 @@ class MCL_TABLE {
       'DATE'    => array('timestamp', 'timestamp_without_time_zone'),
     );
 
-    // Sets contraints.
+    // Sets constraints.
     $this->constraints = array('unique', 'foreign');
   }
 
@@ -49,6 +49,69 @@ class MCL_TABLE {
    * Implements the class destructor.
    */
   public function __destruct() {}
+
+  /**
+   * Returns the table columns.
+   *
+   * @param string $table
+   * @param string $schema
+   *
+   * @return array
+   */
+  public static function getColumns($table, $schema = 'public') {
+    $columns = array();
+
+    // Gets the columns of the table.
+    $table_name = $schema . '.' . $table;
+    if (db_table_exists($table_name)) {
+      $sql = "
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = :table_schema AND table_name = :table_name
+      ";
+      $args = array(
+        ':table_name'   => $table,
+        ':table_schema' => $schema,
+      );
+      $assoc = db_query($sql, $args)->fetchAllAssoc('column_name', PDO::FETCH_ASSOC);
+      $columns = array_keys($assoc);
+    }
+    return $columns;
+  }
+
+  /**
+   * Return union or intersect of table columns of the provided 2 tables.
+   *
+   * @param string $table_1
+   * @param string $table_2
+   * @param string $type
+   * @param string $schema
+   *
+   * @return array
+   */
+  public static function getMergedColumns($table_1, $table_2, $type = 'INTERSECT', $schema = 'public') {
+    $columns = array();
+
+    $table_name_1 = $schema . '.' . $table_1;
+    $table_name_2 = $schema . '.' . $table_2;
+    if (db_table_exists($table_name_1) && db_table_exists($table_name_2)) {
+
+      // Gets the columns of the table 1.
+      $table_cols_1 = self::getColumns($table_1, $schema);
+
+      // Gets the columns of the table 2.
+      $table_cols_2 = self::getColumns($table_2, $schema);
+
+      // Returns the columns.
+      if ($type == 'UNION') {
+        $columns = array_unique(array_merge($table_cols_1, $table_cols_2));
+      }
+      else if ('INTERSECT') {
+        $columns = array_intersect($table_cols_1, $table_cols_2);
+      }
+    }
+    return $columns;
+  }
 
   /**
    * Adds a unique key.

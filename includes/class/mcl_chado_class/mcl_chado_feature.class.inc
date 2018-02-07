@@ -35,7 +35,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
   }
 
   /**
-   * Checks the existance of feature. If not, write the error messasge
+   * Checks the existence of feature. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -93,8 +93,13 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       }
 
       // Checks the feature.
-      $checked = MCL_CHADO_FEATURE::checkFeatureAlias($mcl_tmpl, $uniquename, $genus, $species, $type_id);
-      if (!$checked) {
+      $num = MCL_CHADO_FEATURE::countFeature($mcl_tmpl, $uniquename, $genus, $species, $type_id);
+      if ($num > 1) {
+        self::updateMsg($mcl_tmpl, 'E', "The uniquename '$uniquename' is ambiguous. Please not use this uniquename");
+        $flag = FALSE;
+      }
+      else if ($num < 1) {
+        self::updateMsg($mcl_tmpl, 'E', "The uniquename '$uniquename' does not found in chado.feature");
         $flag = FALSE;
       }
     }
@@ -102,7 +107,98 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
   }
 
   /**
-   * Checks the existance of feature. If not, write the error messasge
+   * Count the number of the feature with the same uniquename, type_id and/or
+   * organism_id
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $uniquename
+   * @param string $genus
+   * @param string $species
+   * @param integer $type_id
+   */
+  public static function countFeature(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $genus, $species, $type_id) {
+
+    // Checks the organism_id.
+    $organism_id = '';
+    if ($genus && $species) {
+      $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+      if ($organism) {
+        $organism_id  = $organism->getOrganismID();
+      }
+      else {
+        self::updateMsg($mcl_tmpl, 'E', "$genus $species not found in organism");
+        return 0;
+      }
+    }
+
+    // Sets the arguments.
+    $args = array(
+      'uniquename'  => $uniquename,
+      'type_id'     => $type_id,
+    );
+
+    // Searches for alias.
+    $sql = "
+      SELECT COUNT(F.feature_id)
+      FROM {chado.feature} F
+      WHERE LOWER(F.uniquename) = LOWER(:uniquename) AND F.type_id = :type_id
+    ";
+    if ($organism_id) {
+      $args['organism_id'] = $organism_id;
+      $sql .= " AND F.organism_id = :organism_id";
+    }
+    return db_query($sql, $args)->fetchField();
+  }
+
+  /**
+   * Checks the feature uniquename for uniqueness for the provided type. Search for the
+   * same uniquename with different organism. Log the error if the uniquename
+   * is used with different organism.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $uniquename
+   * @param string $genus
+   * @param string $species
+   * @param integer $type_id
+   *
+   * @return boolean
+   */
+  public static function checkFeatureUniquenameForUniqueness(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $genus, $species, $type_id) {
+
+    // Gets the organism.
+    $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+    if ($organism) {
+
+      // Gets all the features with the same uniquename.
+      $sql = "
+        SELECT F.* FROM {chado.feature} F
+        WHERE LOWER(F.uniquename) = LOWER(:uniquename) AND F.type_id = :type_id
+      ";
+      $args =  array(
+        ':uniquename' => $uniquename,
+        ':type_id'    => $type_id,
+      );
+      $results = db_query($sql,$args);
+      $found = FALSE;
+      $count = 0;
+      while ($feature = $results->fetchObject()) {
+        $count++;
+
+        // Checks for organism_id.
+        if ($feature->organism_id == $organism->getOrganismID()) {
+          $found = TRUE;
+        }
+      }
+      if ($count && !$found) {
+        self::updateMsg($mcl_tmpl, 'E', "$uniquename is used with different organism. Please change the name.");
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Checks the existence of feature. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -125,7 +221,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
         $organism_id  = $organism->getOrganismID();
       }
       else {
-        self::updateMsg($mcl_tmpl, 'E', "$genus $species not found in organism");
+        self::updateMsg($mcl_tmpl, 'E', "$genus $species not found in chado.organism");
         return FALSE;
       }
     }
@@ -163,7 +259,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       $feature = MCL_CHADO_FEATURE::byKey($args);
       if (!$feature) {
 
-        // Search for alias.
+        // Searches for alias.
         $sql = "
           SELECT COUNT(S.synonym_id)
           FROM {chado.synonym} S
@@ -182,6 +278,222 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       }
     }
     return $flag;
+  }
+
+  /**
+   * Checks the residues. If the residues has allele (e.g. [A|T]), check if
+   * it meets the following conditions.
+   *   1. it has only one allele.
+   *   2. it has only one pair of brackets ([]).
+   *   3. The allele has a valid IUPAC code.
+   *
+   * @param MCL_TEMPLATE MCL_TEMPLATE
+   * @param string $residues
+   *
+   * @return boolean
+   */
+  public static function checkResidues(MCL_TEMPLATE $mcl_tmpl = NULL, $residues) {
+
+    // Checks if the residues has allele.
+    if (preg_match("/\[/", $residues)) {
+      $count = preg_match_all('/\[/', $residues, $matches);
+      if ($count == 1) {
+        $count = preg_match_all("/\]/", $residues, $matches);
+        if ($count == 1) {
+
+          // Checks if the allele has the corresponding IUPAC code.
+          if (preg_match("/\[(.+)\]/", $residues, $matches)) {
+            $allele = $matches[1];
+            if (self::getIUPAC($allele)) {
+              return TRUE;
+            }
+            else {
+              self::updateMsg($mcl_tmpl, 'E', "The allele [$allele] does not have valid IUPAC code");
+              return FALSE;
+            }
+          }
+        }
+      }
+      self::updateMsg($mcl_tmpl, 'E', "The allele has invalid format");
+      return FALSE;
+    }
+    return TRUE;
+  }
+
+  /**
+   * Parses the residues. If the residues has allele (e.g. [A|T]), it does
+   * the followings.
+   *   1. Replace it with IUPAC code.
+   *   2. Gets five prime flanking sequence
+   *   3. Gets three prime flanking sequence
+   *   4. Gets allele
+   *
+   * @param string $residues
+   *
+   * @return array
+   */
+  public static function parseResidues($residues) {
+    $seq_info = array();
+
+    // Checks if the residues has allele.
+    if (preg_match('/^(.*)\[(.*)\](.*)$/', $residues, $matches)) {
+
+      // Parses out the sequence information.
+      $five_prime   = trim($matches[1]);
+      $allele       = trim($matches[2]);
+      $three_prime  = trim($matches[3]);
+      $iupac_code   = self::getIUPAC($allele);
+
+      // Sets the info.
+      $seq_info['allele']       = str_replace(' ', '', $allele);
+      $seq_info['iupac_code']   = $iupac_code;
+      $seq_info['five_prime']   = $five_prime;
+      $seq_info['three_prime']  = $three_prime;
+      $seq_info['residues']     = $five_prime . $iupac_code . $three_prime;
+    }
+    else {
+      $seq_info['residues'] = $residues;
+    }
+    return $seq_info;
+  }
+
+  /**
+   * Returns IUPAC code of the given string.
+   *
+   * @param string $nucleotides
+   *
+   * IUPAC codes
+   *
+   * Nucleotide Code:  Base:
+   * ==================
+   * A.................Adenine
+   * C.................Cytosine
+   * G.................Guanine
+   * T (or U)..........Thymine (or Uracil)
+   * R.................A or G
+   * Y.................C or T
+   * S.................G or C
+   * W.................A or T
+   * K.................G or T
+   * M.................A or C
+   * B.................C or G or T
+   * D.................A or G or T
+   * H.................A or C or T
+   * V.................A or C or G
+   * N.................any base
+   * . or -............gap
+   *
+   * @return string
+   */
+  public static function getIUPAC($nucleotides) {
+    $iupac_code = '';
+    if ($nucleotides) {
+
+      // Cleans up and splits the nucleotides to bases.
+      $sep = array(' ', '/', '\\', '|');
+      $nucleotides = str_replace($sep, '', $nucleotides);
+
+      // Sorts them and finds matched IUPAC code.
+      $temp = str_split($nucleotides);
+      asort($temp);
+      $code = implode('', $temp);
+      if ($code == 'AG') {
+        $iupac_code = 'R';
+      }
+      else if ($code == 'CT') {
+        $iupac_code = 'Y';
+      }
+      else if ($code == 'CG') {
+        $iupac_code = 'S';
+      }
+      else if ($code == 'AT') {
+        $iupac_code = 'W';
+      }
+      else if ($code == 'GT') {
+        $iupac_code = 'K';
+      }
+      else if ($code == 'AC') {
+        $iupac_code = 'M';
+      }
+      else if ($code == 'CGT') {
+        $iupac_code = 'B';
+      }
+      else if ($code == 'AGT') {
+        $iupac_code = 'D';
+      }
+      else if ($code == 'ACT') {
+        $iupac_code = 'H';
+      }
+      else if ($code == 'ACG') {
+        $iupac_code = 'V';
+      }
+    }
+    return $iupac_code;
+  }
+
+  /**
+   * Returns IUPAC code of the given string.
+   *
+   * @param string $nucleotides
+   *
+   * IUPAC codes
+   *
+   * Nucleotide Code:  Base:
+   * ==================
+   * A.................Adenine
+   * C.................Cytosine
+   * G.................Guanine
+   * T (or U)..........Thymine (or Uracil)
+   * R.................A or G
+   * Y.................C or T
+   * S.................G or C
+   * W.................A or T
+   * K.................G or T
+   * M.................A or C
+   * B.................C or G or T
+   * D.................A or G or T
+   * H.................A or C or T
+   * V.................A or C or G
+   * N.................any base
+   * . or -............gap
+   *
+   * @return string
+   */
+  public static function getBases($iupac_code, $separator = '/') {
+    $bases = '';
+    if ($iupac_code) {
+      if ($iupac_code == 'R') {
+        $bases = 'A' . $separator . 'G';
+      }
+      else if ($iupac_code == 'Y') {
+        $bases = 'C' . $separator . 'T';
+      }
+      else if ($iupac_code == 'S') {
+        $bases = 'C' . $separator . 'G';
+      }
+      else if ($iupac_code == 'W') {
+        $bases = 'A' . $separator . 'T';
+      }
+      else if ($iupac_code == 'K') {
+        $bases = 'G' . $separator . 'T';
+      }
+      else if ($iupac_code == 'M') {
+        $bases = 'A' . $separator . 'G';
+      }
+      else if ($iupac_code == 'B') {
+        $bases = 'C' . $separator . 'G'. $separator . 'T';
+      }
+      else if ($iupac_code == 'D') {
+        $bases = 'A' . $separator . 'G'. $separator . 'T';
+      }
+      else if ($iupac_code == 'H') {
+        $bases = 'A' . $separator . 'C'. $separator . 'T';
+      }
+      else if ($iupac_code == 'V') {
+        $bases = 'A' . $separator . 'C' . $separator . 'G';
+      }
+    }
+    return $bases;
   }
 
   /**
@@ -818,7 +1130,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
-        $contact = MCL_CHADO_CONTACT::getContact($name);
+        $contact = MCL_CHADO_CONTACT::byName($name);
         if ($contact) {
           if (!$this->addLink($mcl_tmpl, 'feature_contact', 'feature_id', $this->feature_id, 'contact_id', $contact->getContactID())) {
             $flag = FALSE;
@@ -846,7 +1158,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     if ($dataset_name) {
       $names = preg_split($this->getSepRegex($separator), $dataset_name, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
-        $dataset = MCL_CHADO_DATASET::getDataset(trim($name));
+        $dataset = MCL_CHADO_DATASET::byName(trim($name));
         if ($dataset) {
           if (!$this->addLink($mcl_tmpl, 'feature_project', 'feature_id', $this->feature_id, 'project_id', $dataset->getProjectID())) {
             $flag = FALSE;
@@ -945,13 +1257,12 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
    * Adds genotype to feature_genotype.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $stock
-   * @param integer $cvterm_id
    * @param MCL_CHADO_GENOTYPE $genotype
+   * @param integer $cvterm_id
    *
    * @return boolean
    */
-  public function addGenotype(MCL_TEMPLATE $mcl_tmpl = NULL, $stock, $genus, $cvterm_id, MCL_CHADO_GENOTYPE $genotype) {
+  public function addGenotype(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_GENOTYPE $genotype, $cvterm_id) {
 
     // Checks feature_genotype for duplication.
     $args = array(
@@ -967,6 +1278,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
 
       // Adds feature_genotype.
       $args['cgroup'] = 1;
+      $args['rank']   = 0;
       $chado_feature_genotype = new CHADO_FEATURE_GENOTYPE($args);
       if ($chado_feature_genotype->insert()) {
         $this->addMsg($mcl_tmpl, 'N', 'feature_genotype', $args);
@@ -983,15 +1295,15 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
    * Adds image to feature_image.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $reference
+   * @param string $image_id_list
    * @param string $separator
    *
    * @return boolean
    */
-  public function addImage(MCL_TEMPLATE $mcl_tmpl = NULL, $image, $separator = '') {
+  public function addImageID(MCL_TEMPLATE $mcl_tmpl = NULL, $image_id_list, $separator = '') {
     $flag = TRUE;
-    if ($image) {
-      $eimage_ids = preg_split($this->getSepRegex($separator), $image, NULL, PREG_SPLIT_NO_EMPTY);
+    if ($image_id_list) {
+      $eimage_ids = preg_split($this->getSepRegex($separator), $image_id_list, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($eimage_ids as $eimage_id) {
         $eimage_id = trim($eimage_id);
         $image = MCL_CHADO_IMAGE::byKey(array('eimage_id' => $eimage_id));

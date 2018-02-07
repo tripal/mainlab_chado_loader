@@ -113,10 +113,10 @@ function mcl_admin_template_form_submit($form, &$form_state) {
       }
     }
 
-    // Scans the template directory and add new templates or remove non-existance
+    // Scans the template directory and add new templates or remove non-existence
     // ones from the database.
     MCL_TEMPLATE::updateTemplates(TRUE);
-    drupal_set_message('The templates has been updated');
+    drupal_set_message('The templates have been updated');
   }
 }
 
@@ -143,7 +143,7 @@ function theme_mcl_admin_template_form($variables) {
       }
       $template = MCL_TEMPLATE::byKey(array('template_id' => $template_id));
 
-      // Checks the existance of the class file.
+      // Checks the existence of the class file.
       $class_file = 'mcl_template_' . strtolower($template->getTemplate()) . '.class.inc';
       $class_exists = (file_exists("$template_path/$class_file")) ? 'exists' : 'not exist';
 

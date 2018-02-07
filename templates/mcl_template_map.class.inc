@@ -81,13 +81,13 @@ class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
   public function runErrorCheckDataLine($line) {
 
     // Checks organism for map.
-    MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species'], '[;,]');
+    MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species'], '[;]');
 
     // Checks map_unit.
     MCL_CHADO_FEATUREMAP::checkMapUnit($this, $line['map_unit']);
 
     // Checks stock.
-    MCL_CHADO_STOCK::checkStock($this, $line['population_name'], '', '', "[,;]");
+    MCL_CHADO_STOCK::checkStock($this, $line['population_name'], '', '', "[;]");
 
     // Checks contacts.
     MCL_CHADO_CONTACT::checkContact($this, $line['contact'], '[;]');
@@ -116,10 +116,10 @@ class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
       $map->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
       // Adds organisms.
-      $map->addOrganism($this, $line['genus'], $line['species'], "[,;]");
+      $map->addOrganism($this, $line['genus'], $line['species'], "[;]");
 
       // Adds stocks.
-      $map->addStock($this, $line['population_name'], '', '', "[,;]");
+      $map->addStock($this, $line['population_name'], '', '', "[;]");
 
       // Adds contacts.
       $map->addContact($this, $line['contact'], "[;]");

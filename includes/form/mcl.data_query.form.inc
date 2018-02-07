@@ -11,6 +11,9 @@
 function mcl_data_query_form($form, &$form_state, $type = NULL) {
   global $user;
 
+  // Sets the maximum rows.
+  $max_rows = 50;
+
   // Gets MCL_USER.
   $mcl_user = MCL_USER::byKey(array('user_id' => $user->uid));
 
@@ -36,11 +39,20 @@ function mcl_data_query_form($form, &$form_state, $type = NULL) {
     '#title'      => 'uniquename',
     '#attributes' => array('style' => 'width:400px;'),
   );
-  $form['data_query']['feature_id'] = array(
-    '#type'       => 'textfield',
-    '#title'      => 'feature_id',
-    '#attributes' => array('style' => 'width:400px;'),
-  );
+  if ($type == 'feature') {
+    $form['data_query']['feature_id'] = array(
+      '#type'       => 'textfield',
+      '#title'      => 'feature_id',
+      '#attributes' => array('style' => 'width:400px;'),
+    );
+  }
+  else if ($type == 'stock') {
+    $form['data_query']['stock_id'] = array(
+      '#type'       => 'textfield',
+      '#title'      => 'stock_id',
+      '#attributes' => array('style' => 'width:400px;'),
+    );
+  }
   $form['data_query']['search_btn'] = array(
     '#type'       => 'button',
     '#value'      => 'Search',
@@ -62,7 +74,7 @@ function mcl_data_query_form($form, &$form_state, $type = NULL) {
     // Gets the results.
     if ($query_type == 'feature') {
 
-      // Search the related tables for the features.
+      // Gets cvterm ID of 'genetic_marker'.
       $cvterm = MCL_CHADO_CVTERM::getCvterm('sequence', 'genetic_marker');
       $type_id = $cvterm->getCvtermID();
 
@@ -70,13 +82,21 @@ function mcl_data_query_form($form, &$form_state, $type = NULL) {
       $uniquename = trim($form_state['values']['data_query']['uniquename']);
       if (!$uniquename) {
         $feature_id = trim($form_state['values']['data_query']['feature_id']);
-        $feature = CHADO_FEATURE::byKey(array('feature_id' => $feature_id));
+        $feature    = CHADO_FEATURE::byKey(array('feature_id' => $feature_id));
         $uniquename = $feature->getUniquename();
       }
-      _mcl_get_result_feature($form, $uniquename, $type_id);
+      _mcl_get_result_feature($form, $max_rows, $uniquename, $type_id);
     }
     else if ($query_type == 'stock') {
-      _mcl_get_result_stock($form, $uniquename);
+
+      // Gets uniquename.
+      $uniquename = trim($form_state['values']['data_query']['uniquename']);
+      if (!$uniquename) {
+        $stock_id   = trim($form_state['values']['data_query']['stock_id']);
+        $stock      = MCL_CHADO_STOCK::byKey(array('stock_id' => $stock_id));
+        $uniquename = $stock->getUniquename();
+      }
+      _mcl_get_result_stock($form, $max_rows, $uniquename);
     }
   }
 
@@ -102,10 +122,8 @@ function mcl_data_query_form_ajax_callback($form, &$form_state) {
  * @param arary $form
  * @param string $uniquename
  * @param integer $type_id
- *
- * @return string
  */
-function _mcl_get_result_feature(&$form, $uniquename, $type_id) {
+function _mcl_get_result_feature(&$form, $max_rows, $uniquename, $type_id) {
 
   // Adds a fieldset for the feature.
   $form['data_query']['results']['feature'] = array(
@@ -119,8 +137,8 @@ function _mcl_get_result_feature(&$form, $uniquename, $type_id) {
   $sql = "
     SELECT F.feature_id, F.uniquename, O.genus, O.species
     FROM chado.feature F
-    INNER JOIN chado.organism O on O.organism_id = F.organism_id
-    WHERE F.type_id = :type_id AND uniquename = :uniquename
+      INNER JOIN chado.organism O on O.organism_id = F.organism_id
+    WHERE F.type_id = :type_id AND F.uniquename = :uniquename
   ";
   $features = array();
   $args = array(
@@ -181,23 +199,32 @@ function _mcl_get_result_feature(&$form, $uniquename, $type_id) {
             '#collapsible'  => TRUE,
             '#title'        => "$fk_table ($num)",
           );
-          $sql = "SELECT * FROM chado.$fk_table WHERE $fk_attr = :feature_id";
-          $results = db_query($sql, array(':feature_id' => $feature_id));
-          $tables = '';
-          while ($arr = $results->fetch(PDO::FETCH_ASSOC)) {
-            $rows = array();
-            foreach ($arr as $key => $value) {
-              $rows []= array($key, $value);
+
+          // Default message.
+          $markup = "$fk_table has more than the maximum rows ($max_rows) to be displayed.";
+
+          // Creates a data table only if the number of the rows is less than 50.
+          if ($num < $max_rows) {
+
+            $sql = "SELECT * FROM chado.$fk_table WHERE $fk_attr = :feature_id";
+            $results = db_query($sql, array(':feature_id' => $feature_id));
+            $tables = '';
+            while ($arr = $results->fetch(PDO::FETCH_ASSOC)) {
+              $rows = array();
+              foreach ($arr as $key => $value) {
+                $rows []= array($key, $value);
+              }
+              $table_vars = array(
+                'header'      => array('attr', 'value'),
+                'rows'        => $rows,
+                'attributes'  => array(),
+              );
+              $tables .= theme('table', $table_vars);
             }
-            $table_vars = array(
-              'header'      => array('attr', 'value'),
-              'rows'        => $rows,
-              'attributes'  => array(),
-            );
-            $tables .= theme('table', $table_vars);
+            $markup = $tables;
           }
           $form['data_query']['results']['feature'][$feature_id][$fk_table]['tables'] = array(
-            '#markup' => $tables,
+            '#markup' => $markup,
           );
         }
       }
@@ -213,23 +240,115 @@ function _mcl_get_result_feature(&$form, $uniquename, $type_id) {
 /**
  * Returns the results.
  *
- * @param array $uniquenames
- *
- * @return string
+ * @param arary $form
+ * @param string $uniquename
  */
-function _mcl_get_result_stock($uniquenames) {
-  $results = '';
+function _mcl_get_result_stock(&$form, $max_rows, $uniquename) {
 
-  foreach ($uniquenames as $uniquename) {
-    $feature = MCL_CHADO_STOCK::byKey(array('uniquename' => $uniquename));
-    if ($feature) {
+  // Adds a fieldset for the stock.
+  $form['data_query']['results']['stock'] = array(
+    '#type'         => 'fieldset',
+    '#collapsed'    => FALSE,
+    '#collapsible'  => FALSE,
+    '#title'        => "Stock : $uniquename",
+  );
 
-    }
-    else {
-      $results .= "<b>$uniquename</b> not found in $type<br />";
+  // Gets all stocks with the same uniquename.
+  $sql = "
+    SELECT S.stock_id, S.uniquename, O.genus, O.species
+    FROM chado.stock S
+      INNER JOIN chado.organism O on O.organism_id = S.organism_id
+    WHERE S.uniquename = :uniquename
+  ";
+  $stocks = array();
+  $results = db_query($sql, array(':uniquename' => $uniquename));
+  while ($obj = $results->fetchObject()) {
+    $stocks []= $obj;
+  }
+
+  if (empty($stocks)) {
+    $form['data_query']['results']['stock']['table'] = array(
+      '#markup' => "<em>'<b>$uniquename</b>' not found in stock</em>",
+    );
+  }
+  else {
+    $form['data_query']['results']['stock']['table'] = array(
+      '#markup' => sizeof($stocks) . " stocks have the same uniquename.<br /><br />",
+    );
+
+    // Sets the search_path to chado, public for create_point function.
+    $sql = "SET SEARCH_PATH TO chado, public;";
+    db_query($sql);
+
+    // Searches for related tables for each stock.
+    foreach ($stocks as $stock) {
+      $stock_id = $stock->stock_id;
+      $genus    = $stock->genus;
+      $species  = $stock->species;
+
+      // Adds a fieldset for the stock.
+      $form['data_query']['results']['stock'][$stock_id] = array(
+        '#type'         => 'fieldset',
+        '#collapsed'    => TRUE,
+        '#collapsible'  => TRUE,
+        '#title'        => "Stock ID : $stock_id ($genus $species)",
+      );
+
+      // Checks stock for the related tables.
+      $rel_tables = MCL_CHADO_STOCK::getRelTable();
+      $no_rel_table = TRUE;
+      foreach ($rel_tables['stock_id'] as $table_info) {
+        $fk_table = $table_info['table'];
+        $fk_attr  = $table_info['attr'];
+
+        // Checks if stock_id exists in the related table.
+        $sql = "SELECT COUNT($fk_attr) FROM chado.$fk_table WHERE $fk_attr = :stock_id";
+        $num = db_query($sql, array(':stock_id' => $stock_id))->fetchField();
+
+        // Create fieldset.
+        if ($num) {
+          $no_rel_table = FALSE;
+          $form['data_query']['results']['stock'][$stock_id][$fk_table] = array(
+            '#type'         => 'fieldset',
+            '#collapsed'    => TRUE,
+            '#collapsible'  => TRUE,
+            '#title'        => "$fk_table ($num)",
+          );
+
+          // Default message.
+          $markup = "$fk_table has more than the maximum rows ($max_rows) to be displayed.";
+
+          // Creates a data table only if the number of the rows is less than 50.
+          if ($num < $max_rows) {
+            $sql = "SELECT * FROM chado.$fk_table WHERE $fk_attr = :stock_id";
+            $results = db_query($sql, array(':stock_id' => $stock_id));
+            $tables = '';
+            while ($arr = $results->fetch(PDO::FETCH_ASSOC)) {
+              $rows = array();
+              foreach ($arr as $key => $value) {
+                $rows []= array($key, $value);
+              }
+              $table_vars = array(
+                'header'      => array('attr', 'value'),
+                'rows'        => $rows,
+                'attributes'  => array(),
+              );
+              $tables .= theme('table', $table_vars);
+            }
+            $markup = $tables;
+          }
+          $form['data_query']['results']['stock'][$stock_id][$fk_table]['tables'] = array(
+            '#markup' => $markup,
+          );
+        }
+      }
+      if ($no_rel_table) {
+        $form['data_query']['results']['stock'][$stock_id]['tables'] = array(
+          '#markup' => 'Not found in related tables.',
+        );
+      }
     }
   }
-  return $results;
 }
 
 /**
@@ -245,14 +364,24 @@ function mcl_data_query_form_validate($form, &$form_state) {
 
   // If the 'program_list' was changed.
   if ($trigger_elem == 'search_btn') {
-    $query_type = $form_state['values']['query_type'];
+    $type = $form_state['values']['query_type'];
 
     // Feature.
-    if ($query_type == 'feature') {
+    if ($type == 'feature') {
       $uniquename = trim($form_state['values']['data_query']['uniquename']);
       $feature_id = trim($form_state['values']['data_query']['feature_id']);
       if (($uniquename && $feature_id) || (!$uniquename && !$feature_id)) {
-        form_set_error('data_query][uniquename', t("Please type uniquename or feature_id"));
+        form_set_error('data_query][uniquename', t("Please type uniquename or feature ID"));
+        return;
+      }
+    }
+
+    // Stock.
+    else if ($type == 'stock') {
+      $uniquename = trim($form_state['values']['data_query']['uniquename']);
+      $stock_id   = trim($form_state['values']['data_query']['stock_id']);
+      if (($uniquename && $stock_id) || (!$uniquename && !$stock_id)) {
+        form_set_error('data_query][uniquename', t("Please type uniquename or stock ID"));
         return;
       }
     }

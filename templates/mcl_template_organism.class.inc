@@ -102,7 +102,7 @@ class MCL_TEMPLATE_ORGANISM extends MCL_TEMPLATE {
     MCL_CHADO_DB::checkDB($this, 'GRIN');
 
     // Checks images.
-    MCL_CHADO_IMAGE::checkImage($this, $line['image'], '[;,]');
+    MCL_CHADO_IMAGE::checkImageID($this, $line['image'], '[;,]');
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
@@ -149,7 +149,7 @@ class MCL_TEMPLATE_ORGANISM extends MCL_TEMPLATE {
       }
 
       // Adds images.
-      $organism->addImage($this, $line['image'], "[,;]");
+      $organism->addImageID($this, $line['image'], "[,;]");
 
       // Adds references.
       $organism->addReference($this, $line['reference'], "[,;]");

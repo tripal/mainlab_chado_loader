@@ -34,7 +34,7 @@
   // Reloads the page.
   $.fn.reload_page = function() {
     location.reload();
-   };
+  };
 
   // Re-directs to the page.
   $.fn.redirect_page = function(url) {

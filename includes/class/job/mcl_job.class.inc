@@ -122,6 +122,17 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   }
 
   /**
+   * Returns MCL_JOB by Job ID.
+   *
+   * @param integer $job_id
+   *
+   * @return MCL_JOB|NULL
+   */
+  public static function byID($job_id) {
+    return self::byKey(array('job_id' => $job_id));
+  }
+
+  /**
    * @see PUBLIC_MCL_JOB::insert()
    */
   public function insert() {
@@ -364,19 +375,62 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     // Gets the owner.
     $mcl_user = MCL_USER::byKey(array('user_id' => $this->getUserID()));
 
+    // Do not send if user selected not send.
+    $send_email = $this->getParamByKey('send_email');
+    if (!$send_email) {
+      return;
+    }
 
-  }
+    // All system mails need to specify the module and template key (mirrored from
+    // hook_mail()) that the message they want to send comes from.
+    $module = 'mcl';
+    $key = 'upload-complete';
 
-  /**
-   * Sends an error email.
-   *
-   */
-  public function sendErrorEmail() {
+    // Specify 'to' and 'from' addresses.
+    $to   = $mcl_user->getMail();
+    $from = variable_get('site_mail', 'admin@localhost.localdomain');
 
-    // Gets the owner.
-    $mcl_user = MCL_USER::byKey(array('user_id' => $this->getUserID()));
+    // "params" loads in additional context for email content completion in
+    // hook_mail(). In this case, we want to pass in the values the user entered
+    // into the form, which include the message body in $form_values['message'].
+    $params = array(
+      'job_id' => $this->job_id,
+    );
 
+    // The language of the e-mail. This will one of three values:
+    // * user_preferred_language(): Used for sending mail to a particular website
+    //   user, so that the mail appears in their preferred language.
+    // * global $language: Used when sending a mail back to the user currently
+    //   viewing the site. This will send it in the language they're currently
+    //   using.
+    // * language_default(): Used when sending mail to a pre-existing, 'neutral'
+    //   address, such as the system e-mail address, or when you're unsure of the
+    //   language preferences of the intended recipient.
+    //
+    // Since in our case, we are sending a message to a random e-mail address that
+    // is not necessarily tied to a user account, we will use the site's default
+    // language.
+    $language = language_default();
 
+    // Whether or not to automatically send the mail when drupal_mail() is
+    // called. This defaults to TRUE, and is normally what you want unless you
+    // need to do additional processing before drupal_mail_send() is called.
+    $send = TRUE;
+
+    // Check if mail system has been configured before sending the mail.
+    $system = drupal_mail_system($module, $key);
+    if (!$system->DefaultMailSystem) {
+      watchdog('mcl', t('The drupal mail system has not been configured.'), array(), WATCHDOG_ERROR);
+      return;
+    }
+
+    // Send the mail, and check for success. Note that this does not guarantee
+    // message delivery; only that there were no PHP-related issues encountered
+    // while sending.
+    $result = drupal_mail($module, $key, $to, $language, $params, $from, $send);
+    if ($result['result'] != TRUE) {
+      watchdog('mcl', t('There was a problem sending your message and it was not sent.'), array(), WATCHDOG_ERROR);
+    }
   }
 
   /**
@@ -457,6 +511,47 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
       }
     }
     file_put_contents($progress_file, $old_progress . $progress);
+  }
+
+  /**
+   * Updates the progress of the job.
+   *
+   * @param boolean $user_only
+   *  Lists only parameters added by a user.
+   * @return string
+   */
+  public function getJobParamFormated($user_only = FALSE) {
+    $job_param    = '';
+
+    // Gets the job parameters.
+    $param = $this->getParam();
+    if ($param) {
+      $arr = json_decode($param, TRUE);
+      foreach ($arr as $key => $value) {
+
+        // Updates the key for user parameter.
+        $new_key = $key;
+        if (preg_match("/^#/", $key)) {
+          $new_key = substr($key, 1);
+        }
+        else {
+
+          // Don't list non-user parameters if $user_only is ture.
+          if ($user_only) {
+            continue;
+          }
+        }
+
+        // Adds to the list.
+        if (is_array($value)) {
+          $job_param .= "$new_key:" . json_encode($value) . "\n";
+        }
+        else {
+          $job_param .= "$new_key:$value\n";
+        }
+      }
+    }
+    return $job_param;
   }
 
   /*

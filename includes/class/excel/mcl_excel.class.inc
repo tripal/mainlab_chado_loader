@@ -12,7 +12,7 @@ require_once("$lib_path/PHPExcel/PHPExcel/IOFactory.php");
 class MCL_EXCEL {
 
   /**
-   *  Data members for MCL_EXCEL.
+   * Class data members.
    */
   private $excel          = NULL;
   private $creator        = NULL;
@@ -76,7 +76,7 @@ class MCL_EXCEL {
       $this->version = 'Excel2007';
     }
 
-    // Gets the defualt precision.
+    // Gets the default precision.
     $def_precision = ini_get('precision');
 
     // Creates new PHPExcel object.

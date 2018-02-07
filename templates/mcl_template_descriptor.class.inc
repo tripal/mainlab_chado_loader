@@ -42,9 +42,8 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
       'trait_descriptor_set'  => array('req' => FALSE, 'width' => 20, 'desc' => "The name of the trait descriptor set. If the database has one trait descriptor set for all public trait evaluation data, it can be specified in the loader."),
       'descriptor_name'       => array('req' => TRUE,  'width' => 15, 'desc' => "Any trait descriptor that a breeder uses in their own program.  These descriptors would be used as column heads the Cross or Phenotype sheets, with a '#' prefix."),
       'alias'                 => array('req' => FALSE, 'width' => 15, 'desc' => "Alias of the descriptor."),
-      'data_type'             => array('req' => TRUE,  'width' => 15, 'desc' => "The type of data (date, quantitative_code, quantitative, code, etc.)."),
+      'format'                => array('req' => TRUE,  'width' => 15, 'desc' => "The format of the descriptor (numeric, categorical, date, text, etc.)."),
       'trait_name'            => array('req' => FALSE, 'width' => 20, 'desc' => "crop trait ontology term (no specific protocol or code is involved with trait name) that corresponds to the trait descriptor (name). This should exist in 'Trait' sheet."),
-      'values'                => array('req' => FALSE, 'width' => 10, 'desc' => "Code definition for a coded descriptor."),
       'data_unit'             => array('req' => FALSE, 'width' => 10, 'desc' => "Unit for the trait descriptor."),
       'definition'            => array('req' => FALSE, 'width' => 90, 'desc' => "Definition of the descriptor."),
     );
@@ -56,14 +55,8 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
    */
   public function defineCvterms() {
     $cvterms = array();
-    $cvterms['SITE_CV']['alias']       = -1;
-    $cvterms['SITE_CV']['data_type']   = -1;
-    $cvterms['SITE_CV']['data_unit']   = -1;
-    $cvterms['SITE_CV']['image_file']  = -1;
-    $cvterms['SITE_CV']['code_ref']    = -1;
-    $cvterms['SITE_CV']['qualitative'] = -1;
-    $cvterms['SITE_CV']['code']        = -1;
-    $cvterms['SITE_CV']['belongs_to']  = -1;
+    $cvterms['SITE_CV']['alias']  = -1;
+    $cvterms['SITE_CV']['format'] = -1;
     return $cvterms;
   }
 
@@ -72,22 +65,11 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
    */
   public function runErrorCheckDataLine($line) {
 
-    // Checks db.
-    MCL_CHADO_DB::checkDB($this, MCL_VAR::getValueByName('SITE_DB'));
-
     // Checks cv for trait_descriptor_set.
     MCL_CHADO_CV::checkCV($this, $line['trait_descriptor_set']);
 
-    // Checks values.
-    MCL_CHADO_CVTERM::checkValues($this, $line['type'], $line['values']);
-
     // Checks trait_name.
     MCL_CHADO_CVTERM::checkCvterm($this, MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY'), $line['trait_name']);
-
-    // Checks descirptor type.
-    if (!MCL_DATA_VALID_TYPE::validate('descriptor_type', $line['data_type'])) {
-      $this->updateMsg('E', 'Invalid descirptor type : ' . $line['data_type']);
-    }
   }
 
   /**
@@ -110,19 +92,24 @@ class MCL_TEMPLATE_DESCRIPTOR extends MCL_TEMPLATE {
     if ($descriptor) {
 
       // Adds properties.
-      $descriptor->addProp($this, 'SITE_CV', 'data_type', $line['data_type']);
+      $descriptor->addProp($this, 'SITE_CV', 'format', $line['format']);
       $descriptor->addProp($this, 'SITE_CV', 'data_unit', $line['data_unit']);
-      $descriptor->addProp($this, 'SITE_CV', 'image_file', $line['image_file']);
 
       // Adds aliases.
       $descriptor->addAlias($this, 'SITE_CV', 'alias', $line['alias'], '[,;]');
-
-      // Adds values.
-      $descriptor->addValues($this, $line['data_type'], $line['values']);
 
       // Links to the trait.
       $trait = MCL_CHADO_CVTERM::getCvterm(MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY'), $line['trait_name']);
       $descriptor->linkTrait($this, $trait);
     }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Checks db.
+    MCL_CHADO_DB::checkDB($this, MCL_VAR::getValueByName('SITE_DB'));
   }
 }

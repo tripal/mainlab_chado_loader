@@ -205,27 +205,57 @@ class CHADO_TABLE  {
   public function addProperty(MCL_TEMPLATE $mcl_tmpl = NULL, $table_name, $target_field, $target_id, $type_id, $value, $separator = '') {
     if ($value || $value == '0') {
 
-      // Checks duplication before adding a new property.
-      $args = array(
-        $target_field => $target_id,
-        'type_id'     => $type_id,
-      );
+      // Gets the class name for the table.
       $class_name = strtoupper('CHADO_' . $table_name);
-      $obj = $class_name::byKey($args);
-      if ($obj) {
-        $this->addMsg($mcl_tmpl, 'D', $table_name, $args);
-      }
-      else {
 
-        // Poluplates the array with values.
+      // Adds new properties.
+      if ($separator) {
         $value_arr = preg_split($this->getSepRegex($separator), $value, NULL, PREG_SPLIT_NO_EMPTY);
 
-        // Adds each property.
-        $rank = 0;
+        // Checks duplication before adding new properties.
+        // We add multiple valuse with different ranks. So check duplication
+        // for type_id andvalue.
+        $err_flag = FALSE;
         foreach ($value_arr as $val) {
-          $args['value']  = $val;
-          $args['rank']   = $rank++;
-
+          $args = array(
+            $target_field => $target_id,
+            'type_id'     => $type_id,
+            'value'       => $val,
+          );
+          $obj = $class_name::byKey($args);
+          if ($obj) {
+            $this->addMsg($mcl_tmpl, 'D', $table_name, $args);
+          }
+          else {
+            $args['rank'] = $this->getNextRank($table_name, $target_field, $target_id, $type_id);
+            $obj = new $class_name($args);
+            if ($obj->insert()) {
+              $this->addMsg($mcl_tmpl, 'N', $table_name, $args);
+            }
+            else {
+              $this->addMsg($mcl_tmpl, 'E', $table_name, $args);
+              $err_flag = TRUE;
+            }
+          }
+        }
+        if (!$err_flag) {
+          return TRUE;
+        }
+      }
+      else {
+        // Checks duplication before adding a new property.
+        //   We assume that the property holds one value. So check duplication
+        //   for only type_id.
+        $args = array(
+          $target_field => $target_id,
+          'type_id'     => $type_id,
+        );
+        $obj = $class_name::byKey($args);
+        if ($obj) {
+          $this->addMsg($mcl_tmpl, 'D', $table_name, $args);
+        }
+        else {
+          $args['value'] = $value;
           $obj = new $class_name($args);
           if ($obj->insert()) {
             $this->addMsg($mcl_tmpl, 'N', $table_name, $args);
@@ -238,6 +268,35 @@ class CHADO_TABLE  {
       }
     }
     return FALSE;
+  }
+
+  /**
+   * Returns the next empty rank.
+   *
+   * @param string $table_name
+   * @param string $target_field
+   * @param integer $target_id
+   * @param integer $type_id
+   *
+   * @return boolean
+   */
+  public function getNextRank($table_name, $target_field, $target_id, $type_id) {
+    $sql = "
+      SELECT COUNT(rank)
+      FROM chado.$table_name
+      WHERE type_id = :type_id AND $target_field = $target_id
+    ";
+    $count = db_query($sql, array(':type_id' => $type_id))->fetchField();
+    if (!$count) {
+      return 0;
+    }
+    $sql = "
+      SELECT MAX(rank)
+      FROM chado.$table_name
+      WHERE type_id = :type_id AND $target_field = $target_id
+    ";
+    $rank = db_query($sql, array(':type_id' => $type_id))->fetchField();
+    return $rank + 1;
   }
 
   /**
@@ -305,7 +364,6 @@ class CHADO_TABLE  {
       );
       $class_name = strtoupper('CHADO_' . $table_name);
       $obj = $class_name::byKey($args);
-
 
       // If the property exists, update it. Otherwise add a new one.
       if ($obj) {

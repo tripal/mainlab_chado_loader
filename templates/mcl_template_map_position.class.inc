@@ -39,7 +39,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $headers = array(
-      'marker_qtl_mtl'      => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the marker, QTL or MTL. Please provide the detailr data in 'Marker', 'QTL', or 'MTL' sheet."),
+      'marker_qtl_mtl'      => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the marker, QTL or MTL. Please provide the detailed data in 'Marker', 'QTL', or 'MTL' sheet."),
       'locus_name'          => array('req' => FALSE, 'width' => 10, 'desc' => "When a RFLP (eg. AA07) corresponds to more than one locus, the marker name (eg. AA07) is recorded in marker/qtl/mtl column and the specific name for each map position (eg. AA07A, AA07B) is recorded in this 'locus_name' column. Use AA07 as a marker name and the loci names as aliases for the marker name in 'Marker' Sheet. When a MTL is mapped to multiple locations, use the MTL_name in 'MTL' sheet in 'marker/qtl/mtl' column and the locus name of the specific map position in 'locus_name'' colum."),
       'map_name'            => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the genetic map."),
       'linkage_group'       => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the linkage group."),
@@ -61,21 +61,23 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
    */
   public function defineCvterms() {
     $cvterms = array();
-    $cvterms['SITE_CV']['bin']                            = -1;
-    $cvterms['SITE_CV']['start']                          = -1;
-    $cvterms['SITE_CV']['stop']                           = -1;
-    $cvterms['SITE_CV']['qtl_peak']                       = -1;
-    $cvterms['SITE_CV']['comments']                       = -1;
-    $cvterms['SITE_CV']['chr_name']                       = -1;
-    $cvterms['SITE_CV']['chr_number']                     = -1;
-    $cvterms['sequence']['marker_locus']                  = -1;
-    $cvterms['sequence']['genetic_marker']                = -1;
-    $cvterms['sequence']['qtl']                           = -1;
-    $cvterms['sequence']['heritable_phenotypic_marker']   = -1;
-    $cvterms['sequence']['linkage_group']                 = -1;
-    $cvterms['sequence']['chromosome_arm']                = -1;
-    $cvterms['relationship']['contained_in']              = -1;
-    $cvterms['relationship']['instance_of']               = -1;
+    $cvterms['SITE_CV']['bin']                          = -1;
+    $cvterms['SITE_CV']['start']                        = -1;
+    $cvterms['SITE_CV']['stop']                         = -1;
+    $cvterms['SITE_CV']['qtl_peak']                     = -1;
+    $cvterms['SITE_CV']['comments']                     = -1;
+    $cvterms['SITE_CV']['chr_name']                     = -1;
+    $cvterms['SITE_CV']['chr_number']                   = -1;
+    $cvterms['sequence']['marker_locus']                = -1;
+    $cvterms['sequence']['genetic_marker']              = -1;
+    $cvterms['sequence']['qtl']                         = -1;
+    $cvterms['sequence']['heritable_phenotypic_marker'] = -1;
+    $cvterms['sequence']['linkage_group']               = -1;
+    $cvterms['sequence']['chromosome_arm']              = -1;
+    $cvterms['relationship']['contained_in']            = -1;
+    $cvterms['relationship']['instance_of']             = -1;
+    $cvterms['relationship']['adjacent_to']             = -1;
+    $cvterms['relationship']['located_in']              = -1;
     return $cvterms;
   }
 
@@ -127,7 +129,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     $organism_id    = $feature->getOrganismID();
 
     // Adds a locus if this is a genetic marker. If locus name is empty,
-    // use $marker_qtl_mtl.
+    // use the name under marker_qtl_mtl column
     $locus = NULL;
     if ($feature->getTypeID() == $this->cvterms['sequence']['genetic_marker']) {
       $locus_name = ($line['locus_name']) ? $line['locus_name'] : $marker_qtl_mtl;
@@ -219,5 +221,29 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
         }
       }
     }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::postProcess()
+   */
+  public function postProcess() {
+/*
+    // Adds all missing parents now.
+    $marker_locus = $this->getTmpByKey('marker_locus');
+    foreach ((array)$marker_locus as $ml_feature_id => $rel_features) {
+      $marker_locus = MCL_CHADO_FEATURE::byKey(array('feature_id' => $ml_feature_id));
+      foreach ((array)$rel_features as $type => $features) {
+        $relation = preg_match("/^colocalized/", $type) ? 'adjacent_to' : 'located_in';
+
+        // Adds the feature.
+        if (preg_match("/_qtl$/", $type)) {
+          $marker_locus->addRelatedFeatures($this, $line[$type], $this->cvterms['sequence']['qtl'], FALSE, $this->cvterms['relationship'][$relation], "[,;]", FALSE);
+        }
+        else if (preg_match("/_mtl$/", $type)) {
+          $marker_locus->addRelatedFeatures($this, $line[$type], $this->cvterms['sequence']['heritable_phenotypic_marker'], FALSE, $this->cvterms['relationship'][$relation], "[,;]", FALSE);
+        }
+      }
+    }
+*/
   }
 }

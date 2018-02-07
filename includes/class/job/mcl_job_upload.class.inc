@@ -8,11 +8,11 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
  /**
   *  Class data members.
   */
-  protected $upload_file      = NULL;
-  protected $csv_dir          = NULL;
-  private   $excludes         = array();
-  private   $force            = FALSE;
-  private   $cur_template     = '';
+  protected $upload_file  = NULL;
+  protected $csv_dir      = NULL;
+  private   $excludes     = array();
+  private   $force        = FALSE;
+  private   $cur_template = '';
 
   /**
    * @see MCL_JOB::__construct()
@@ -20,15 +20,17 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
   public function __construct($details = array()) {
     parent::__construct($details);
 
-    // Adds status for a uploading job.
+    // Adds status for an uploading job.
     $this->status_label['20']         = 'copying';
-    $this->status_label['30']         = 'syntax error';
-    $this->status_label['40']         = 'data error';
+    $this->status_label['30']         = 'syntax error checking';
+    $this->status_label['40']         = 'data error checking';
     $this->status_label['60']         = 'uploading';
+    $this->status_label['80']         = 'callback';
     $this->status_int['copying']      = 20;
     $this->status_int['syntax error'] = 30;
     $this->status_int['data error']   = 40;
     $this->status_int['uploading']    = 60;
+    $this->status_int['callback']     = 80;
 
     // Creates a MCL_FILE object for the uploaded file.
     $file_id = $this->getParamByKey('file_id');
@@ -49,6 +51,13 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     if ($this->job_id) {
       $this->resetNewLogFiles();
     }
+  }
+
+  /**
+   * @see MCL_JOB::byID()
+   */
+  public static function byID($job_id) {
+    return self::byKey(array('job_id' => $job_id));
   }
 
   /**
@@ -184,6 +193,12 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         }
         else if ($line_no == -1) {
           $messages_tmp[$type] .= ">Required cvterms\n$msg\n";
+        }
+        else if ($line_no == -2) {
+          $messages_tmp[$type] .= ">Pre-processing\n$msg\n";
+        }
+        else if ($line_no == -3) {
+          $messages_tmp[$type] .= ">Post-processing\n$msg\n";
         }
         else {
           $ln = ($file_type == 'excel') ? 'row ' . ($line_no - 1) : "ln. $line_no";
@@ -419,74 +434,64 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
           throw new Exception("\n\tUploading data failed : please check error log file.\n\n\n");
         }
       }
-
-      // Sends the completion notifiation email.
-      if ($this->status == 60) {
-
-        // Sets the status to '100' and sends completion notifiation email.
-        $this->setStatus(100);
-        $this->update();
-        $this->sendCompleteEmail();
-        $this->setProgress('COMPLETED');
-      }
     }
     catch (Exception $e) {
-
-      // Sends an error notifiation email.
-      $this->sendError();
 
       // If error occurs, rollbacks transactions.
       if ($transaction) {
         $transaction->rollback();
       }
 
-      // Sets the status as 'FAILED'
-      $this->setStatus(-200);
-      $this->update();
-      $this->setProgress('FAILED');
+      // Sets the status as 'FAILED'.
+      $this->updateStatus(-200);
 
       // Keeps the error message.
       watchdog('mcl', $e->getMessage(), array(), WATCHDOG_ERROR);
       return FALSE;
     }
 
-    // No error has occured. So copy the logs file for new data.
-    $new_log_files = $this->getNewLogFiles();
-    if ($new_log_files) {
-      $date_str = date("Y-m-d-G-i-s");
-      $dir_new_data = $this->getNewDataLogDir();
-      foreach ($new_log_files as $template => $log_file) {
-        $new_data_log = "$dir_new_data/$template" . '-' . $date_str . '.log';
-        $cmd = "cp $log_file $new_data_log";
-        exec($cmd);
+    // Runs callback drush commands.
+    if ($this->status == 60) {
+
+      // Checks if there are callback functions in job paramters.
+      $callbacks = $this->_getCallbacks();
+      if (!empty($callbacks)) {
+
+        // Runs callaback drush commands.
+        mcl_print("==================================", 1, 1, FALSE);
+        mcl_print("Phase IV : Runs callback commands", 1);
+        mcl_print("----------------------------------", 1, 1, FALSE);
+        $this->setProgress("Started running callback commands");
+        if ($this->_runCallbacks($callbacks)) {
+          mcl_print("Done callbacks", 1, 2);
+        }
+        else {
+          mcl_print("Running callback commands failed : please check error log file.", 1, 3);
+        }
       }
+      $this->setStatus(80);
+      $this->update();
+    }
+
+    // Finalizing the uploading job.
+    if ($this->status == 80) {
+
+      // No error has occured. So copy the logs file for new data.
+      $new_log_files = $this->getNewLogFiles();
+      if ($new_log_files) {
+        $date_str = date("Y-m-d-G-i-s");
+        $dir_new_data = $this->getNewDataLogDir();
+        foreach ($new_log_files as $template => $log_file) {
+          $new_data_log = "$dir_new_data/$template" . '-' . $date_str . '.log';
+          $cmd = "cp $log_file $new_data_log";
+          exec($cmd);
+        }
+      }
+
+      // Updats the status to be 100.
+      $this->updateStatus(100);
     }
     return TRUE;
-  }
-
-  /**
-   * Sends an error notification email for the following errors.
-   *   - syntax error
-   *   - data integrity error
-   *   - data uploading error
-   *
-   */
-  private function sendError() {
-    $err_msg = '';
-
-    // Sends a syntax error email.
-    if ($this->status == 30) {}
-
-    // Sends a data uploading error email.
-    else if ($this->status == 40) {}
-
-    // Sends a data uploading error email.
-    else if ($this->status == 50) {}
-
-    // Sends an error message.
-    if ($err_msg) {
-      $this->sendErrorEmail($err_msg);
-    }
   }
 
   /**
@@ -529,10 +534,23 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     }
 
     // Copies a single CSV file to CSV folder.
-    else if ($file_type == 'csv') {
-      $filename     = basename($filepath);
-      $destination  = "$csv_dir/$filename";
+    else if ($file_type == 'csv' || $file_type == 'trt') {
 
+      // Gets the template name.
+      $template = $this->_getTemplate($filepath);
+      if ($template == '') {
+        $this->updateMsg('E', "The template name can not be found.");
+        return FALSE;
+      }
+
+      // Checks the templates. If not defined yet, skip it.
+      if (!MCL_TEMPLATE::getByTemplate($template)) {
+        $this->updateMsg('W', "Warn : Template ($template) has not defined yet, so it was skipped.");
+        return TRUE;
+      }
+
+      // Renames the file and copies it to the csv directory.
+      $destination  = $this->csv_dir . '/' . $template . '.csv';
       if (copy($filepath, $destination)) {
         $this->_registerCSVFile($destination);
       }
@@ -548,46 +566,61 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
   }
 
   /**
-   * Extract the template name from the provided file. The moudule name is
-   * specified at the first line of a CSV file.
+   * Gets and returns the template name. Checks the name in the job parameters
+   * and then gets it from the filepath.
    *
    * @param string $filepath.
    *
    * @return string
    */
-  private function _getTemplateFromFile($filepath) {
-    $template = '';
+  private function _getTemplate($filepath) {
+
+    // Checks and gets the template from the prop.
+    $template = $this->getParamByKey('template');
 
     // Gets the first line of the file.
-    if (file_exists($filepath)) {
-      $line = fgets(fopen($filepath, 'r'));
-      if (preg_match("/^#([a-zA-Z_]+)$/", $line, $matches)) {
-        $template = $matches[1];
+    if (!$template) {
+      if (file_exists($filepath)) {
+        $line = fgets(fopen($filepath, 'r'));
+        if (preg_match("/^#([a-zA-Z_]+)$/", $line, $matches)) {
+          $template = $matches[1];
+        }
       }
     }
-     return $template;
+    return $template;
   }
 
   /**
    * Register a CSV file.
    *
    * @param string $filepath.
+   * @param string $template.
    *
    * @return boolean
    */
-  private function _registerCSVFile($filepath) {
+  private function _registerCSVFile($filepath, $template = '') {
 
-    // Gets the template name from the file.
-    $template = $this->_getTemplateFromFile($filepath);
+    // Gets the template name if not provided.
     if (!$template) {
-      $this->updateMsg('E', "No template line at the begining of the file.\n$destination.");
-      return FALSE;
+
+      // Gets the template name.
+      $template = $this->_getTemplate($filepath);
+      if ($template == '') {
+        $this->updateMsg('E', "The template name can not be found.");
+        return FALSE;
+      }
+
+      // Checks the templates. If not defined yet, skip it.
+      if (!MCL_TEMPLATE::getByTemplate($template)) {
+        $this->updateMsg('W', "Warn : Template ($template) has not defined yet, so it was skipped.");
+        return TRUE;
+      }
     }
 
     // Creates MCL_FILE and adds it to this job if not exists.
     if (!$this->existCSV($template)) {
-      $csv_file = $this->_createMCL_FILE_CSV($destination, $template);
-      if ($csv_file || $csv_file->insert()) {
+      $csv_file = $this->_createMCL_FILE_CSV($filepath, $template);
+      if ($csv_file->insert()) {
 
         // Adds a new CSV file.
         if (!$this->_addCSVFile($csv_file)) {
@@ -636,7 +669,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     // Gets Excel file type [Excel5 | ].
     $file_type = PHPExcel_IOFactory::identify($filepath);
 
-    // Gets the defualt precision.
+    // Gets the default precision.
     $def_precision = ini_get('precision');
 
     // Read input Excel file.
@@ -746,7 +779,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       else {
         $class_name = 'MCL_TEMPLATE_' . strtoupper($template);
         $msg = "\nThe sheet name '$template' is not a valid template name.\nIt could be the following reason.\n\n";
-        $msg .= "  1. wrong spell.\n";
+        $msg .= "  1. wrong spelling.\n";
         $msg .= "  2. $class_name is not defined.\n\n";
         $msg .= "'$template' is skipped.\n\n";
         $this->updateMsg('W', $msg);
@@ -804,7 +837,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       $csv_files = array();
     }
 
-    // Removes if exists.
+    // Updates $csv_files array.
     foreach ($csv_files as $file_id => $csv_filename) {
       if ($csv_filename == $csv_file->getFilename()) {
         unset($csv_files[$file_id]);
@@ -939,8 +972,8 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       $this->setProgress("Uploading data for " . $tmpl_obj->getTemplate());
       if ($tmpl_obj->uploadData()) {
         $csv_file->setPassed($this->status_int['uploading'], TRUE);
-        mcl_print("Data have been uploaded to $template", 2, 2);
-        $this->setProgress("Done uploading data to " . $tmpl_obj->getTemplate());
+        mcl_print("Data have been uploaded", 2, 2);
+        $this->setProgress("Done uploading data for " . $tmpl_obj->getTemplate());
       }
       else {
         $this->setProgress("Failed to upload data for " . $tmpl_obj->getTemplate());
@@ -961,6 +994,71 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
   }
 
   /**
+   * Returns the callback functions in job parameters.
+   *
+   * @return array
+   */
+  private function _getCallbacks() {
+
+    // Searches in job param.
+    $callbacks_json = $this->getParamByKey('callbacks');
+    if ($callbacks_json) {
+      $callbacks = json_decode($callbacks_json);
+      if (is_array($callbacks)) {
+
+        // Validate callback functions. Returns valid callback functions.
+        $valid_callbacks = array();
+        foreach ($callbacks as $callback) {
+          // TODO: validate callback function.
+          //if (function_exists($func_name)) {
+          if (TRUE) {
+            $valid_callbacks []= $callback;
+          }
+          else {
+            $this->updateMsg('W', "Warn : Callback function ($callback) does not exist. Running callbacks Aborted");
+            return array();
+          }
+        }
+        return $valid_callbacks;
+      }
+      else {
+        $this->updateMsg('W', "Warn : Callback functions are defined but they can not be decoded. So they are skipped.");
+      }
+    }
+    return array();
+  }
+
+  /**
+   * Runs callback functions.
+   *
+   * @param array $callbacks
+   *
+   * @return boolean
+   */
+  private function _runCallbacks($callbacks) {
+
+    // Sets stdout and stderr log file names.
+    $stdout = $this->getStdFile('stdout');
+    $stderr = $this->getStdFile('stderr');
+
+    // Runs callback drush commands.
+    $drush = bims_get_config_setting('bims_drush_binary');
+    foreach ($callbacks as $cmd) {
+      mcl_print("Runs callback function: $cmd", 1, 2);
+
+     // $pid = exec("$drush $cmd > $stdout 2>$stderr  &", $output, $return_var);
+      $pid = exec("$drush $cmd > /dev/null 2>/dev/null  &", $output, $return_var);
+
+
+      if ($return_var) {
+        $this->updateMsg('W', "Warn : Failed to run callback.");
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+  /**
    * Return all CSV files in order.
    *
    * @return array
@@ -972,15 +1070,19 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
 
     // Ranks CSV files.
     $csv_files_unsorted = array();
-    foreach ($csv_files as $file_id => $csv_filename) {
+    foreach ((array)$csv_files as $file_id => $csv_filename) {
 
       // Gets the rank of csv file.
       $mcl_file_csv = MCL_FILE_CSV::byKey(array('file_id' => $file_id));
+      if (!$mcl_file_csv) {
+        $this->updateMsg('E', "File ($file_id) not found.");
+        continue;
+      }
       $rank = MCL_TEMPLATE::getRank($mcl_file_csv->getTemplate());
       $info = array(
         'file_id'       => $file_id,
         'csv_filename'  => $csv_filename,
-        'rank' => $rank
+        'rank'          => $rank
       );
       $csv_files_unsorted[] = $info;
     }
@@ -1002,28 +1104,41 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
   }
 
   /**
-   * Checks if CSV file exists.
+   * Checks if CSV file exists in csv_files array.
    *
    * @param string $template
    *
    * @return boolean
    */
   public function existCSV($template) {
+    $csv_exist    = FALSE;
+    $update_flag  = FALSE;
 
-    // Gets all CSV files.
+    // Go through all files in $csv_files. Updates if $file_id
+    // does not exist in mcl_file table.
     $csv_files = $this->getPropByKey('csv_files');
+    $csv_files_updated = array();
     if (is_array($csv_files)) {
-      foreach ($csv_files as $file_id => $csv_filename) {
+      foreach ($csv_files as $file_id => $filename) {
         $csv_file = MCL_FILE_CSV::byKey(array('file_id' => $file_id));
         if ($csv_file) {
-          $csv_template = $csv_file->getTemplate();
+          $csv_files_updated[$file_id] = $filename;
           if ($template == $csv_file->getTemplate()) {
-            return TRUE;
+            $csv_exist = TRUE;
           }
+        }
+        else {
+          $update_flag = TRUE;
         }
       }
     }
-    return FALSE;
+
+    // Updates $csv_files if necessary.
+    if ($update_flag) {
+      $this->setPropByKey('csv_files', $csv_files_updated);
+      $this->update();
+    }
+    return $csv_exist;
   }
 
   /**
@@ -1124,10 +1239,10 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       $date = $matches[2];
       $time = $matches[3];
       $log_files []= array(
-          'key'       => $key,
-          'date'      => "$date $time",
-          'filepath'  => $filepath,
-          'log_file'  => 'new_data:' . basename($filepath),
+        'key'       => $key,
+        'date'      => "$date $time",
+        'filepath'  => $filepath,
+        'log_file'  => 'new_data:' . basename($filepath),
       );
     }
 
@@ -1245,9 +1360,44 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     return $this->getPropByKey('transaction');
   }
 
+  /**
+   * Updates the status.
+   *
+   * @param integer $status
+   */
+  public function updateStatus($status) {
+
+    // Status : Completed (100).
+    if ($status == 100) {
+      $this->sendCompleteEmail();
+      $this->setCompleteDate(date("Y-m-d G:i:s"));
+      $this->setProgress('COMPLETED');
+    }
+
+    // Status : Failed (-200).
+    else if ($status == -200) {
+      $this->sendCompleteEmail();
+      $this->setCompleteDate(date("Y-m-d G:i:s"));
+      $this->setProgress('FAILED');
+    }
+
+    // Sets and updates the status.
+    $this->setStatus($status);
+    $this->update();
+  }
+
   /*
    * Defines getters and setters below.
    */
+  /**
+   * Returns the job status label.
+   *
+   * @return string
+   */
+  public function getStatusLabel() {
+    return $this->status_label[$this->status];
+  }
+
   /**
    * Retrieves the force flag.
    *

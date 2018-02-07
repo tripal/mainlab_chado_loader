@@ -27,6 +27,17 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
   }
 
   /**
+   * Returns MCL_CHADO_TRAIT by ID.
+   *
+   * @param integer $cvterm_id
+   *
+   * @return MCL_CHADO_TRAIT
+   */
+  public static function byID($cvterm_id) {
+    return MCL_CHADO_TRAIT::bykey(array('cvterm_id' => $cvterm_id));
+  }
+
+  /**
    * @see MCL_CHADO_CVTERM::__destruct()
    */
   public function __destruct() {
@@ -34,7 +45,7 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
   }
 
   /**
-   * Checks the existance of trait. If not, write the error messasge
+   * Checks the existence of trait. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -71,7 +82,7 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
    *
    * @return MCL_CHADO_TRAIT
    */
-  public static function getTrait($cvterm_name, $cv_name = NULL) {
+  public function getTrait($cvterm_name, $cv_name = NULL) {
 
     // Updates cv.name
     if (!$cv_name) {
@@ -79,9 +90,44 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
     }
     $cv = MCL_CHADO_CV::getCV($cv_name);
     if ($cv) {
-      return MCL_CHADO_CVTERM::bykey(array('cv_id' => $cv->getCvID(), 'name' => $cvterm_name));
+      return MCL_CHADO_TRAIT::bykey(array('cv_id' => $cv->getCvID(), 'name' => $cvterm_name));
     }
     return NULL;
+  }
+
+
+  /**
+   * Returns the list of the traits that belongs to this trait category.
+   *
+   * @param string $separator
+   *
+   * @return string
+   */
+  public function getTraits($separator = ';') {
+
+    // Gets type_id of the relationship.
+    $type_id = MCL_CHADO_CVTERM::getCvterm('SITE_CV', 'belongs_to')->getCvtermID();
+
+    // Gets all traits.
+    $sql = "
+      SELECT O.cvterm_id
+      FROM {chado.cvterm} O
+        INNER JOIN {chado.cvterm_relationship} CR on CR.object_id = C.cvterm_id
+        INNER JOIN {chado.cvterm} S on S.subject_id = CR.subject_id
+      WHERE CR.type_id = :type_id AND S.subject_id = :subject_id
+    ";
+    $args = array(
+      ':type_id'    => $type_id,
+      ':subject_id' => $this->cvterm_id,
+    );
+    $results = db_query($sql, $args);
+    $trait_arr = array();
+    while ($cvterm_name = $results->fetchField()) {
+      $trait_arr []= $cvterm_name;
+    }
+
+    // Returns the list of the traits.
+    return implode($separator, $trait_arr);
   }
 
   /**
@@ -94,14 +140,77 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
    *
    * @return MCL_CHADO_TRAIT
    */
-  public static function addTrait(MCL_TEMPLATE $mcl_tmpl = NULL, $cvterm_name, $definition = '', $accession = '') {
+  public static function addTrait(MCL_TEMPLATE $mcl_tmpl = NULL, $cvterm_name, $definition = '', $accession = '', $category = FALSE) {
     $db_name = MCL_VAR::getValueByName('SITE_DB');
     $cv_name = MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY');
     $cvterm = MCL_CHADO_CVTERM::addCvterm($mcl_tmpl, $db_name, $cv_name, $cvterm_name, $definition, $accession);
     if ($cvterm) {
+
+      // Marks this trait as trait category.
+      if (!$category) {
+        $trait = MCL_CHADO_TRAIT::byID($cvterm->getCvtermID());
+        if ($trait->markCategory()) {
+          return $trait;
+        }
+        return NULL;
+      }
       return MCL_CHADO_TRAIT::byKey(array('cvterm_id' => $cvterm->getCvtermID()));
     }
     return NULL;
+  }
+
+  /**
+   * Marks this trait as 'trait category'.
+   *
+   * @return boolean
+   */
+  public function markCategory() {
+
+    // Checks the cvterm 'trait_category'.
+    $cv_tc = MCL_CHADO_CVTERM::getCvterm('SITE_CV', 'trait_category');
+    if (!$cv_tc) {
+      return FALSE;
+    }
+
+    // Checks if it already been marked.
+    if ($this->isCategory()) {
+      return TRUE;
+    }
+
+    // Marks this trait.
+    $details = array(
+      'cvterm_id' => $this->getCvtermID(),
+      'type_id'   => $cv_tc->getCvID(),
+      'value'     => 'trait_category',
+    );
+    $cvtermprop = new CHADO_CVTERMPROP($details);
+    if (!$cvtermprop->insert()) {
+      return NULL;
+    }
+    return FALSE;
+  }
+
+  /**
+   * Returns if this trait iss 'trait category'.
+   *
+   * @return boolean
+   */
+  public function isCategory() {
+
+    // Checks the cvterm 'trait_category'.
+    $cv_tc = MCL_CHADO_CVTERM::getCvterm('SITE_CV', 'trait_category');
+    if (!$cv_tc) {
+      return FALSE;
+    }
+
+    // Checks cvtermprop.
+    $keys = array(
+      'cvterm_id' => $this->getCvtermID(),
+      'type_id'   => $cv_tc->getCvID(),
+      'value'     => 'trait_category',
+    );
+    $cvtermprop = CHADO_CVTERMPROP::byKey($keys);
+    return ($cvtermprop) ? TRUE : FALSE;
   }
 
   /**

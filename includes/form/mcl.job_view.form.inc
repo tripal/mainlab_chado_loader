@@ -35,7 +35,7 @@ function mcl_job_view_form($form, &$form_state, $job_id = NULL) {
     );
 
     // Gets MCL_JOB_UPLOAD.
-    $mcl_job = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
+    $mcl_job = MCL_JOB_UPLOAD::byID($job_id);
     if ($mcl_job) {
 
       // Adds the refresh button.
@@ -69,18 +69,40 @@ function mcl_job_view_form($form, &$form_state, $job_id = NULL) {
           'file_validate_extensions' => array('xls xlsx zip csv'),
         ),
       );
-      $form['job_rerun']['force_cb'] = array(
+      $job_param = $mcl_job->getJobParamFormated(TRUE);
+      if ($job_param) {
+        $form['job_rerun']['advanced'] = array(
+          '#type'         => 'fieldset',
+          '#collapsed'    => TRUE,
+          '#collapsible'  => TRUE,
+          '#title'        => 'Advanced options',
+        );
+        $form['job_rerun']['advanced']['job_param'] = array(
+          '#type'           => 'textarea',
+          '#title'          => '',
+          '#default_value'  => $job_param,
+          '#attributes'     => array('style' => 'width:100%;', 'readonly' => TRUE),
+        );
+      }
+      $form['job_rerun']['advanced']['force_cb'] = array(
         '#type'           => 'checkbox',
         '#title'          => 'Force to upload data',
         '#description'    => "Check if new data were added to the template which has already been uploaded.",
         '#default_value'  => FALSE,
       );
       $default = ($mcl_job->getPropByKey('transaction')) ? FALSE : TRUE;
-      $form['job_rerun']['no_transaction_cb'] = array(
+      $form['job_rerun']['advanced']['no_transaction_cb'] = array(
         '#type'           => 'checkbox',
         '#title'          => 'No transaction',
-        '#description'    => "Check if the size of your uploading file are large.",
+        '#description'    => "Check if the size of your uploading file is large.",
         '#default_value'  => $default,
+      );
+      $send_email = ($mcl_job->getParamByKey('send_email')) ? TRUE : FALSE;
+      $form['job_rerun']['email_cb'] = array(
+        '#type'           => 'checkbox',
+        '#title'          => 'Email notification',
+        '#description'    => "Check if you'd like to recieve email notification when the job is completed.",
+        '#default_value'  => $send_email,
       );
       $form['job_rerun']['rerun_btn'] = array(
         '#type'   => 'submit',
@@ -303,7 +325,7 @@ function _mcl_add_logs(&$form, MCL_JOB $mcl_job, $log_type, $logs) {
       $table_width = 'width:470px;';
     }
 
-    // Creates a talbe.
+    // Creates a table.
     $table_vars = array(
       'header'      => $headers,
       'rows'        => $rows,
@@ -440,8 +462,9 @@ function mcl_job_view_form_submit($form, &$form_state) {
   $user_name  = $mcl_user->getName();
   $user_dir   = $mcl_user->getUserDir();
 
-  // Gets job_id.
+  // Gets MCL_JOB_UPLOAD.
   $job_id = $form['job_id']['#value'];
+  $mcl_job = MCL_JOB_UPLOAD::byID($job_id);
 
   // Gets the re-uploading file.
   $drupal_file = file_load($form_state['values']['job_rerun']['upload_file']);
@@ -452,14 +475,18 @@ function mcl_job_view_form_submit($form, &$form_state) {
   $cmd              = "mv $target_filepath $dest_filepath";
   exec($cmd);
 
+  // Resets the progress file.
+  $progress_file = $mcl_job->getJobDir() . '/progress';
+  file_put_contents($progress_file, '');
+
   // Removes file form manage_file table.
   db_delete('file_managed')
-  ->condition('fid', $drupal_file->fid, '=')
-  ->execute();
+    ->condition('fid', $drupal_file->fid, '=')
+    ->execute();
 
   // Gets 'force' option.
   $opt_force = '';
-  $force_cb = trim($form_state['values']['job_rerun']['force_cb']);
+  $force_cb = trim($form_state['values']['job_rerun']['advanced']['force_cb']);
   if ($force_cb) {
     $opt_force = '--force';
   }
@@ -467,20 +494,24 @@ function mcl_job_view_form_submit($form, &$form_state) {
   // Gets 'no_transaction' option.
   $opt_no_transaction = '';
   $trans = TRUE;
-  $no_transaction_cb = trim($form_state['values']['job_rerun']['no_transaction_cb']);
+  $no_transaction_cb = trim($form_state['values']['job_rerun']['advanced']['no_transaction_cb']);
   if ($no_transaction_cb) {
     $opt_no_transaction = '--no_transaction';
     $trans = FALSE;
   }
-
-  // Gets MCL_JOB_UPLOAD and updates the properties.
-  $mcl_job = MCL_JOB_UPLOAD::byKey(array('job_id' => $job_id));
   $mcl_job->setPropByKey('transaction', $trans);
+
+  // Gets 'email' option.
+  $email_cb = $form_state['values']['job_rerun']['email_cb'];
+  $mcl_job->setParamByKey('send_email', $email_cb);
+
+  // Updates the properties.
   $mcl_job->setStatus(0);
   $mcl_job->update();
 
   // Submits the re-uploading job.
-  $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_force $opt_no_transaction > /dev/null 2>/dev/null & ";
+  $drush = mcl_get_config_setting('mcl_drush_binary');
+  $cmd = "$drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_force $opt_no_transaction > /dev/null 2>/dev/null & ";
   $pid = exec($cmd, $output, $return_var);
   if ($return_var) {
     drupal_set_message("Failed to re-run the job");

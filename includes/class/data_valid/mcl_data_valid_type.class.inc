@@ -29,6 +29,17 @@ class MCL_DATA_VALID_TYPE extends PUBLIC_MCL_DATA_VALID_TYPE {
   }
 
   /**
+   * Returns MCL_DATA_VALID_TYPE by ID.
+   *
+   * @param integer $data_valid_type_id
+   *
+   * @return MCL_DATA_VALID_TYPE
+   */
+  public static function byID($data_valid_type_id) {
+    return MCL_DATA_VALID_TYPE::bykey(array('data_valid_type_id' => $data_valid_type_id));
+  }
+
+  /**
    * @see MCL_DATA_VALID_TYPE::__destruct()
    */
   public function __destruct() {
@@ -63,6 +74,13 @@ class MCL_DATA_VALID_TYPE extends PUBLIC_MCL_DATA_VALID_TYPE {
       ->condition('data_valid_type_id', $this->data_valid_type_id)
       ->execute();
     parent::delete();
+  }
+
+  /**
+   * Returns if type is a cvterm.
+   */
+  public function isCvterm() {
+    return ($this->cv_id) ? TRUE : FALSE;
   }
 
   /**
@@ -105,10 +123,10 @@ class MCL_DATA_VALID_TYPE extends PUBLIC_MCL_DATA_VALID_TYPE {
    * @return array of MCL_DATA_VALID_TYPE objects.
    */
   public static function getDataValidTypes() {
-    $data_valid_types = array();
 
     $sql = "SELECT DVT.data_valid_type_id FROM {mcl_data_valid_type} DVT ORDER BY DVT.type";
     $result = db_query($sql);
+    $data_valid_types = array();
     while ($data_valid_type_id = $result->fetchField()) {
       $data_valid_types[] = MCL_DATA_VALID_TYPE::byKey(array('data_valid_type_id' => $data_valid_type_id));
     }

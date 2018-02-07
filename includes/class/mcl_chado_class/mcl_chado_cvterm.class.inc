@@ -27,6 +27,17 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   }
 
   /**
+   * Returns MCL_CHADO_CVTERM by ID.
+
+   * @param integer $cvterm_id
+   *
+   * @return MCL_CHADO_CVTERM
+   */
+  public static function byID($cvterm_id) {
+    return MCL_CHADO_CVTERM::bykey(array('cvterm_id' => $cvterm_id));
+  }
+
+  /**
    * @see CHADO_CVTERM::__destruct()
    */
   public function __destruct() {
@@ -38,15 +49,22 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    */
   public function delete() {
 
-    // Deletes the dbxref first.
+    // Saves dbxref_id and deletes dbxref after deleting this cvterm.
+    $dbxref_id = $this->dbxref_id;
+
+    // Deletes this cvterm.
+    if (parent::delete()) {
+
+    // Deletes the dbxref.
     db_delete('chado.dbxref')
-      ->condition('dbxref_id', $this->dbxref_id, '=')
+      ->condition('dbxref_id', $dbxref_id, '=')
       ->execute();
-    parent::delete();
+      return TRUE;
+    }
   }
 
   /**
-   * Checks the existance of cvterm. If not, write the error messasge
+   * Checks the existence of cvterm. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -147,28 +165,87 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   }
 
   /**
-   * Returns the cvterm by cvterm ID.
-
-   * @param integer $cvterm_id
-   *
-   * @return MCL_CHADO_CVTERM
-   */
-  public static function getCvtermByID($cvterm_id) {
-    return MCL_CHADO_CVTERM::bykey(array('cvterm_id' => $cvterm_id));
-  }
-
-  /**
    * Returns the cvterm by cv ID and cvterm name.
-
+   *
    * @param integer $cvterm_id
    * @param string $cvterm_name
    *
    * @return MCL_CHADO_CVTERM
    */
   public static function getCvtermByCvID($cv_id, $cvterm_name) {
-    $cv = MCL_CHADO_CV::getCVByID($cv_id);
+    $cv = MCL_CHADO_CV::byID($cv_id);
     if ($cv) {
       return MCL_CHADO_CVTERM::bykey(array('cv_id' => $cv_id, 'name' => $cvterm_name));
+    }
+    return NULL;
+  }
+
+  /**
+   * Returns the Field Book descriptor.
+   *
+   * @param integer $site_cv_name
+   * @param integer $cvterm_id
+   * @param string $cvterm_name
+   *
+   * @return array
+   */
+  public static function getFBDescriptor($site_cv_name, $cv_id, $cvterm_name) {
+    $cvterm = MCL_CHADO_CVTERM::getCvtermByCvID($cv_id, $cvterm_name);
+    if ($cvterm) {
+      $cvterm_id = $cvterm->getCvtermID();
+      $sql = "
+        SELECT C.cvterm_id, C.name, FORMAT.value AS format,
+          MINIMUM.value AS minimum, MAXIMUM.value AS maximum,
+          DEF_VAL.value AS defaultValue, CAT.value AS categories
+        FROM {chado.cvterm} C
+          INNER JOIN (
+            SELECT CP.cvterm_id, CP.value
+            FROM chado.cvtermprop CP
+              INNER JOIN chado.cvterm C on C.cvterm_id = CP.type_id
+              INNER JOIN chado.cv CV on CV.cv_id = C.cv_id
+            WHERE LOWER(C.name) = :format AND LOWER(CV.name) = LOWER(:site_cv_name)
+          ) FORMAT on FORMAT.cvterm_id = C.cvterm_id
+          LEFT JOIN (
+            SELECT CP.cvterm_id, CP.value
+            FROM chado.cvtermprop CP
+              INNER JOIN chado.cvterm C on C.cvterm_id = CP.type_id
+              INNER JOIN chado.cv CV on CV.cv_id = C.cv_id
+            WHERE LOWER(C.name) = :minimum AND LOWER(CV.name) = LOWER(:cv_name)
+          ) MINIMUM on MINIMUM.cvterm_id = C.cvterm_id
+          LEFT JOIN (
+            SELECT CP.cvterm_id, CP.value
+            FROM chado.cvtermprop CP
+              INNER JOIN chado.cvterm C on C.cvterm_id = CP.type_id
+              INNER JOIN chado.cv CV on CV.cv_id = C.cv_id
+            WHERE LOWER(C.name) = :maximum AND LOWER(CV.name) = LOWER(:cv_name)
+          ) MAXIMUM on MAXIMUM.cvterm_id = C.cvterm_id
+          LEFT JOIN (
+            SELECT CP.cvterm_id, CP.value
+            FROM chado.cvtermprop CP
+              INNER JOIN chado.cvterm C on C.cvterm_id = CP.type_id
+              INNER JOIN chado.cv CV on CV.cv_id = C.cv_id
+            WHERE LOWER(C.name) = :defaultValue AND LOWER(CV.name) = LOWER(:cv_name)
+          ) DEF_VAL on DEF_VAL.cvterm_id = C.cvterm_id
+          LEFT JOIN (
+            SELECT CP.cvterm_id, CP.value
+            FROM chado.cvtermprop CP
+              INNER JOIN chado.cvterm C on C.cvterm_id = CP.type_id
+              INNER JOIN chado.cv CV on CV.cv_id = C.cv_id
+            WHERE LOWER(C.name) = :categories AND LOWER(CV.name) = LOWER(:cv_name)
+          ) CAT on CAT.cvterm_id = C.cvterm_id
+        WHERE C.cvterm_id = :cvterm_id
+      ";
+      $args = array(
+        ':site_cv_name' => $site_cv_name,
+        ':cv_name'      => 'BIMS_FIELD_BOOK_FORMAT_PROP',
+        ':format'       => 'format',
+        ':minimum'      => 'minimum',
+        ':maximum'      => 'maximum',
+        ':defaultValue' => 'defaultValue',
+        ':categories'   => 'categories',
+        ':cvterm_id'    => $cvterm_id
+      );
+      return db_query($sql, $args)->fetch(PDO::FETCH_ASSOC);
     }
     return NULL;
   }
@@ -199,6 +276,25 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   }
 
   /**
+   * Returns the all cvterms that belong to the provide cv.
+
+   * @param integer $cv_id
+   *
+   * @return array
+   */
+  public function getCvtermsByCvID($cv_id) {
+
+    // Gets the cvterms.
+    $sql = "SELECT C.cvterm_id FROM {chado.cvterm} C WHERE C.cv_id = :cv_id";
+    $result = db_query($sql, array(':cv_id' => $cv_id));
+    $cvterms = array();
+    while ($cvterm_id = $result->fetchField()) {
+      $cvterms []= MCL_CHADO_CVTERM::byID($cvterm_id);
+    }
+    return $cvterms;
+  }
+
+  /**
    * Adds null cvterm.
    *
    * @return MCL_CHADO_CVTERM
@@ -209,7 +305,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
     $cv     = MCL_CHADO_CV::addNull();
     $dbxref = MCL_CHADO_DBXREF::addNull();
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $cvterm = MCL_CHADO_CVTERM::getCvterm('null', 'null');
     if (!$cvterm) {
       $details = array(
@@ -237,13 +333,13 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    *
    * @return MCL_CHADO_CVTERM
    */
-  public static function addCvterm(MCL_TEMPLATE $mcl_tmpl = NULL, $db_name, $cv_name, $cvterm_name, $definition, $accession = '') {
+  public static function addCvterm(MCL_TEMPLATE $mcl_tmpl = NULL, $db_name, $cv_name, $cvterm_name, $definition = '', $accession = '') {
 
     // Updates DB and CV names.
-    if ($db_name == '') {
+    if (!$db_name) {
       $db_name = 'SITE_DB';
     }
-    if ($cv_name == '') {
+    if (!$cv_name) {
       $cv_name = 'SITE_CV';
     }
 
@@ -317,7 +413,6 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
           'definition'  => $definition,
         );
         $cvterm = new MCL_CHADO_CVTERM($args);
-        dpm($args);
         if ($cvterm->insert()) {
           self::addMsg($mcl_tmpl, 'N', 'cvterm', $args);
         }
@@ -348,6 +443,19 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   }
 
   /**
+   * Gets property.
+   *
+   * @param string $cv_name
+   * @param string $cvterm_name
+   *
+   * @return string
+   */
+  public function getProp($cv_name, $cvterm_name) {
+    $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+    return $this->getProperty('cvtermprop', 'cvterm_id', $this->cvterm_id, $type_id);
+  }
+
+  /**
    * Adds a property.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -360,8 +468,11 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
     if ($value != '') {
-      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
-      return $this->addProperty($mcl_tmpl, 'cvtermprop', 'cvterm_id', $this->cvterm_id, $type_id, $value, $separator);
+      $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
+      if ($cvterm) {
+        $type_id = $cvterm->getCvtermID();
+        return $this->addProperty($mcl_tmpl, 'cvtermprop', 'cvterm_id', $this->cvterm_id, $type_id, $value, $separator);
+      }
     }
     return TRUE;
   }
@@ -382,6 +493,39 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
       return $this->updateProperty($mcl_tmpl, 'cvtermprop', 'cvterm_id', $this->cvterm_id, $type_id, $value);
     }
     return TRUE;
+  }
+
+  /**
+   * Return aliases.
+   *
+   * @param string $separator
+   *
+   * @return string
+   */
+  public function getAlias($separator = ';') {
+
+    // Gets type_id of alias.
+    $type_id = MCL_CHADO_CVTERM::getCvterm('SITE_CV', 'alias')->getCvtermID();
+
+    // Gets all aliases.
+    $sql = "
+      SELECT CS.synonym
+      FROM {chado.cvtermsynonym} CS
+       WHERE CS.type_id = :type_id AND CS.cvterm_id = :cvterm_id
+
+    ";
+    $args = array(
+      ':type_id'   => $type_id,
+      ':cvterm_id' => $this->cvterm_id,
+    );
+    $results = db_query($sql, $args);
+    $alias_arr = array();
+    while ($cvterm_name = $results->fetchField()) {
+      $alias_arr []= $cvterm_name;
+    }
+
+    // Returns the list of the aliases.
+    return implode($separator, $alias_arr);
   }
 
   /**
@@ -406,7 +550,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
       }
       $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
 
-      // Poluplates the array with aliases.
+      // Populates the array with aliases.
       $alias_arr = array();
       if ($separator) {
         $alias_arr = preg_split($this->getSepRegex($separator), $alias, NULL, PREG_SPLIT_NO_EMPTY);
@@ -554,7 +698,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   }
 
   /**
-   * Linds between a descript and a trait.
+   * Linds between a descriptor and a trait.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param MCL_CHADO_CVTERM $cv_name
@@ -569,5 +713,107 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
       return $this->addLink($mcl_tmpl, 'cvterm_relationship', 'subject_id', $this->cvterm_id, 'object_id', $trait->getCvtermID(), $type_id);
     }
     return TRUE;
+  }
+
+  /**
+   * Checks the value for the descriptor.
+   *
+   * @param array $descriptor
+   * @param string $value
+   * @param integer $line_no
+   *
+   * @return boolean
+   */
+  public static function checkFBDescriptorValue(MCL_TEMPLATE $mcl_tmpl = NULL, $descriptor, $value, $row_no) {
+
+    // Gets the variables.
+    $cvterm_id    = $descriptor['cvterm_id'];
+    $name         = $descriptor['name'];
+    $format       = $descriptor['format'];
+    $minimum      = $descriptor['minimum'];
+    $maximum      = $descriptor['maximum'];
+    $categories   = $descriptor['categories'];
+
+    // Formats : numeric/percent/counter/categorical/boolean
+    if (preg_match("/(numeric|percent|counter)/", $format)) {
+      if ($format == 'numeric') {
+        if (!is_numeric($value)) {
+          self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) must be numeric at row $row_no");
+          return FALSE;
+        }
+      }
+      else if ($format == 'percent') {
+        if (!is_numeric($value)) {
+          self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) must be numeric at row $row_no");
+          return FALSE;
+        }
+        if ($value > 100.0) {
+          self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) must be between 0 and 100 at row $row_no");
+          return FALSE;
+        }
+        else if ($value < 0.0) {
+          self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) must be between 0 and 100 at row $row_no");
+          return FALSE;
+        }
+      }
+      else if ($format == 'counter') {
+        if (is_int($value) && $value >= 0) {
+          self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) must be a positive integer at row $row_no");
+          return FALSE;
+        }
+      }
+
+      // Check the ranges.
+      if ($minimum && ($value < $minimum)) {
+        self::updateMsg($mcl_tmpl, 'E', "[$value < $minimum]$name ($format) : the value ($value) is smaller than minimum ($minimum) at row $row_no");
+        return FALSE;
+      }
+      if ($maximum && ($value > $maximum)) {
+        self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) is bigger than maximum ($maximum) at row $row_no");
+        return FALSE;
+      }
+    }
+    else if ($format == 'boolean') {
+      if (!preg_match("/^(true|false)$/", $value)) {
+        self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) must be 'true' or 'false' in lowercase at row $row_no");
+        return FALSE;
+      }
+    }
+    else if ($format == 'date') {
+      if (preg_match("/^\d{1,2}\/\d{1,2}\/\d\d\d\d$/", $value)) {
+        return TRUE;
+      }
+      else if (preg_match("/^\d\d\d\d\d$/", $value)) {
+        self::updateMsg($mcl_tmpl, 'W', "$name ($format) : the value ($value) is not valid date format. It has 5-digit. The number is converted into the data. at row $row_no");
+        return TRUE;
+      }
+      else {
+        self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) is not valid date format. it must be 1/1/2017 at row $row_no");
+        return FALSE;
+      }
+    }
+    else if ($format == 'categorical') {
+      $regex = str_replace('/', '|', $categories);
+      if (!preg_match("/^($regex)$/i", $value)) {
+        self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) must be one of '$categories' at row $row_no");
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Convert the date to Field Book date format.
+   *
+   * @param string $value
+   *
+   * @return string
+   */
+  public static function convertFBDate($value) {
+    if (preg_match("/^(\d\d\d\d\d)$/", $value, $matches)) {
+      $date_digit = $matches[1];
+      $value = date("n/j/Y", mktime(0, 0 , 0 , 1, $date_digit - 1, 1900));
+    }
+    return $value;
   }
 }

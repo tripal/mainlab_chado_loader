@@ -54,7 +54,7 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
       'species'                   => array('req' => TRUE,  'width' => 10, 'desc' => "Species name. Enter 'sp.' to represent one unknown species, 'spp.' to represent multiple unknown species."),
       'descriptor'                => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the trait. It should exist in 'trait_name' column of the 'Trait' sheet and 'QTL' sheet."),
       'trait_descriptor_set'      => array('req' => FALSE, 'width' => 20, 'desc' => "The name of the crop trait ontology that is stored in cv table of chado (eg. 'rosaceae_trait_ontology' for GDR, 'cotton_trait_ontology' for cotton). In Main Lab, we develop crop trait ontology for Rosaceae, cool season food legumes, cotton and citrus, and map them to the Plant Trait Ontology. If not provided, the site trait ontology will be used."),
-      'site_name'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Location/environment where the plant was grown. Site_name should exist in 'site_name' column of the 'Site' sheet. If the phenotypic measurement has bee done in multiple years, create multiple site_code even if it is done in the same location."),
+      'site_name'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Location/environment where the plant was grown. Site_name should exist in 'site_name' column of the 'Site' sheet. If the phenotypic measurement has been done in multiple years, create multiple site_code even if it is done in the same location."),
       'mean'                      => array('req' => TRUE,  'width' => 10, 'desc' => "The mean value of the traits for each parent and progeny."),
       'min_value'                 => array('req' => FALSE, 'width' => 10, 'desc' => "The minimum value of the traits for each parent and progeny."),
       'max_value'                 => array('req' => FALSE, 'width' => 10, 'desc' => "The maximum value of the traits for each parent and progeny."),
@@ -120,7 +120,7 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
     // Gets the trait.
     $trait = MCL_CHADO_TRAIT::getTrait($line['descriptor'], $line['trait_descriptor_set']);
 
-    // Gets the organims.
+    // Gets the organism.
     $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
 
     // Gets the stock.
@@ -134,7 +134,7 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
     $nd_geolocation_id = MCL_CHADO_LOCATION::getLocationIDBySite($line['site_name']);
 
     // Adds a phenotype (mean).
-    $uniquename = $line['descriptor'] . '_' . $line['mean'];
+    $uniquename = $trait->getCvtermID() . '_' . $line['mean'];
     $phenotype = MCL_CHADO_PHENOTYPE::addPhenotype($this, $uniquename, $trait->getCvtermID(), $line['mean']);
 
     // Adds a nd_experiment.

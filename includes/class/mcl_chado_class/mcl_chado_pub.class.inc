@@ -35,7 +35,7 @@ class MCL_CHADO_PUB extends CHADO_PUB {
   }
 
   /**
-   * Checks the existance of db. If not, write the error messasge
+   * Checks the existence of db. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -52,10 +52,16 @@ class MCL_CHADO_PUB extends CHADO_PUB {
       $pub_ids = preg_split(self::getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);
-        $pub = MCL_CHADO_PUB::getPub($pub_id);
-        if (!$pub) {
-          self::updateMsg($mcl_tmpl, 'E', "(pub_id) = ($pub_id) not found in pub");
+        if (!preg_match("/^\d+$/", $pub_id)) {
+          self::updateMsg($mcl_tmpl, 'E', "pub_id is not integer");
           $flag = FALSE;
+        }
+        else {
+          $pub = MCL_CHADO_PUB::getPub($pub_id);
+          if (!$pub) {
+            self::updateMsg($mcl_tmpl, 'E', "(pub_id) = ($pub_id) not found in pub");
+            $flag = FALSE;
+          }
         }
       }
     }
@@ -83,7 +89,7 @@ class MCL_CHADO_PUB extends CHADO_PUB {
     // Gets null cvterm.
     $cvterm = MCL_CHADO_CVTERM::addNull();
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $pub = MCL_CHADO_PUB::byKey(array('uniquename' => 'null'));
     if (!$pub) {
       $details = array(

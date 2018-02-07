@@ -311,6 +311,9 @@ function mcl_get_config_setting($setting) {
       $default_mcl_library_dir = realpath('./') . '/' . '/sites/all/libraries';
       return variable_get('mcl_library_dir', $default_mcl_library_dir);
       break;
+    case 'mcl_drush_binary':
+      return variable_get('mcl_drush_binary', '/usr/local/drush/drush');
+      break;
   }
 }
 
@@ -442,7 +445,39 @@ function mcl_add_ajax_command($command) {
  * Implements hook_mail().
  */
 function mcl_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'upload-complete':
+      _mcl_mail_upload_complete($message, $params);
+    break;
+  }
+}
 
+/**
+ * Generates email contents for MCL.
+ *
+ * @param array $message
+ * @param array $params
+ */
+function _mcl_mail_upload_complete(&$message, $params) {
+
+  // Gets paramters.
+  $job_id = $params['job_id'];
+
+  // Gets MCL_JOB_UPLOAD.
+  $mcl_job = MCL_JOB_UPLOAD::byID($job_id);
+
+  // Write the email contents.
+	$status = $mcl_job->getStatus();
+
+  if ($status == 100) {
+    $message['body'][] = "Uplaoding job has been completed successfully.";
+  }
+  else if ($status == -200) {
+    $message['body'][] = "Uplaoding job has been completed with some errors.";
+  }
+  $message['subject'] = "Uplaoding job has been completed";
+  $message['body'][] = "Please return to MCL to view the log files.";
+  $message['body'][] = "Thank you for using MCL !";
 }
 
  /************************************************/
@@ -455,8 +490,6 @@ function mcl_check_setup() {
 
   // Checks PHPExcel library.
   // Checks PHPZip library.
-
-
 
   $issues = '';
   $is_ready = TRUE;

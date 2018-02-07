@@ -42,6 +42,17 @@ class MCL_FILE extends PUBLIC_MCL_FILE {
   }
 
   /**
+   * Returns MCL_FILE by ID.
+   *
+   * @param integer $file_id
+   *
+   * @return MCL_FILE|NULL
+   */
+  public static function byID($file_id) {
+    return self::byKey(array('file_id' => $file_id));
+  }
+
+  /**
    * @see PUBLIC_MCL_FILE::__destruct()
    */
   public function __destruct() {
@@ -97,6 +108,9 @@ class MCL_FILE extends PUBLIC_MCL_FILE {
     }
     else if (preg_match("/\.csv$/", $this->filename)) {
       $this->type = 'csv';
+    }
+    else if (preg_match("/\.trt$/", $this->filename)) {
+      $this->type = 'trt';
     }
     else {
       $this->type = 'unknown';

@@ -45,6 +45,7 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
       'super_dataset'         => array('req' => FALSE, 'width' => 16, 'desc' => "Larger dataset that this sub_dataset belngs to."),
       'pi'                    => array('req' => FALSE, 'width' => 12, 'desc' => "Principal Investigator (eg. breeder, corresponding author of the QTL paper) of the Dataset.   It should match a 'contact_name' column in 'Contact' sheet."),
       'crop'                  => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the crop for the dataset."),
+      'trait_descriptor_set'  => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the trait descriptor set of the descriptors used for this dataset."),
       'comments'              => array('req' => FALSE, 'width' => 15, 'desc' => "Any comments for the dataset."),
       'reference'             => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id for any reference if the dataset is from publication."),
       'permission'            => array('req' => FALSE, 'width' => 10, 'desc' => "Permission of the dataset. '0' or empty indicates public. Other positive integer indicates private."),
@@ -61,13 +62,14 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
    */
   public function defineCvterms() {
     $cvterms = array();
-    $cvterms['SITE_CV']['project_type']       = -1;
-    $cvterms['SITE_CV']['sub_type']           = -1;
-    $cvterms['SITE_CV']['description']        = -1;
-    $cvterms['SITE_CV']['comments']           = -1;
-    $cvterms['SITE_CV']['crop']               = -1;
-    $cvterms['SITE_CV']['is_a_subproject_of'] = -1;
-    $cvterms['SITE_CV']['permission']         = -1;
+    $cvterms['SITE_CV']['project_type']         = -1;
+    $cvterms['SITE_CV']['sub_type']             = -1;
+    $cvterms['SITE_CV']['description']          = -1;
+    $cvterms['SITE_CV']['comments']             = -1;
+    $cvterms['SITE_CV']['crop']                 = -1;
+    $cvterms['SITE_CV']['trait_descriptor_set'] = -1;
+    $cvterms['SITE_CV']['is_a_subproject_of']   = -1;
+    $cvterms['SITE_CV']['permission']           = -1;
     return $cvterms;
   }
 
@@ -80,7 +82,10 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
     MCL_CHADO_DATASET::checkDataset($this, $line['super_datatset']);
 
     // Checks PI.
-    MCL_CHADO_CONTACT::checkContact($this, $line['pi']);
+    MCL_CHADO_CONTACT::checkContact($this, $line['pi'], "[;]");
+
+    // Checks trait_descriptor_set.
+    MCL_CHADO_CV::checkCV($this, $line['trait_descriptor_set']);
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
@@ -103,11 +108,14 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
       $dataset->addProp($this, 'SITE_CV', 'comments', $line['comments']);
       $dataset->addProp($this, 'SITE_CV', 'permission', $line['permission']);
 
+      // Adds trait_descriptor_set.
+      $dataset->addProp($this, 'SITE_CV', 'trait_descriptor_set', $line['trait_descriptor_set']);
+
       // Adds PI.
-      $dataset->addContact($this, $line['pi']);
+      $dataset->addContact($this, $line['pi'], "[;]");
 
       // Adds a parent.
-      $dataset->addParentDataset($this, $line['super_datatset']);
+      $dataset->addParentDataset($this, $line['super_dataset']);
 
       // Adds references.
       $dataset->addReference($this, $line['reference'], "[;,]");

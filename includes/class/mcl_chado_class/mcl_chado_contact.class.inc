@@ -28,6 +28,28 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
   }
 
   /**
+   * Returns MCL_CHADO_CONTACT by ID.
+   *
+   * @param integer $contact_id
+   *
+   * @return MCL_CHADO_CONTACT
+   */
+  public static function byID($contact_id) {
+    return MCL_CHADO_CONTACT::bykey(array('contact_id' => $contact_id));
+  }
+
+  /**
+   * Returns the contact by name.
+   *
+   * @param string $name
+   *
+   * @return MCL_CHADO_CONTACT
+   */
+  public static function byName($name) {
+    return MCL_CHADO_CONTACT::bykey(array('name' => trim($name)));
+  }
+
+  /**
    * @see CHADO_CONTACT::__destruct()
    */
   public function __destruct() {
@@ -35,7 +57,7 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
   }
 
   /**
-   * Checks the existance of contact. If not, write the error messasge
+   * Checks the existence of contact. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -51,7 +73,7 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
       // Gets the contacts.
       $names = preg_split(self::getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
-        $contact = MCL_CHADO_CONTACT::getContact(trim($name));
+        $contact = MCL_CHADO_CONTACT::byName(trim($name));
         if (!$contact) {
           self::updateMsg($mcl_tmpl, 'E', "(name) = ($name) not found in contact");
           $flag = FALSE;
@@ -59,17 +81,6 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
       }
     }
     return $flag;
-  }
-
-  /**
-   * Returns the contact by name.
-   *
-   * @param string $name
-   *
-   * @return MCL_CHADO_CONTACT
-   */
-  public static function getContact($name) {
-    return MCL_CHADO_CONTACT::bykey(array('name' => $name));
   }
 
   /**

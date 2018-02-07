@@ -28,6 +28,17 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
   }
 
   /**
+   * Returns MCL_CHADO_STOCK by ID.
+   *
+   * @param integer $stock_id
+   *
+   * @return MCL_CHADO_STOCK
+   */
+  public static function byID($stock_id) {
+    return MCL_CHADO_STOCK::bykey(array('stock_id' => $stock_id));
+  }
+
+  /**
    * @see CHADO_STOCK::__destruct()
    */
   public function __destruct() {
@@ -35,7 +46,7 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
   }
 
   /**
-   * Checks the existance of stock. If not, write the error messasge
+   * Checks the existence of stock. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -74,6 +85,70 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
 
         // If '::' found in uniquename, update uniquename and organism_id.
         if (preg_match("/^(.*?)\s+(.*?)::(.*?)$/", $uniquename, $matches)) {
+          $genus          = trim($matches[1]);
+          $species        = trim($matches[2]);
+          $uniquename     = trim($matches[3]);
+          $diff_organism  = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+          if ($diff_organism) {
+            $args['organism_id'] = $diff_organism->getOrganismID();
+          }
+          else {
+            self::updateMsg($mcl_tmpl, 'E', "$genus $species not found in organism");
+            $flag = FALSE;
+          }
+        }
+
+        // Checks the stock.
+        $stock = MCL_CHADO_STOCK::byKey($args);
+        if (!$stock) {
+          self::updateMsg($mcl_tmpl, 'E', self::arrStr($args) . " not found in stock");
+          $flag = FALSE;
+        }
+      }
+    }
+    return $flag;
+  }
+
+  /**
+   * Checks the existence of the secondary ID. If not, write the error messasge
+   * to the log.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $second_id
+   * @param string $genus
+   * @param string $species
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public static function checkSecondaryID(MCL_TEMPLATE $mcl_tmpl = NULL, $second_id, $genus = '', $species = '', $separator = '') {
+    $flag = TRUE;
+    if ($second_id) {
+
+      // Gets the organism_id.
+      $organism_id = NULL;
+      if ($genus && $species) {
+        $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+        if (!$organism) {
+          self::updateMsg($mcl_tmpl, 'E', "$genus $species not found in organism");
+          return FALSE;
+        }
+        $organism_id = $organism->getOrganismID();
+      }
+
+      // Gets the uniquenames.
+      $names = preg_split(self::getSepRegex($separator), $second_id, NULL, PREG_SPLIT_NO_EMPTY);
+      foreach ($names as $name) {
+        $name = trim($name);
+
+        // Sets the arguments.
+        $args = array('name' => $name);
+        if ($organism_id) {
+          $args['organism_id'] = $organism_id;
+        }
+
+        // If '::' found in name, update uniquename and organism_id.
+        if (preg_match("/^(.*?)\s+(.*?)::(.*?)$/", $name, $matches)) {
           $genus          = trim($matches[1]);
           $species        = trim($matches[2]);
           $uniquename     = trim($matches[3]);
@@ -292,10 +367,97 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
     if ($value != '') {
-      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
-      return $this->addProperty($mcl_tmpl, 'stockprop', 'stock_id', $this->stock_id, $type_id, $value, $separator);
+      $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
+      if ($cvterm) {
+        $type_id = $cvterm->getCvtermID();
+        return $this->addProperty($mcl_tmpl, 'stockprop', 'stock_id', $this->stock_id, $type_id, $value, $separator);
+      }
     }
     return TRUE;
+  }
+
+  /**
+   * Returns if this stock is sample.
+   *
+   * @return boolean
+   */
+  public function isSample() {
+    return TRUE;
+  }
+
+  /**
+   * Returns if this stock is clone.
+   *
+   * @return boolean
+   */
+  public function isClone() {
+    return TRUE;
+  }
+
+  /**
+   * Returns the clone ID.
+   *
+   * @param string $separator
+   *
+   * @return string
+   */
+  public function getCloneID($separator = ';') {
+
+    // Gets the type_id.
+    $cvterm_name  = $this->isSample() ? 'sample_of' : 'clone_of';
+    $type_id      =  MCL_CHADO_CVTERM::getCvterm('SITE_CV', $cvterm_name)->getCvtermID();
+
+    // Gets clone IDs.
+    $sql = '';
+    if ($this->isSample()) {
+      $sql = "
+        SELECT SR.object_id
+        FROM {chado.stock_relationship} SR
+        WHERE SR.type_id = :type_id AND SR.subject_id = :target_id
+      ";
+      $args[':target_id'] = $this->stock_id;
+    }
+    else {
+      $sql = "
+        SELECT SR.subject_id
+        FROM {chado.stock_relationship} SR
+        WHERE SR.type_id = :type_id AND SR.object_id = :target_id
+      ";
+    }
+    $args = array(
+      ':target_id'  => $this->stock_id,
+      ':type_id'     => $type_id,
+    );
+    $results = db_query($sql, $args);
+    $clones = array();
+    while ($stock_id = $results->fetchField()) {
+      $s = MCL_CHADO_STOCK::byID($stock_id);
+      if ($s) {
+        $clones []= $s->getName();
+      }
+    }
+    return implode($separator, $clones);
+  }
+
+  /**
+   * Returns nd_experiment_id of all experiments belong to this sample.
+   *
+   * @return array
+   */
+  public function getExperiments() {
+    $nd_experiment_ids = array();
+    if ($this->isSample()) {
+      $sql = "
+        SELECT NES.nd_experiment_id
+        FROM {chado.nd_experiment_stock} NES
+        WHERE NES.stock_id = :stock_id
+      ";
+      $results = db_query($sql, array(':stock_id' => $this->stock_id));
+      while ($nd_experiment_id = $results->fetchField()) {
+        $nd_experiment_ids []= $nd_experiment_id;
+      }
+    }
+    return nd_experiment_ids;
   }
 
   /**
@@ -315,7 +477,7 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
   }
 
   /**
-   * Adds parents by dataset name and cross numbe.
+   * Adds parents by dataset name and cross number.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param MCL_CHADO_ND_EXPERIMENT $cross
@@ -369,9 +531,9 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
 
         if ($mcl_tmpl) {
 
-          // Saves the parent that could not find in stock table. It may be in the
-          // later row of the same Excel file. Adds them after processing the
-          // stock sheet.
+          // Saves the parent that could not find in stock table. They may be
+          // listed in the later row of the same Excel file.
+          // Adds them after processing the stock sheet.
           $missing_parent = array(
             'uniquename'  => $uniquename,
             'organism_id' => $organism_id,
@@ -444,16 +606,29 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
   public function addAlias(MCL_TEMPLATE $mcl_tmpl = NULL, $alias, $separator = '') {
     $flag = TRUE;
     if ($alias) {
+      $arr_alias    = array();
+      $arr_cultivar = array();
       $aliases = preg_split($this->getSepRegex($separator), $alias, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($aliases as $value) {
         $tmp = preg_split("/:/", $value);
-        $alias_type = 'alias';
         if (sizeof($tmp) > 1) {
-          $alias_type = $tmp[0];
-          $value = $tmp[1];
+          $arr_cultivar []= $tmp[1];
         }
-        $alias_type = (strtolower($alias_type) == 'cultivar') ? 'cultivar' : 'alias';
-        if (!$this->addProp($mcl_tmpl, 'SITE_CV', $alias_type, $value)) {
+        else {
+          $arr_alias []= $value;
+        }
+      }
+
+      // Adds the values as aliases.
+      if (!empty($arr_alias)) {
+        if (!$this->addProp($mcl_tmpl, 'SITE_CV', 'alias', implode(';', $arr_alias), $separator)) {
+          $flag = FALSE;
+        }
+      }
+
+      // Adds the values as cultivars.
+      if (!empty($arr_cultivar)) {
+        if (!$this->addProp($mcl_tmpl, 'SITE_CV', 'cultivar', implode(';', $arr_cultivar), $separator)) {
           $flag = FALSE;
         }
       }
@@ -484,14 +659,14 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param string $separator
    *
    * @return boolean
-
+   */
   public function addContact(MCL_TEMPLATE $mcl_tmpl = NULL, $contact, $separator = '') {
     $flag = TRUE;
     if ($contact) {
       $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
-        $contact = MCL_CHADO_CONTACT::getContact($name);
+        $contact = MCL_CHADO_CONTACT::byName($name);
         if ($contact) {
           if (!$this->addLink($mcl_tmpl, 'stock_contact', 'stock_id', $this->stock_id, 'contact_id', $contact->getContactID())) {
             $flag = FALSE;
@@ -503,24 +678,62 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
       }
     }
     return $flag;
-  } */
+  }
 
   /**
-   * Adds image to stock_image.
+   * Adds image IDs to stock_image.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $reference
+   * @param string $image_id_list
    * @param string $separator
    *
    * @return boolean
    */
-  public function addImage(MCL_TEMPLATE $mcl_tmpl = NULL, $image, $separator = '') {
+  public function addImageID(MCL_TEMPLATE $mcl_tmpl = NULL, $image_id_list, $separator = '') {
     $flag = TRUE;
-    if ($image) {
-      $eimage_ids = preg_split($this->getSepRegex($separator), $image, NULL, PREG_SPLIT_NO_EMPTY);
+    if ($image_id_list) {
+      $eimage_ids = preg_split($this->getSepRegex($separator), $image_id_list, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($eimage_ids as $eimage_id) {
         $eimage_id = trim($eimage_id);
         $image = MCL_CHADO_IMAGE::byKey(array('eimage_id' => $eimage_id));
+        if ($image) {
+          if (!$this->addLink($mcl_tmpl, 'stock_image', 'stock_id', $this->stock_id, 'eimage_id', $image->getEimageID())) {
+            $flag = FALSE;
+          }
+        }
+        else {
+          $flag = FALSE;
+        }
+      }
+    }
+    return $flag;
+  }
+
+
+  /**
+   * Adds images to stock_image.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $type
+   * @param string $image_list
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addImage(MCL_TEMPLATE $mcl_tmpl = NULL, $type, $image_list, $separator = '') {
+    $flag = TRUE;
+    if ($image_list) {
+      $eimages = preg_split($this->getSepRegex($separator), $image_list, NULL, PREG_SPLIT_NO_EMPTY);
+      foreach ($eimages as $eimage) {
+        $eimage = trim($eimage);
+
+        // Checks duplication.
+        $args = array(
+          'eimage_data' => $eimage,
+          'eimage_type' => $type,
+          'eimage_url'  => $eimage,
+        );
+        $image = MCL_CHADO_IMAGE::byKey($args);
         if ($image) {
           if (!$this->addLink($mcl_tmpl, 'stock_image', 'stock_id', $this->stock_id, 'eimage_id', $image->getEimageID())) {
             $flag = FALSE;
@@ -591,4 +804,108 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
     }
     return $flag;
   }
+
+  /**
+   * Gets property.
+   *
+   * @param string $cv_name
+   * @param string $cvterm_name
+   *
+   * @return string
+   */
+  public function getProp($cv_name, $cvterm_name) {
+    $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+    return $this->getProperty('stockprop', 'stock_id', $this->stock_id, $type_id);
+  }
+
+  /**
+   * Retrieves the properties of the stock.
+   *
+   * @param string $cv_name
+   * @param string $cvterm_name
+   * @param string $separator
+   *
+   * @return string
+   */
+  public function getProps($cv_name, $cvterm_name, $separator = ':') {
+    $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+    $sql = "
+      SELECT SP.value
+      FROM {chado.stockprop} SP
+      WHERE SP.stock_id = :stock_id AND SP.type_id = :type_id
+    ";
+    $args = array(
+      ':type_id' => $type_id,
+      ':stock_id' => $this->stock_id,
+    );
+    $results = db_query($sql, $args);
+    $values = array();
+    while ($value = $results->fetchField()) {
+      $values []= $value;
+    }
+    return implode($separator, $values);
+  }
+
+  /**
+   * Retrieves the parent of the stock.
+   *
+   * @param string $cvterm_name
+   *
+   * @return string
+   */
+  public function getParent($cv_name, $cvterm_name) {
+    $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
+    $keys = array(
+      'object_id' => $this->stock_id,
+      'type_id' => $cvterm->getCvtermID(),
+    );
+    $rel = CHADO_STOCK_RELATIONSHIP::byKey($keys);
+    if ($rel) {
+      $parent = MCL_CHADO_STOCK::byID($rel->getSubjectID());
+      return $parent->getName();
+    }
+    return '';
+  }
+
+  /**
+   * Retrieves the aliases of the stock.
+   *
+   * @param string $separator
+   *
+   * @return string
+   */
+  public function getAlias($separator = ':') {
+    return $this->getProps('SITE_CV', 'alias', $separator);
+  }
+
+  /**
+   * Retrieves the type of the stock.
+   *
+   * @return string
+   */
+  public function getType() {
+    $cvterm = MCL_CHADO_CVTERM::byID($this->type_id);
+    return $cvterm->getName();
+  }
+
+  /**
+   * Retrieves the genus of the stock.
+   *
+   * @return string
+   */
+  public function getGenus() {
+    $organism = MCL_CHADO_ORGANISM::byID($this->organism_id);
+    return $organism->getGenus();
+  }
+
+  /**
+   * Retrieves the species of the stock.
+   *
+   * @return string
+   */
+  public function getSpecies() {
+    $organism = MCL_CHADO_ORGANISM::byID($this->organism_id);
+    return $organism->getSpecies();
+  }
+
 }

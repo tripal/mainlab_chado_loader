@@ -327,6 +327,37 @@ COMMENT ON COLUMN batch.batch IS 'A serialized array containing the processing d
 
 
 --
+-- Name: bims_archive_type; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE bims_archive_type (
+    archive_type_id integer NOT NULL,
+    type character varying(255) NOT NULL,
+    prop text,
+    rank integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: bims_archive_type_archive_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE bims_archive_type_archive_type_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: bims_archive_type_archive_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE bims_archive_type_archive_type_id_seq OWNED BY bims_archive_type.archive_type_id;
+
+
+--
 -- Name: bims_crop; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -369,17 +400,6 @@ CREATE TABLE bims_crop_organism (
 
 
 --
--- Name: bims_descriptor_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE bims_descriptor_group (
-    cv_id integer NOT NULL,
-    cv_name character varying(255) NOT NULL,
-    definition text
-);
-
-
---
 -- Name: bims_file; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -391,9 +411,10 @@ CREATE TABLE bims_file (
     filesize integer DEFAULT 0 NOT NULL,
     uri character varying(255) NOT NULL,
     user_id integer NOT NULL,
-    job_id integer,
     submit_date timestamp without time zone NOT NULL,
-    prop text
+    prop text,
+    program_id integer,
+    description text
 );
 
 
@@ -447,52 +468,20 @@ ALTER SEQUENCE bims_instruction_instruction_id_seq OWNED BY bims_instruction.ins
 
 
 --
--- Name: bims_job; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE bims_job (
-    job_id integer NOT NULL,
-    name character varying(255) NOT NULL,
-    type character varying(255) NOT NULL,
-    class_name character varying(255),
-    status integer,
-    param text,
-    prop text,
-    user_id integer NOT NULL,
-    submit_date timestamp without time zone NOT NULL,
-    complete_date timestamp without time zone
-);
-
-
---
--- Name: bims_job_job_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE bims_job_job_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: bims_job_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE bims_job_job_id_seq OWNED BY bims_job.job_id;
-
-
---
 -- Name: bims_list; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
 CREATE TABLE bims_list (
     list_id integer NOT NULL,
     name character varying(255) NOT NULL,
+    type character varying(255) NOT NULL,
     program_id integer NOT NULL,
     user_id integer NOT NULL,
-    prop text
+    prop text,
+    create_date timestamp without time zone NOT NULL,
+    update_date timestamp without time zone,
+    description text,
+    shared integer DEFAULT 0 NOT NULL
 );
 
 
@@ -520,12 +509,12 @@ ALTER SEQUENCE bims_list_list_id_seq OWNED BY bims_list.list_id;
 --
 
 CREATE TABLE bims_mview_cross_stats (
-    project_id integer NOT NULL,
     node_id integer NOT NULL,
     nd_experiment_id integer NOT NULL,
     name character varying(255) NOT NULL,
     cvterm_id integer NOT NULL,
-    stats text
+    stats text,
+    num_data integer DEFAULT 0 NOT NULL
 );
 
 
@@ -540,52 +529,9 @@ CREATE TABLE bims_mview_descriptor (
     cvterm_id integer NOT NULL,
     alias character varying(255),
     format character varying(255),
-    default_value character varying(255),
-    min_value character varying(255),
-    max_value character varying(255),
-    categories text,
-    data_unit character varying(255),
     prop text,
     definition text
 );
-
-
---
--- Name: bims_mview_location; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE bims_mview_location (
-    nd_geolocation_id integer NOT NULL,
-    program_id integer NOT NULL,
-    name character varying(255) NOT NULL,
-    type character varying(255) NOT NULL,
-    latitude character varying(255),
-    longitude character varying(255),
-    altitude character varying(255),
-    country character varying(255),
-    state character varying(255),
-    region character varying(255),
-    address character varying(255)
-);
-
-
---
--- Name: bims_mview_location_program_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE bims_mview_location_program_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: bims_mview_location_program_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE bims_mview_location_program_id_seq OWNED BY bims_mview_location.program_id;
 
 
 --
@@ -593,11 +539,25 @@ ALTER SEQUENCE bims_mview_location_program_id_seq OWNED BY bims_mview_location.p
 --
 
 CREATE TABLE bims_mview_phenotype_stats (
-    project_id integer NOT NULL,
     node_id integer NOT NULL,
     stats text,
     cvterm_id integer NOT NULL,
-    name character varying(255) NOT NULL
+    name character varying(255) NOT NULL,
+    num_data integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: bims_mview_stock_stats; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE bims_mview_stock_stats (
+    node_id integer NOT NULL,
+    stock_id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    cvterm_id integer NOT NULL,
+    num_data integer DEFAULT 0 NOT NULL,
+    stats text
 );
 
 
@@ -617,7 +577,8 @@ CREATE TABLE bims_node (
     trial_tree text,
     breed_line_tree text,
     cross_tree text,
-    description text
+    description text,
+    access integer DEFAULT 1 NOT NULL
 );
 
 
@@ -668,37 +629,6 @@ CREATE SEQUENCE bims_node_relationship_relationship_id_seq
 --
 
 ALTER SEQUENCE bims_node_relationship_relationship_id_seq OWNED BY bims_node_relationship.relationship_id;
-
-
---
--- Name: bims_program_descriptor_group; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE bims_program_descriptor_group (
-    program_descriptor_group_id integer NOT NULL,
-    program_id integer NOT NULL,
-    cv_id integer NOT NULL,
-    name character varying(255) NOT NULL
-);
-
-
---
--- Name: bims_program_descriptor_group_program_descriptor_group_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE bims_program_descriptor_group_program_descriptor_group_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: bims_program_descriptor_group_program_descriptor_group_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE bims_program_descriptor_group_program_descriptor_group_id_seq OWNED BY bims_program_descriptor_group.program_descriptor_group_id;
 
 
 --
@@ -2412,7 +2342,8 @@ CREATE TABLE do_overview (
     group_id integer NOT NULL,
     description text,
     submit_date timestamp without time zone,
-    filename character varying(100) NOT NULL
+    filename character varying(100) NOT NULL,
+    status character varying(100)
 );
 
 
@@ -2760,6 +2691,82 @@ COMMENT ON COLUMN field_data_comment_body.delta IS 'The sequence number for this
 
 
 --
+-- Name: field_data_field_first_anme; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE field_data_field_first_anme (
+    entity_type character varying(128) DEFAULT ''::character varying NOT NULL,
+    bundle character varying(128) DEFAULT ''::character varying NOT NULL,
+    deleted smallint DEFAULT 0 NOT NULL,
+    entity_id bigint NOT NULL,
+    revision_id bigint,
+    language character varying(32) DEFAULT ''::character varying NOT NULL,
+    delta bigint NOT NULL,
+    field_first_anme_value character varying(255),
+    field_first_anme_format character varying(255),
+    CONSTRAINT field_data_field_first_anme_delta_check CHECK ((delta >= 0)),
+    CONSTRAINT field_data_field_first_anme_entity_id_check CHECK ((entity_id >= 0)),
+    CONSTRAINT field_data_field_first_anme_revision_id_check CHECK ((revision_id >= 0))
+);
+
+
+--
+-- Name: TABLE field_data_field_first_anme; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE field_data_field_first_anme IS 'Data storage for field 5 (field_first_anme)';
+
+
+--
+-- Name: COLUMN field_data_field_first_anme.entity_type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_data_field_first_anme.entity_type IS 'The entity type this data is attached to';
+
+
+--
+-- Name: COLUMN field_data_field_first_anme.bundle; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_data_field_first_anme.bundle IS 'The field instance bundle to which this row belongs, used when deleting a field instance';
+
+
+--
+-- Name: COLUMN field_data_field_first_anme.deleted; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_data_field_first_anme.deleted IS 'A boolean indicating whether this data item has been deleted';
+
+
+--
+-- Name: COLUMN field_data_field_first_anme.entity_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_data_field_first_anme.entity_id IS 'The entity id this data is attached to';
+
+
+--
+-- Name: COLUMN field_data_field_first_anme.revision_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_data_field_first_anme.revision_id IS 'The entity revision id this data is attached to, or NULL if the entity type is not versioned';
+
+
+--
+-- Name: COLUMN field_data_field_first_anme.language; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_data_field_first_anme.language IS 'The language for this data item.';
+
+
+--
+-- Name: COLUMN field_data_field_first_anme.delta; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_data_field_first_anme.delta IS 'The sequence number for this data item, used for multi-value fields';
+
+
+--
 -- Name: field_data_field_image; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -3103,6 +3110,82 @@ COMMENT ON COLUMN field_revision_comment_body.language IS 'The language for this
 --
 
 COMMENT ON COLUMN field_revision_comment_body.delta IS 'The sequence number for this data item, used for multi-value fields';
+
+
+--
+-- Name: field_revision_field_first_anme; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE field_revision_field_first_anme (
+    entity_type character varying(128) DEFAULT ''::character varying NOT NULL,
+    bundle character varying(128) DEFAULT ''::character varying NOT NULL,
+    deleted smallint DEFAULT 0 NOT NULL,
+    entity_id bigint NOT NULL,
+    revision_id bigint NOT NULL,
+    language character varying(32) DEFAULT ''::character varying NOT NULL,
+    delta bigint NOT NULL,
+    field_first_anme_value character varying(255),
+    field_first_anme_format character varying(255),
+    CONSTRAINT field_revision_field_first_anme_delta_check CHECK ((delta >= 0)),
+    CONSTRAINT field_revision_field_first_anme_entity_id_check CHECK ((entity_id >= 0)),
+    CONSTRAINT field_revision_field_first_anme_revision_id_check CHECK ((revision_id >= 0))
+);
+
+
+--
+-- Name: TABLE field_revision_field_first_anme; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE field_revision_field_first_anme IS 'Revision archive storage for field 5 (field_first_anme)';
+
+
+--
+-- Name: COLUMN field_revision_field_first_anme.entity_type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_revision_field_first_anme.entity_type IS 'The entity type this data is attached to';
+
+
+--
+-- Name: COLUMN field_revision_field_first_anme.bundle; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_revision_field_first_anme.bundle IS 'The field instance bundle to which this row belongs, used when deleting a field instance';
+
+
+--
+-- Name: COLUMN field_revision_field_first_anme.deleted; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_revision_field_first_anme.deleted IS 'A boolean indicating whether this data item has been deleted';
+
+
+--
+-- Name: COLUMN field_revision_field_first_anme.entity_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_revision_field_first_anme.entity_id IS 'The entity id this data is attached to';
+
+
+--
+-- Name: COLUMN field_revision_field_first_anme.revision_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_revision_field_first_anme.revision_id IS 'The entity revision id this data is attached to';
+
+
+--
+-- Name: COLUMN field_revision_field_first_anme.language; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_revision_field_first_anme.language IS 'The language for this data item.';
+
+
+--
+-- Name: COLUMN field_revision_field_first_anme.delta; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN field_revision_field_first_anme.delta IS 'The sequence number for this data item, used for multi-value fields';
 
 
 --
@@ -3891,18 +3974,6 @@ CREATE TABLE gensas_job (
 
 
 --
--- Name: gensas_job_cmd; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE gensas_job_cmd (
-    id integer NOT NULL,
-    index integer NOT NULL,
-    cmd text,
-    sanitized_cmd text
-);
-
-
---
 -- Name: gensas_job_execid; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -3940,16 +4011,6 @@ CREATE SEQUENCE gensas_job_id_seq
 --
 
 ALTER SEQUENCE gensas_job_id_seq OWNED BY gensas_job.id;
-
-
---
--- Name: gensas_job_pid; Type: TABLE; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE TABLE gensas_job_pid (
-    job_id character varying(200) NOT NULL,
-    pid integer NOT NULL
-);
 
 
 --
@@ -4260,7 +4321,9 @@ CREATE TABLE gensas_seq_group (
     num_seqs integer DEFAULT 0 NOT NULL,
     version character varying(25) DEFAULT ''::character varying NOT NULL,
     filtered text,
-    status character varying(20)
+    status text,
+    filesize integer DEFAULT 0 NOT NULL,
+    submit_date timestamp without time zone
 );
 
 
@@ -4387,7 +4450,9 @@ CREATE TABLE gensas_tool (
     is_enabled smallint DEFAULT 1 NOT NULL,
     category_id integer NOT NULL,
     tool_path character varying,
-    profile_num integer DEFAULT 1 NOT NULL
+    profile_num integer DEFAULT 1 NOT NULL,
+    version character varying(50),
+    use_masked integer DEFAULT 1 NOT NULL
 );
 
 
@@ -4527,6 +4592,21 @@ ALTER SEQUENCE gensas_tool_type_tool_type_id_seq OWNED BY gensas_tool_type.tool_
 
 
 --
+-- Name: gensas_usage; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE gensas_usage (
+    user_id integer NOT NULL,
+    apollo bigint DEFAULT 0 NOT NULL,
+    project bigint DEFAULT 0 NOT NULL,
+    file bigint DEFAULT 0 NOT NULL,
+    update_date timestamp without time zone,
+    prop text,
+    total bigint DEFAULT 0 NOT NULL
+);
+
+
+--
 -- Name: gensas_user_tool; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -4534,6 +4614,16 @@ CREATE TABLE gensas_user_tool (
     user_id integer NOT NULL,
     tool_id integer NOT NULL,
     status character varying
+);
+
+
+--
+-- Name: gensas_userprop; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE gensas_userprop (
+    user_id integer NOT NULL,
+    prop text
 );
 
 
@@ -5021,6 +5111,134 @@ CREATE SEQUENCE mcl_var_var_id_seq
 --
 
 ALTER SEQUENCE mcl_var_var_id_seq OWNED BY mcl_var.var_id;
+
+
+--
+-- Name: mdlu_cron_job; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE mdlu_cron_job (
+    cron_job_id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    "interval" character varying(255),
+    description text
+);
+
+
+--
+-- Name: mdlu_cron_job_cron_job_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE mdlu_cron_job_cron_job_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: mdlu_cron_job_cron_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE mdlu_cron_job_cron_job_id_seq OWNED BY mdlu_cron_job.cron_job_id;
+
+
+--
+-- Name: mdlu_database; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE mdlu_database (
+    database_id integer NOT NULL,
+    database_type_id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    url character varying(255) NOT NULL,
+    description text,
+    last_update timestamp without time zone,
+    filesize integer,
+    filepath character varying(500),
+    cmd text
+);
+
+
+--
+-- Name: mdlu_database_database_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE mdlu_database_database_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: mdlu_database_database_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE mdlu_database_database_id_seq OWNED BY mdlu_database.database_id;
+
+
+--
+-- Name: mdlu_database_type; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE mdlu_database_type (
+    database_type_id integer NOT NULL,
+    type character varying(255) NOT NULL,
+    label character varying(255) NOT NULL,
+    description text
+);
+
+
+--
+-- Name: mdlu_database_type_database_type_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE mdlu_database_type_database_type_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: mdlu_database_type_database_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE mdlu_database_type_database_type_id_seq OWNED BY mdlu_database_type.database_type_id;
+
+
+--
+-- Name: mdlu_log; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE mdlu_log (
+    log_id integer NOT NULL,
+    user_id integer NOT NULL,
+    update_date timestamp without time zone
+);
+
+
+--
+-- Name: mdlu_log_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE mdlu_log_log_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: mdlu_log_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE mdlu_log_log_id_seq OWNED BY mdlu_log.log_id;
 
 
 --
@@ -7095,6 +7313,746 @@ ALTER SEQUENCE tmp_id_seq OWNED BY tmp.id;
 
 
 --
+-- Name: tripal_custom_tables; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_custom_tables (
+    table_id integer NOT NULL,
+    table_name character varying(255),
+    schema text,
+    mview_id integer,
+    CONSTRAINT tripal_custom_tables_table_id_check CHECK ((table_id >= 0))
+);
+
+
+--
+-- Name: tripal_custom_tables_table_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_custom_tables_table_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_custom_tables_table_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_custom_tables_table_id_seq OWNED BY tripal_custom_tables.table_id;
+
+
+--
+-- Name: tripal_cv_defaults; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_cv_defaults (
+    cv_default_id integer NOT NULL,
+    table_name character varying(128) NOT NULL,
+    field_name character varying(128) NOT NULL,
+    cv_id integer NOT NULL,
+    CONSTRAINT tripal_cv_defaults_cv_default_id_check CHECK ((cv_default_id >= 0))
+);
+
+
+--
+-- Name: tripal_cv_defaults_cv_default_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_cv_defaults_cv_default_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_cv_defaults_cv_default_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_cv_defaults_cv_default_id_seq OWNED BY tripal_cv_defaults.cv_default_id;
+
+
+--
+-- Name: tripal_cv_obo; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_cv_obo (
+    obo_id integer NOT NULL,
+    name character varying(255),
+    path character varying(1024),
+    CONSTRAINT tripal_cv_obo_obo_id_check CHECK ((obo_id >= 0))
+);
+
+
+--
+-- Name: tripal_cv_obo_obo_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_cv_obo_obo_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_cv_obo_obo_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_cv_obo_obo_id_seq OWNED BY tripal_cv_obo.obo_id;
+
+
+--
+-- Name: tripal_jobs; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_jobs (
+    job_id integer NOT NULL,
+    uid bigint,
+    job_name character varying(255),
+    modulename character varying(50),
+    callback character varying(255),
+    arguments text,
+    progress bigint DEFAULT 0,
+    status character varying(50),
+    submit_date integer,
+    start_time integer,
+    end_time integer,
+    error_msg text,
+    pid bigint,
+    priority bigint DEFAULT 0::bigint,
+    mlock bigint,
+    lock bigint,
+    CONSTRAINT tripal_jobs_job_id_check CHECK ((job_id >= 0)),
+    CONSTRAINT tripal_jobs_lock_check CHECK ((lock >= 0)),
+    CONSTRAINT tripal_jobs_mlock_check CHECK ((mlock >= 0)),
+    CONSTRAINT tripal_jobs_pid_check CHECK ((pid >= 0)),
+    CONSTRAINT tripal_jobs_priority_check CHECK ((priority >= 0)),
+    CONSTRAINT tripal_jobs_progress_check CHECK ((progress >= 0)),
+    CONSTRAINT tripal_jobs_uid_check CHECK ((uid >= 0))
+);
+
+
+--
+-- Name: COLUMN tripal_jobs.uid; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_jobs.uid IS 'The Drupal userid of the submitee';
+
+
+--
+-- Name: COLUMN tripal_jobs.modulename; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_jobs.modulename IS 'The module name that provides the callback for this job';
+
+
+--
+-- Name: COLUMN tripal_jobs.progress; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_jobs.progress IS 'a value from 0 to 100 indicating percent complete';
+
+
+--
+-- Name: COLUMN tripal_jobs.submit_date; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_jobs.submit_date IS 'UNIX integer submit time';
+
+
+--
+-- Name: COLUMN tripal_jobs.start_time; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_jobs.start_time IS 'UNIX integer start time';
+
+
+--
+-- Name: COLUMN tripal_jobs.end_time; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_jobs.end_time IS 'UNIX integer end time';
+
+
+--
+-- Name: COLUMN tripal_jobs.pid; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_jobs.pid IS 'The process id for the job';
+
+
+--
+-- Name: COLUMN tripal_jobs.priority; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_jobs.priority IS 'The job priority';
+
+
+--
+-- Name: COLUMN tripal_jobs.mlock; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_jobs.mlock IS 'If set to 1 then all jobs for the module are held until this one finishes';
+
+
+--
+-- Name: COLUMN tripal_jobs.lock; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_jobs.lock IS 'If set to 1 then all jobs are held until this one finishes';
+
+
+--
+-- Name: tripal_jobs_job_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_jobs_job_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_jobs_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_jobs_job_id_seq OWNED BY tripal_jobs.job_id;
+
+
+--
+-- Name: tripal_mviews; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_mviews (
+    mview_id integer NOT NULL,
+    name character varying(255),
+    modulename character varying(50),
+    mv_table character varying(128),
+    mv_specs text,
+    mv_schema text,
+    indexed text,
+    query text,
+    special_index text,
+    last_update integer,
+    status text,
+    comment text,
+    CONSTRAINT tripal_mviews_mview_id_check CHECK ((mview_id >= 0))
+);
+
+
+--
+-- Name: COLUMN tripal_mviews.modulename; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_mviews.modulename IS 'The module name that provides the callback for this job';
+
+
+--
+-- Name: COLUMN tripal_mviews.last_update; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_mviews.last_update IS 'UNIX integer time';
+
+
+--
+-- Name: tripal_mviews_mview_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_mviews_mview_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_mviews_mview_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_mviews_mview_id_seq OWNED BY tripal_mviews.mview_id;
+
+
+--
+-- Name: tripal_node_variables; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_node_variables (
+    node_variable_id integer NOT NULL,
+    nid integer NOT NULL,
+    variable_id integer NOT NULL,
+    value text,
+    rank integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: TABLE tripal_node_variables; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE tripal_node_variables IS 'This table is used for storing any type of variable such as a property or setting that should be associated with a Tripal managed Drupal node.  This table is meant to store non-biological information only. All biological data should be housed in the Chado tables. Be aware that any data stored here will not be made visible through services such as Tripal Web Services and therefore can be a good place to hide application specific settings.';
+
+
+--
+-- Name: tripal_node_variables_node_variable_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_node_variables_node_variable_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_node_variables_node_variable_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_node_variables_node_variable_id_seq OWNED BY tripal_node_variables.node_variable_id;
+
+
+--
+-- Name: tripal_toc; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_toc (
+    toc_item_id integer NOT NULL,
+    node_type character varying(32) NOT NULL,
+    key character varying(255) NOT NULL,
+    title character varying(255),
+    weight integer,
+    hide smallint DEFAULT 0,
+    nid integer,
+    CONSTRAINT tripal_toc_toc_item_id_check CHECK ((toc_item_id >= 0))
+);
+
+
+--
+-- Name: tripal_toc_toc_item_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_toc_toc_item_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_toc_toc_item_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_toc_toc_item_id_seq OWNED BY tripal_toc.toc_item_id;
+
+
+--
+-- Name: tripal_token_formats; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_token_formats (
+    tripal_format_id integer NOT NULL,
+    content_type character varying(255) NOT NULL,
+    application character varying(255) NOT NULL,
+    format text NOT NULL,
+    tokens text NOT NULL,
+    CONSTRAINT tripal_token_formats_tripal_format_id_check CHECK ((tripal_format_id >= 0))
+);
+
+
+--
+-- Name: tripal_token_formats_tripal_format_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_token_formats_tripal_format_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_token_formats_tripal_format_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_token_formats_tripal_format_id_seq OWNED BY tripal_token_formats.tripal_format_id;
+
+
+--
+-- Name: tripal_variables; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_variables (
+    variable_id integer NOT NULL,
+    name character varying(255) NOT NULL,
+    description text NOT NULL
+);
+
+
+--
+-- Name: TABLE tripal_variables; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE tripal_variables IS 'This table houses a list of unique variable names that can be used in the tripal_node_variables table.';
+
+
+--
+-- Name: tripal_variables_variable_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_variables_variable_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_variables_variable_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_variables_variable_id_seq OWNED BY tripal_variables.variable_id;
+
+
+--
+-- Name: tripal_views; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_views (
+    setup_id integer NOT NULL,
+    mview_id bigint,
+    base_table integer DEFAULT 1,
+    table_name character varying(255) DEFAULT ''::character varying NOT NULL,
+    priority integer,
+    name character varying(255) DEFAULT ''::character varying NOT NULL,
+    comment text DEFAULT ''::text,
+    CONSTRAINT tripal_views_mview_id_check CHECK ((mview_id >= 0)),
+    CONSTRAINT tripal_views_setup_id_check CHECK ((setup_id >= 0))
+);
+
+
+--
+-- Name: TABLE tripal_views; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE tripal_views IS 'contains the setups, their materialized view id and base table name that was used.';
+
+
+--
+-- Name: COLUMN tripal_views.setup_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views.setup_id IS 'the id of the setup';
+
+
+--
+-- Name: COLUMN tripal_views.mview_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views.mview_id IS 'the materialized view used for this setup';
+
+
+--
+-- Name: COLUMN tripal_views.base_table; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views.base_table IS 'either TRUE (1) or FALSE (0) depending on whether the current table should be a bast table of a View';
+
+
+--
+-- Name: COLUMN tripal_views.table_name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views.table_name IS 'the table name being integrated.';
+
+
+--
+-- Name: COLUMN tripal_views.priority; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views.priority IS 'when there are 2+ entries for the same table, the entry with the lightest (drupal-style) priority is used.';
+
+
+--
+-- Name: COLUMN tripal_views.name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views.name IS 'Human readable name of this setup';
+
+
+--
+-- Name: COLUMN tripal_views.comment; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views.comment IS 'add notes about this views setup';
+
+
+--
+-- Name: tripal_views_field; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_views_field (
+    setup_id bigint NOT NULL,
+    column_name character varying(255) NOT NULL,
+    name character varying(255) NOT NULL,
+    description character varying(255) NOT NULL,
+    type character varying(50) NOT NULL,
+    CONSTRAINT tripal_views_field_setup_id_check CHECK ((setup_id >= 0))
+);
+
+
+--
+-- Name: TABLE tripal_views_field; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE tripal_views_field IS 'keep track of fields available for a given table';
+
+
+--
+-- Name: COLUMN tripal_views_field.setup_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_field.setup_id IS 'the id of the setup';
+
+
+--
+-- Name: COLUMN tripal_views_field.column_name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_field.column_name IS 'the name of the field in the database';
+
+
+--
+-- Name: COLUMN tripal_views_field.name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_field.name IS 'the human-readable name of the field';
+
+
+--
+-- Name: COLUMN tripal_views_field.description; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_field.description IS 'A short description of the field -seen under the field in the views UI';
+
+
+--
+-- Name: COLUMN tripal_views_field.type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_field.type IS 'the database type of this field (ie: int, varchar)';
+
+
+--
+-- Name: tripal_views_handlers; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_views_handlers (
+    handler_id integer NOT NULL,
+    setup_id bigint NOT NULL,
+    column_name character varying(255) DEFAULT ''::character varying NOT NULL,
+    handler_type character varying(50) DEFAULT ''::character varying NOT NULL,
+    handler_name character varying(255) DEFAULT ''::character varying NOT NULL,
+    arguments text DEFAULT ''::text,
+    CONSTRAINT tripal_views_handlers_handler_id_check CHECK ((handler_id >= 0)),
+    CONSTRAINT tripal_views_handlers_setup_id_check CHECK ((setup_id >= 0))
+);
+
+
+--
+-- Name: TABLE tripal_views_handlers; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE tripal_views_handlers IS 'in formation for views: column and views handler name';
+
+
+--
+-- Name: COLUMN tripal_views_handlers.handler_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_handlers.handler_id IS 'the id of the handler';
+
+
+--
+-- Name: COLUMN tripal_views_handlers.setup_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_handlers.setup_id IS 'setup id from the tripal_views table';
+
+
+--
+-- Name: COLUMN tripal_views_handlers.handler_type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_handlers.handler_type IS 'identifies the type of hander (e.g. field, filter, sort, argument, relationship, etc.)';
+
+
+--
+-- Name: COLUMN tripal_views_handlers.handler_name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_handlers.handler_name IS 'the name of the handler';
+
+
+--
+-- Name: COLUMN tripal_views_handlers.arguments; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_handlers.arguments IS 'arguments that may get passed to the handler';
+
+
+--
+-- Name: tripal_views_handlers_handler_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_views_handlers_handler_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_views_handlers_handler_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_views_handlers_handler_id_seq OWNED BY tripal_views_handlers.handler_id;
+
+
+--
+-- Name: tripal_views_join; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_views_join (
+    view_join_id integer NOT NULL,
+    setup_id bigint NOT NULL,
+    base_table character varying(255) DEFAULT ''::character varying NOT NULL,
+    base_field character varying(255) DEFAULT ''::character varying NOT NULL,
+    left_table character varying(255) DEFAULT ''::character varying NOT NULL,
+    left_field character varying(255) DEFAULT ''::character varying NOT NULL,
+    handler character varying(255) DEFAULT ''::character varying NOT NULL,
+    relationship_handler character varying(255) DEFAULT 'views_handler_relationship'::character varying NOT NULL,
+    relationship_only integer DEFAULT 0,
+    arguments text,
+    CONSTRAINT tripal_views_join_setup_id_check CHECK ((setup_id >= 0)),
+    CONSTRAINT tripal_views_join_view_join_id_check CHECK ((view_join_id >= 0))
+);
+
+
+--
+-- Name: TABLE tripal_views_join; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE tripal_views_join IS 'coordinate the joining of tables';
+
+
+--
+-- Name: COLUMN tripal_views_join.view_join_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_join.view_join_id IS 'the id of the join';
+
+
+--
+-- Name: COLUMN tripal_views_join.setup_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_join.setup_id IS 'setup id from tripal_views table';
+
+
+--
+-- Name: COLUMN tripal_views_join.base_table; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_join.base_table IS 'the name of the base table';
+
+
+--
+-- Name: COLUMN tripal_views_join.base_field; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_join.base_field IS 'the name of the base table column that will be joined';
+
+
+--
+-- Name: COLUMN tripal_views_join.left_table; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_join.left_table IS 'the table on which to perform a left join';
+
+
+--
+-- Name: COLUMN tripal_views_join.left_field; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_join.left_field IS 'the column on which to perform a left join';
+
+
+--
+-- Name: COLUMN tripal_views_join.handler; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_join.handler IS 'the name of the handler';
+
+
+--
+-- Name: COLUMN tripal_views_join.arguments; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN tripal_views_join.arguments IS 'arguments that may get passed to the handler';
+
+
+--
+-- Name: tripal_views_join_view_join_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_views_join_view_join_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_views_join_view_join_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_views_join_view_join_id_seq OWNED BY tripal_views_join.view_join_id;
+
+
+--
+-- Name: tripal_views_setup_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE tripal_views_setup_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: tripal_views_setup_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE tripal_views_setup_id_seq OWNED BY tripal_views.setup_id;
+
+
+--
 -- Name: url_alias; Type: TABLE; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -7737,6 +8695,13 @@ ALTER TABLE ONLY authmap ALTER COLUMN aid SET DEFAULT nextval('authmap_aid_seq':
 
 
 --
+-- Name: archive_type_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY bims_archive_type ALTER COLUMN archive_type_id SET DEFAULT nextval('bims_archive_type_archive_type_id_seq'::regclass);
+
+
+--
 -- Name: crop_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7758,24 +8723,10 @@ ALTER TABLE ONLY bims_instruction ALTER COLUMN instruction_id SET DEFAULT nextva
 
 
 --
--- Name: job_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY bims_job ALTER COLUMN job_id SET DEFAULT nextval('bims_job_job_id_seq'::regclass);
-
-
---
 -- Name: list_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY bims_list ALTER COLUMN list_id SET DEFAULT nextval('bims_list_list_id_seq'::regclass);
-
-
---
--- Name: program_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY bims_mview_location ALTER COLUMN program_id SET DEFAULT nextval('bims_mview_location_program_id_seq'::regclass);
 
 
 --
@@ -7790,13 +8741,6 @@ ALTER TABLE ONLY bims_node ALTER COLUMN node_id SET DEFAULT nextval('bims_node_n
 --
 
 ALTER TABLE ONLY bims_node_relationship ALTER COLUMN relationship_id SET DEFAULT nextval('bims_node_relationship_relationship_id_seq'::regclass);
-
-
---
--- Name: program_descriptor_group_id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY bims_program_descriptor_group ALTER COLUMN program_descriptor_group_id SET DEFAULT nextval('bims_program_descriptor_group_program_descriptor_group_id_seq'::regclass);
 
 
 --
@@ -8080,6 +9024,34 @@ ALTER TABLE ONLY mcl_var ALTER COLUMN var_id SET DEFAULT nextval('mcl_var_var_id
 
 
 --
+-- Name: cron_job_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY mdlu_cron_job ALTER COLUMN cron_job_id SET DEFAULT nextval('mdlu_cron_job_cron_job_id_seq'::regclass);
+
+
+--
+-- Name: database_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY mdlu_database ALTER COLUMN database_id SET DEFAULT nextval('mdlu_database_database_id_seq'::regclass);
+
+
+--
+-- Name: database_type_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY mdlu_database_type ALTER COLUMN database_type_id SET DEFAULT nextval('mdlu_database_type_database_type_id_seq'::regclass);
+
+
+--
+-- Name: log_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY mdlu_log ALTER COLUMN log_id SET DEFAULT nextval('mdlu_log_log_id_seq'::regclass);
+
+
+--
 -- Name: mlid; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -8143,6 +9115,90 @@ ALTER TABLE ONLY tmp ALTER COLUMN id SET DEFAULT nextval('tmp_id_seq'::regclass)
 
 
 --
+-- Name: table_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_custom_tables ALTER COLUMN table_id SET DEFAULT nextval('tripal_custom_tables_table_id_seq'::regclass);
+
+
+--
+-- Name: cv_default_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_cv_defaults ALTER COLUMN cv_default_id SET DEFAULT nextval('tripal_cv_defaults_cv_default_id_seq'::regclass);
+
+
+--
+-- Name: obo_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_cv_obo ALTER COLUMN obo_id SET DEFAULT nextval('tripal_cv_obo_obo_id_seq'::regclass);
+
+
+--
+-- Name: job_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_jobs ALTER COLUMN job_id SET DEFAULT nextval('tripal_jobs_job_id_seq'::regclass);
+
+
+--
+-- Name: mview_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_mviews ALTER COLUMN mview_id SET DEFAULT nextval('tripal_mviews_mview_id_seq'::regclass);
+
+
+--
+-- Name: node_variable_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_node_variables ALTER COLUMN node_variable_id SET DEFAULT nextval('tripal_node_variables_node_variable_id_seq'::regclass);
+
+
+--
+-- Name: toc_item_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_toc ALTER COLUMN toc_item_id SET DEFAULT nextval('tripal_toc_toc_item_id_seq'::regclass);
+
+
+--
+-- Name: tripal_format_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_token_formats ALTER COLUMN tripal_format_id SET DEFAULT nextval('tripal_token_formats_tripal_format_id_seq'::regclass);
+
+
+--
+-- Name: variable_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_variables ALTER COLUMN variable_id SET DEFAULT nextval('tripal_variables_variable_id_seq'::regclass);
+
+
+--
+-- Name: setup_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_views ALTER COLUMN setup_id SET DEFAULT nextval('tripal_views_setup_id_seq'::regclass);
+
+
+--
+-- Name: handler_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_views_handlers ALTER COLUMN handler_id SET DEFAULT nextval('tripal_views_handlers_handler_id_seq'::regclass);
+
+
+--
+-- Name: view_join_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_views_join ALTER COLUMN view_join_id SET DEFAULT nextval('tripal_views_join_view_join_id_seq'::regclass);
+
+
+--
 -- Name: pid; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -8203,6 +9259,14 @@ ALTER TABLE ONLY batch
 
 
 --
+-- Name: bims_archive_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY bims_archive_type
+    ADD CONSTRAINT bims_archive_type_pkey PRIMARY KEY (archive_type_id);
+
+
+--
 -- Name: bims_crop_organism_ukey_bims_crop_organism_crop_id_organism_id_; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -8216,14 +9280,6 @@ ALTER TABLE ONLY bims_crop_organism
 
 ALTER TABLE ONLY bims_crop
     ADD CONSTRAINT bims_crop_pkey PRIMARY KEY (crop_id);
-
-
---
--- Name: bims_descriptor_group_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY bims_descriptor_group
-    ADD CONSTRAINT bims_descriptor_group_pkey PRIMARY KEY (cv_id);
 
 
 --
@@ -8243,14 +9299,6 @@ ALTER TABLE ONLY bims_instruction
 
 
 --
--- Name: bims_job_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY bims_job
-    ADD CONSTRAINT bims_job_pkey PRIMARY KEY (job_id);
-
-
---
 -- Name: bims_list_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -8259,11 +9307,11 @@ ALTER TABLE ONLY bims_list
 
 
 --
--- Name: bims_mview_cross_stats_ukey_bims_mview_cross_stats_project_id_n; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+-- Name: bims_mview_cross_stats_node_id_nd_experiment_id_cvterm_id_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY bims_mview_cross_stats
-    ADD CONSTRAINT bims_mview_cross_stats_ukey_bims_mview_cross_stats_project_id_n UNIQUE (project_id, nd_experiment_id, cvterm_id);
+    ADD CONSTRAINT bims_mview_cross_stats_node_id_nd_experiment_id_cvterm_id_key UNIQUE (node_id, nd_experiment_id, cvterm_id);
 
 
 --
@@ -8275,27 +9323,19 @@ ALTER TABLE ONLY bims_mview_descriptor
 
 
 --
--- Name: bims_mview_descriptor_ukey_bims_mview_descriptor_cv_id_cvterm_i; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY bims_mview_descriptor
-    ADD CONSTRAINT bims_mview_descriptor_ukey_bims_mview_descriptor_cv_id_cvterm_i UNIQUE (cv_id, cvterm_id);
-
-
---
--- Name: bims_mview_location_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY bims_mview_location
-    ADD CONSTRAINT bims_mview_location_pkey PRIMARY KEY (nd_geolocation_id);
-
-
---
--- Name: bims_mview_phenotype_stats_ukey_bims_mview_phenotype_stats_proj; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+-- Name: bims_mview_phenotype_stats_node_id_cvterm_id_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY bims_mview_phenotype_stats
-    ADD CONSTRAINT bims_mview_phenotype_stats_ukey_bims_mview_phenotype_stats_proj UNIQUE (project_id, cvterm_id);
+    ADD CONSTRAINT bims_mview_phenotype_stats_node_id_cvterm_id_key UNIQUE (node_id, cvterm_id);
+
+
+--
+-- Name: bims_mview_stock_stats_ukey_bims_mview_stock_stats_node_id_stoc; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY bims_mview_stock_stats
+    ADD CONSTRAINT bims_mview_stock_stats_ukey_bims_mview_stock_stats_node_id_stoc UNIQUE (node_id, stock_id, cvterm_id);
 
 
 --
@@ -8328,22 +9368,6 @@ ALTER TABLE ONLY bims_node_relationship
 
 ALTER TABLE ONLY bims_node
     ADD CONSTRAINT bims_node_ukey_bims_node_name_root_id_owner_id_key UNIQUE (name, root_id, owner_id);
-
-
---
--- Name: bims_program_descriptor_group_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY bims_program_descriptor_group
-    ADD CONSTRAINT bims_program_descriptor_group_pkey PRIMARY KEY (program_descriptor_group_id);
-
-
---
--- Name: bims_program_descriptor_group_ukey_bims_mview_descriptor_progra; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY bims_program_descriptor_group
-    ADD CONSTRAINT bims_program_descriptor_group_ukey_bims_mview_descriptor_progra UNIQUE (program_id, cv_id);
 
 
 --
@@ -8707,6 +9731,14 @@ ALTER TABLE ONLY field_data_comment_body
 
 
 --
+-- Name: field_data_field_first_anme_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY field_data_field_first_anme
+    ADD CONSTRAINT field_data_field_first_anme_pkey PRIMARY KEY (entity_type, entity_id, deleted, delta, language);
+
+
+--
 -- Name: field_data_field_image_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -8736,6 +9768,14 @@ ALTER TABLE ONLY field_revision_body
 
 ALTER TABLE ONLY field_revision_comment_body
     ADD CONSTRAINT field_revision_comment_body_pkey PRIMARY KEY (entity_type, entity_id, revision_id, deleted, delta, language);
+
+
+--
+-- Name: field_revision_field_first_anme_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY field_revision_field_first_anme
+    ADD CONSTRAINT field_revision_field_first_anme_pkey PRIMARY KEY (entity_type, entity_id, revision_id, deleted, delta, language);
 
 
 --
@@ -8880,14 +9920,6 @@ ALTER TABLE ONLY gensas_group_task
 
 ALTER TABLE ONLY gensas_group_user
     ADD CONSTRAINT gensas_group_user_ukey_gensas_group_user_group_id_user_id_key UNIQUE (group_id, user_id);
-
-
---
--- Name: gensas_job_cmd_ukey_gensas_job_cmd_id_index_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY gensas_job_cmd
-    ADD CONSTRAINT gensas_job_cmd_ukey_gensas_job_cmd_id_index_key UNIQUE (id, index);
 
 
 --
@@ -9155,11 +10187,27 @@ ALTER TABLE ONLY gensas_tool_type
 
 
 --
+-- Name: gensas_usage_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY gensas_usage
+    ADD CONSTRAINT gensas_usage_pkey PRIMARY KEY (user_id);
+
+
+--
 -- Name: gensas_user_tool_ukey_gensas_user_tool_user_id_tool_id_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY gensas_user_tool
     ADD CONSTRAINT gensas_user_tool_ukey_gensas_user_tool_user_id_tool_id_key UNIQUE (user_id, tool_id);
+
+
+--
+-- Name: gensas_userprop_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY gensas_userprop
+    ADD CONSTRAINT gensas_userprop_pkey PRIMARY KEY (user_id);
 
 
 --
@@ -9304,6 +10352,46 @@ ALTER TABLE ONLY mcl_var
 
 ALTER TABLE ONLY mcl_var
     ADD CONSTRAINT mcl_var_ukey_mcl_var_name_key UNIQUE (name);
+
+
+--
+-- Name: mdlu_cron_job_name_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY mdlu_cron_job
+    ADD CONSTRAINT mdlu_cron_job_name_key UNIQUE (name);
+
+
+--
+-- Name: mdlu_cron_job_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY mdlu_cron_job
+    ADD CONSTRAINT mdlu_cron_job_pkey PRIMARY KEY (cron_job_id);
+
+
+--
+-- Name: mdlu_database_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY mdlu_database
+    ADD CONSTRAINT mdlu_database_pkey PRIMARY KEY (database_id);
+
+
+--
+-- Name: mdlu_database_type_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY mdlu_database_type
+    ADD CONSTRAINT mdlu_database_type_pkey PRIMARY KEY (database_type_id);
+
+
+--
+-- Name: mdlu_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY mdlu_log
+    ADD CONSTRAINT mdlu_log_pkey PRIMARY KEY (log_id);
 
 
 --
@@ -9544,6 +10632,166 @@ ALTER TABLE ONLY taxonomy_vocabulary
 
 ALTER TABLE ONLY taxonomy_vocabulary
     ADD CONSTRAINT taxonomy_vocabulary_pkey PRIMARY KEY (vid);
+
+
+--
+-- Name: tripal_custom_tables_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_custom_tables
+    ADD CONSTRAINT tripal_custom_tables_pkey PRIMARY KEY (table_id);
+
+
+--
+-- Name: tripal_cv_defaults_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_cv_defaults
+    ADD CONSTRAINT tripal_cv_defaults_pkey PRIMARY KEY (cv_default_id);
+
+
+--
+-- Name: tripal_cv_defaults_tripal_cv_defaults_unq1_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_cv_defaults
+    ADD CONSTRAINT tripal_cv_defaults_tripal_cv_defaults_unq1_key UNIQUE (table_name, field_name, cv_id);
+
+
+--
+-- Name: tripal_cv_obo_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_cv_obo
+    ADD CONSTRAINT tripal_cv_obo_pkey PRIMARY KEY (obo_id);
+
+
+--
+-- Name: tripal_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_jobs
+    ADD CONSTRAINT tripal_jobs_pkey PRIMARY KEY (job_id);
+
+
+--
+-- Name: tripal_mviews_mv_name_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_mviews
+    ADD CONSTRAINT tripal_mviews_mv_name_key UNIQUE (name);
+
+
+--
+-- Name: tripal_mviews_mv_table_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_mviews
+    ADD CONSTRAINT tripal_mviews_mv_table_key UNIQUE (mv_table);
+
+
+--
+-- Name: tripal_mviews_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_mviews
+    ADD CONSTRAINT tripal_mviews_pkey PRIMARY KEY (mview_id);
+
+
+--
+-- Name: tripal_node_variables_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_node_variables
+    ADD CONSTRAINT tripal_node_variables_pkey PRIMARY KEY (node_variable_id);
+
+
+--
+-- Name: tripal_node_variables_tripal_node_variables_c1_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_node_variables
+    ADD CONSTRAINT tripal_node_variables_tripal_node_variables_c1_key UNIQUE (nid, variable_id, rank);
+
+
+--
+-- Name: tripal_toc_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_toc
+    ADD CONSTRAINT tripal_toc_pkey PRIMARY KEY (toc_item_id);
+
+
+--
+-- Name: tripal_toc_tripal_toc_uq1_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_toc
+    ADD CONSTRAINT tripal_toc_tripal_toc_uq1_key UNIQUE (node_type, key, nid);
+
+
+--
+-- Name: tripal_token_formats_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_token_formats
+    ADD CONSTRAINT tripal_token_formats_pkey PRIMARY KEY (tripal_format_id);
+
+
+--
+-- Name: tripal_token_formats_type_application_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_token_formats
+    ADD CONSTRAINT tripal_token_formats_type_application_key UNIQUE (content_type, application);
+
+
+--
+-- Name: tripal_variables_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_variables
+    ADD CONSTRAINT tripal_variables_pkey PRIMARY KEY (variable_id);
+
+
+--
+-- Name: tripal_variables_tripal_variables_c1_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_variables
+    ADD CONSTRAINT tripal_variables_tripal_variables_c1_key UNIQUE (name);
+
+
+--
+-- Name: tripal_views_field_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_views_field
+    ADD CONSTRAINT tripal_views_field_pkey PRIMARY KEY (setup_id, column_name);
+
+
+--
+-- Name: tripal_views_handlers_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_views_handlers
+    ADD CONSTRAINT tripal_views_handlers_pkey PRIMARY KEY (handler_id);
+
+
+--
+-- Name: tripal_views_join_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_views_join
+    ADD CONSTRAINT tripal_views_join_pkey PRIMARY KEY (view_join_id);
+
+
+--
+-- Name: tripal_views_pkey; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_views
+    ADD CONSTRAINT tripal_views_pkey PRIMARY KEY (setup_id);
 
 
 --
@@ -9991,6 +11239,55 @@ CREATE INDEX field_data_comment_body_revision_id_idx ON field_data_comment_body 
 
 
 --
+-- Name: field_data_field_first_anme_bundle_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_data_field_first_anme_bundle_idx ON field_data_field_first_anme USING btree (bundle);
+
+
+--
+-- Name: field_data_field_first_anme_deleted_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_data_field_first_anme_deleted_idx ON field_data_field_first_anme USING btree (deleted);
+
+
+--
+-- Name: field_data_field_first_anme_entity_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_data_field_first_anme_entity_id_idx ON field_data_field_first_anme USING btree (entity_id);
+
+
+--
+-- Name: field_data_field_first_anme_entity_type_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_data_field_first_anme_entity_type_idx ON field_data_field_first_anme USING btree (entity_type);
+
+
+--
+-- Name: field_data_field_first_anme_field_first_anme_format_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_data_field_first_anme_field_first_anme_format_idx ON field_data_field_first_anme USING btree (field_first_anme_format);
+
+
+--
+-- Name: field_data_field_first_anme_language_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_data_field_first_anme_language_idx ON field_data_field_first_anme USING btree (language);
+
+
+--
+-- Name: field_data_field_first_anme_revision_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_data_field_first_anme_revision_id_idx ON field_data_field_first_anme USING btree (revision_id);
+
+
+--
 -- Name: field_data_field_image_bundle_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -10187,6 +11484,55 @@ CREATE INDEX field_revision_comment_body_revision_id_idx ON field_revision_comme
 
 
 --
+-- Name: field_revision_field_first_anme_bundle_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_revision_field_first_anme_bundle_idx ON field_revision_field_first_anme USING btree (bundle);
+
+
+--
+-- Name: field_revision_field_first_anme_deleted_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_revision_field_first_anme_deleted_idx ON field_revision_field_first_anme USING btree (deleted);
+
+
+--
+-- Name: field_revision_field_first_anme_entity_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_revision_field_first_anme_entity_id_idx ON field_revision_field_first_anme USING btree (entity_id);
+
+
+--
+-- Name: field_revision_field_first_anme_entity_type_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_revision_field_first_anme_entity_type_idx ON field_revision_field_first_anme USING btree (entity_type);
+
+
+--
+-- Name: field_revision_field_first_anme_field_first_anme_format_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_revision_field_first_anme_field_first_anme_format_idx ON field_revision_field_first_anme USING btree (field_first_anme_format);
+
+
+--
+-- Name: field_revision_field_first_anme_language_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_revision_field_first_anme_language_idx ON field_revision_field_first_anme USING btree (language);
+
+
+--
+-- Name: field_revision_field_first_anme_revision_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX field_revision_field_first_anme_revision_id_idx ON field_revision_field_first_anme USING btree (revision_id);
+
+
+--
 -- Name: field_revision_field_image_bundle_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -10366,13 +11712,6 @@ CREATE INDEX gensas_expire_idx1_gensas_expire_idx ON gensas_expire USING btree (
 --
 
 CREATE INDEX gensas_gff3_landmark_job_id_id_key ON gensas_gff3 USING btree (job_id, id, landmark);
-
-
---
--- Name: gensas_job_cmd_idx_gensas_job_cmd_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
---
-
-CREATE INDEX gensas_job_cmd_idx_gensas_job_cmd_id_idx ON gensas_job_cmd USING btree (id);
 
 
 --
@@ -10894,6 +12233,83 @@ CREATE INDEX taxonomy_vocabulary_list_idx ON taxonomy_vocabulary USING btree (we
 
 
 --
+-- Name: tripal_custom_tables_table_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_custom_tables_table_id_idx ON tripal_custom_tables USING btree (table_id);
+
+
+--
+-- Name: tripal_cv_defaults_tripal_cv_defaults_idx1_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_cv_defaults_tripal_cv_defaults_idx1_idx ON tripal_cv_defaults USING btree (table_name, field_name);
+
+
+--
+-- Name: tripal_cv_obo_tripal_cv_obo_idx1_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_cv_obo_tripal_cv_obo_idx1_idx ON tripal_cv_obo USING btree (obo_id);
+
+
+--
+-- Name: tripal_jobs_job_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_jobs_job_id_idx ON tripal_jobs USING btree (job_id);
+
+
+--
+-- Name: tripal_jobs_job_name_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_jobs_job_name_idx ON tripal_jobs USING btree (job_name);
+
+
+--
+-- Name: tripal_mviews_mview_id_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_mviews_mview_id_idx ON tripal_mviews USING btree (mview_id);
+
+
+--
+-- Name: tripal_node_variables_tripal_node_variables_idx1_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_node_variables_tripal_node_variables_idx1_idx ON tripal_node_variables USING btree (variable_id);
+
+
+--
+-- Name: tripal_toc_tripal_toc_idx1_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_toc_tripal_toc_idx1_idx ON tripal_toc USING btree (node_type, key);
+
+
+--
+-- Name: tripal_toc_tripal_toc_idx2_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_toc_tripal_toc_idx2_idx ON tripal_toc USING btree (node_type, key, nid);
+
+
+--
+-- Name: tripal_variables_tripal_variable_names_idx1_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_variables_tripal_variable_names_idx1_idx ON tripal_variables USING btree (variable_id);
+
+
+--
+-- Name: tripal_views_priority_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_views_priority_idx ON tripal_views USING btree (table_name, priority);
+
+
+--
 -- Name: url_alias_alias_language_pid_idx; Type: INDEX; Schema: public; Owner: -; Tablespace: 
 --
 
@@ -10996,6 +12412,14 @@ CREATE INDEX watchdog_type_idx ON watchdog USING btree (type);
 --
 
 CREATE INDEX watchdog_uid_idx ON watchdog USING btree (uid);
+
+
+--
+-- Name: tripal_custom_tables_fk1; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY tripal_custom_tables
+    ADD CONSTRAINT tripal_custom_tables_fk1 FOREIGN KEY (mview_id) REFERENCES tripal_mviews(mview_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 
 --

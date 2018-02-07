@@ -55,8 +55,11 @@ class MCL_CLASS_LOADER {
         $path = '/core/';
       }
       $class_filepath = $this->template_path . $path . strtolower($class_name) . '.class.inc';
-      require_once($class_filepath);
-      return TRUE;
+      if (file_exists($class_filepath)) {
+        require_once($class_filepath);
+        return TRUE;
+      }
+      return FALSE;
     }
 
     // Gets the path to the class file.
@@ -66,6 +69,9 @@ class MCL_CLASS_LOADER {
     }
     else if (preg_match("/^CHADO_/", $class_name, $matches)) {
       $path .= 'chado_table_class/';
+    }
+    else if (preg_match("/^MCL_CUSTOM_/", $class_name, $matches)) {
+      $path .= 'mcl_custom_class/';
     }
     else if (preg_match("/^MCL_CHADO/", $class_name, $matches)) {
       $path .= 'mcl_chado_class/';
@@ -94,8 +100,11 @@ class MCL_CLASS_LOADER {
 
     // Includes the class file.
     $class_filepath = $this->class_path . $path . strtolower($class_name) . '.class.inc';
-    require_once($class_filepath);
-    return TRUE;
+    if (file_exists($class_filepath)) {
+      require_once($class_filepath);
+      return TRUE;
+    }
+    return FALSE;
   }
 
   /*

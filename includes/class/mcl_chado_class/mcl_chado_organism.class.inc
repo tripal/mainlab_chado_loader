@@ -28,6 +28,17 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
   }
 
   /**
+   * Returns MCL_CHADO_ORGANISM by ID.
+   *
+   * @param integer $organism_id
+   *
+   * @return MCL_CHADO_ORGANISM
+   */
+  public static function byID($organism_id) {
+    return MCL_CHADO_ORGANISM::bykey(array('organism_id' => $organism_id));
+  }
+
+  /**
    * @see CHADO_ORGANISM::__destruct()
    */
   public function __destruct() {
@@ -54,7 +65,7 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
   }
 
   /**
-   * Checks the existance of orgainsm. If not, write the error messasge
+   * Checks the existence of orgainsm. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -84,6 +95,29 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
   }
 
   /**
+   * Checks the existence of orgainsm by ID. If not, write the error messasge
+   * to the log.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $organism_id
+   *
+   * @return boolean
+   */
+  public static function checkOrganismByID(MCL_TEMPLATE $mcl_tmpl = NULL, $organism_id) {
+    $flag = TRUE;
+    if ($organism_id) {
+
+      // Gets the orgainsm.
+      $orgainsm = MCL_CHADO_ORGANISM::getOrganismByID($organism_id);
+      if (!$orgainsm) {
+        self::updateMsg($mcl_tmpl, 'E', "(organism_id) = ($organism_id) not found in organism");
+        $flag = FALSE;
+      }
+    }
+    return $flag;
+  }
+
+  /**
    * Returns the orgainsm by genus and species.
    *
    * @param string $genus
@@ -97,6 +131,17 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
       'species' => $species,
     );
     return MCL_CHADO_ORGANISM::bykey($args);
+  }
+
+  /**
+   * Returns the orgainsm by organism ID.
+   *
+   * @param integer $organism_id
+   *
+   * @return MCL_CHADO_ORGANISM
+   */
+  public static function getOrganismByID($organism_id) {
+    return MCL_CHADO_ORGANISM::bykey(array('organism_id' => $organism_id));
   }
 
   /**
@@ -150,7 +195,7 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
    */
   public static function addNA() {
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $organism = MCL_CHADO_ORGANISM::getOrganism('N/A', 'N/A');
     if (!$organism) {
       $details = array(
@@ -233,15 +278,15 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
    * Adds image to organism_image.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $reference
+   * @param string $image_id_list
    * @param string $separator
    *
    * @return boolean
    */
-  public function addImage(MCL_TEMPLATE $mcl_tmpl = NULL, $image, $separator = '') {
+  public function addImageID(MCL_TEMPLATE $mcl_tmpl = NULL, $image_id_list, $separator = '') {
     $flag = TRUE;
-    if ($image) {
-      $eimage_ids = preg_split($this->getSepRegex($separator), $image, NULL, PREG_SPLIT_NO_EMPTY);
+    if ($image_id_list) {
+      $eimage_ids = preg_split($this->getSepRegex($separator), $image_id_list, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($eimage_ids as $eimage_id) {
         $eimage_id = trim($eimage_id);
         $image = MCL_CHADO_IMAGE::byKey(array('eimage_id' => $eimage_id));

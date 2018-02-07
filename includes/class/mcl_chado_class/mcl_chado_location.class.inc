@@ -33,6 +33,17 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
   }
 
   /**
+   * Returns MCL_CHADO_LOCATION by ID.
+   *
+   * @param integer $nd_geolocation_id
+   *
+   * @return MCL_CHADO_LOCATION
+   */
+  public static function byID($nd_geolocation_id) {
+    return MCL_CHADO_LOCATION::bykey(array('nd_geolocation_id' => $nd_geolocation_id));
+  }
+
+  /**
    * Checks the site code. Write the error messasge to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -154,7 +165,7 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    */
   public static function addNA() {
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $location = MCL_CHADO_LOCATION::byKey(array('description' => 'Not Available'));
     if (!$location) {
       $details = array('description' => 'Not Available');
@@ -225,6 +236,19 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       }
     }
     return $location;
+  }
+
+  /**
+   * Gets property.
+   *
+   * @param string $cv_name
+   * @param string $cvterm_name
+   *
+   * @return string
+   */
+  public function getProp($cv_name, $cvterm_name) {
+    $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+    return $this->getProperty('nd_geolocationprop', 'nd_geolocation_id', $this->nd_geolocation_id, $type_id);
   }
 
   /**

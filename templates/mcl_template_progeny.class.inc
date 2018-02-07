@@ -81,7 +81,7 @@ class MCL_TEMPLATE_PROGENY extends MCL_TEMPLATE {
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
     // Checks cross_number.
-    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset_name']);
+    $dataset = MCL_CHADO_DATASET::byName($line['dataset_name']);
     MCL_CHADO_ND_EXPERIMENT::checkCrossNumber($this, $dataset->getProjectID(), $line['cross_number'], $this->cvterms['SITE_CV']['cross_experiment'], $this->cvterms['SITE_CV']['cross_experiment']);
   }
 
@@ -95,7 +95,7 @@ class MCL_TEMPLATE_PROGENY extends MCL_TEMPLATE {
     $organism_id = $organism->getOrganismID();
 
     // Gets the dataset.
-    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset_name']);
+    $dataset = MCL_CHADO_DATASET::byName($line['dataset_name']);
 
     // Adds a progeny.
     $progeny = MCL_CHADO_STOCK::addStock($this, $line['progeny_name'], '', $organism_id, $this->cvterms['SITE_CV']['breeding_research_material']);

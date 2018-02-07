@@ -1,9 +1,9 @@
 <?php
 /**
- * The declaration of MCL_TEMPLATE_GENOTYPE_SNP class.
+ * The declaration of MCL_TEMPLATE_GENOTYPE_SNP_LONG_FORM class.
  *
  */
-class MCL_TEMPLATE_GENOTYPE_SNP extends MCL_TEMPLATE {
+class MCL_TEMPLATE_GENOTYPE_SNP_LONG_FORM extends MCL_TEMPLATE {
 
   /**
    *  Class data members.
@@ -40,11 +40,11 @@ class MCL_TEMPLATE_GENOTYPE_SNP extends MCL_TEMPLATE {
   public function defineHeaders() {
     $headers = array(
       'dataset_name'  => array('req' => TRUE, 'width' => 10, 'desc' => "Name of the genotyping dataset. It should match a dataset_name in 'Dataset' sheet."),
-      'stock_name'    => array('req' => TRUE, 'width' => 10, 'desc' => "Name of the stock genotyped. It should match an 'stock_name' of the 'Stock' sheet."),
+      'stock_name'    => array('req' => TRUE, 'width' => 10, 'desc' => "Name of the stock genotyped. It should match a 'stock_name' of the 'Stock' sheet."),
       'genus'         => array('req' => TRUE, 'width' => 10, 'desc' => "Genus of the stock"),
       'species'       => array('req' => TRUE, 'width' => 10, 'desc' => "Species of the stock"),
       'marker'        => array('req' => TRUE, 'width' => 10, 'desc' => "Name of the marker used for genotyping. It should match a marker_name in the 'Marker' sheet."),
-      'genotype'      => array('req' => TRUE, 'width' => 10, 'desc' => ""),
+      'genotype'      => array('req' => TRUE, 'width' => 10, 'desc' => "Type the alleles with '|' in between (e.g. A|T)"),
     );
     return $headers;
   }
@@ -83,7 +83,7 @@ class MCL_TEMPLATE_GENOTYPE_SNP extends MCL_TEMPLATE {
   public function uploadDataLine($line) {
 
     // Gets the dataset.
-    $dataset = MCL_CHADO_DATASET::getDataset($line['dataset']);
+    $dataset = MCL_CHADO_DATASET::byName($line['dataset']);
 
     // Gets the stock.
     $stock = MCL_CHADO_STOCK::getStock($line['stock_name'], $line['genus'], $line['species']);

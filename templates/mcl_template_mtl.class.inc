@@ -49,8 +49,8 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
       'screening_method'      => array('req' => FALSE, 'width' => 10, 'desc' => "Any specific method for the phenotypic inspection."),
       'description'           => array('req' => FALSE, 'width' => 10, 'desc' => "Desctiption for the trait. The more detail, the better. You can describe the phenotype of the various cultivar and provide the pictures."),
       'published_symbol'      => array('req' => FALSE, 'width' => 10, 'desc' => "Published symbol for the MTL."),
-      'colocalized_marker'    => array('req' => FALSE, 'width' => 10, 'desc' => "Molecular marker that colocalizes with the MTL."),
-      'neighboring_marker'    => array('req' => FALSE, 'width' => 10, 'desc' => "Molecular marker that is mapped near MTL. Multiple markers can be added, separated by a semicolon (;)."),
+      'colocalized_marker'    => array('req' => FALSE, 'width' => 10, 'desc' => "Marker locus that colocalizes with the MTL."),
+      'neighboring_marker'    => array('req' => FALSE, 'width' => 10, 'desc' => "Marker locus that is mapped near MTL. Multiple loci can be added, separated by a semicolon (;)."),
       'contact'               => array('req' => FALSE, 'width' => 10, 'desc' => "Contact person for the MTL. It should match 'contact_name' in Contact sheet."),
       'image'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
       'reference'             => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id for the reference that describes MTL. Multiple references, separated by comma, can be added."),
@@ -93,13 +93,13 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
     MCL_CHADO_TRAIT::checkTrait($this, $line['trait_name'], $line['trait_descriptor_set']);
 
     // Checks colocalized_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
+//    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
 
     // Checks neighboring_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
+//    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
 
     // Checks images.
-    MCL_CHADO_IMAGE::checkImage($this, $line['image'], '[;,]');
+    MCL_CHADO_IMAGE::checkImageID($this, $line['image'], '[;,]');
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
@@ -143,7 +143,7 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
       $mtl->addContact($this, $line['contact'], "[;]");
 
       // Adds images.
-      $mtl->addImage($this, $line['image'], "[,;]");
+      $mtl->addImageID($this, $line['image'], "[,;]");
 
       // Adds references.
       $mtl->addReference($this, $line['reference'], "[,;]");

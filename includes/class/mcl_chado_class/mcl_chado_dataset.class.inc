@@ -28,6 +28,28 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
   }
 
   /**
+   * Returns MCL_CHADO_DATASET by ID.
+   *
+   * @param integer $project_id
+   *
+   * @return MCL_CHADO_DATASET
+   */
+  public static function byID($project_id) {
+    return MCL_CHADO_DATASET::bykey(array('project_id' => $project_id));
+  }
+
+  /**
+   * Returns the dataset by name.
+   *
+   * @param string $name
+   *
+   * @return MCL_CHADO_DATASET
+   */
+  public static function byName($name) {
+    return MCL_CHADO_DATASET::bykey(array('name' => $name));
+  }
+
+  /**
    * @see CHADO_PROJECT::__destruct()
    */
   public function __destruct() {
@@ -35,7 +57,7 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
   }
 
   /**
-   * Checks the existance of dataset. If not, write the error messasge
+   * Checks the existence of dataset. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -47,7 +69,7 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
     if ($name) {
 
       // Gets the dataset.
-      $dataset = MCL_CHADO_DATASET::getDataset($name);
+      $dataset = MCL_CHADO_DATASET::byName($name);
       if (!$dataset) {
         self::updateMsg($mcl_tmpl, 'E', "(name) = ($name) not found in project");
         return FALSE;
@@ -57,7 +79,7 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
   }
 
   /**
-   * Checks the existance of dataset by ID. If not, write the error messasge
+   * Checks the existence of dataset by ID. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -76,17 +98,6 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
       }
     }
     return TRUE;
-  }
-
-  /**
-   * Returns the dataset by name.
-   *
-   * @param string $name
-   *
-   * @return MCL_CHADO_DATASET
-   */
-  public static function getDataset($name) {
-    return MCL_CHADO_DATASET::bykey(array('name' => $name));
   }
 
   /**
@@ -173,7 +184,11 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
    */
   public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
     if ($value != '') {
-      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
+      if (!$cvterm) {
+        return FALSE;
+      }
+      $type_id = $cvterm->getCvtermID();
       return $this->addProperty($mcl_tmpl, 'projectprop', 'project_id', $this->project_id, $type_id, $value, $separator);
     }
     return TRUE;
@@ -217,7 +232,7 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
    */
   public function addParentDataset(MCL_TEMPLATE $mcl_tmpl = NULL, $dataset_name) {
     if ($dataset_name) {
-      $parent = MCL_CHADO_DATASET::getDataset($dataset_name);
+      $parent = MCL_CHADO_DATASET::byName($dataset_name);
       if ($parent) {
         $type_id = MCL_CHADO_CVTERM::getCvterm('SITE_CV', 'is_a_subproject_of')->getCvtermID();
         return $this->addLink($mcl_tmpl, 'project_relationship', 'subject_project_id', $this->project_id, 'object_project_id', $parent->getProjectID(), $type_id);

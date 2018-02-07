@@ -206,10 +206,33 @@ function _mcl_get_add_job_form(&$form, MCL_USER $mcl_user) {
       'file_validate_extensions' => array('xls xlsx zip csv'),
     ),
   );
-  $form['add_upload_job']['no_transaction_cb'] = array(
+  $form['add_upload_job']['advanced'] = array(
+    '#type'         => 'fieldset',
+    '#collapsed'    => TRUE,
+    '#collapsible'  => TRUE,
+    '#title'        => 'Advanced options',
+    '#attributes'   => array('style' => 'width:100%;'),
+  );
+  $markup = "Please provide job paramters in a pair of key and value in each row in the textarea below.<br />(e.g)<br /><div style='margin-left:15px;'>cv::MAIN<br />callbacks::[mcl-run 3]</div><br />";
+  $form['add_upload_job']['advanced']['job_params_desc'] = array(
+    '#markup' => $markup,
+  );
+  $form['add_upload_job']['advanced']['job_params'] = array(
+    '#type'         => 'textarea',
+    '#rows'         => 4,
+    '#attributes'   => array('style' => 'width:100%;'),
+    '#description'  => "Please provide job parameters.",
+  );
+  $form['add_upload_job']['advanced']['no_transaction_cb'] = array(
     '#type'           => 'checkbox',
     '#title'          => 'No transaction',
-    '#description'    => "Check if the size of your uploading file are large.",
+    '#description'    => "Check if the size of your uploading file is large.",
+    '#default_value'  => FALSE,
+  );
+  $form['add_upload_job']['email_cb'] = array(
+    '#type'           => 'checkbox',
+    '#title'          => 'Email notification',
+    '#description'    => "Check if you'd like to recieve email notification when the job is completed.",
     '#default_value'  => FALSE,
   );
   $form['add_upload_job']['add_btn'] = array(
@@ -217,6 +240,32 @@ function _mcl_get_add_job_form(&$form, MCL_USER $mcl_user) {
     '#name'   => 'add_btn',
     '#value'  => 'Add a uploading job',
   );
+}
+
+/**
+ * Parses the job parameters.
+ *
+ * @param string $job_params
+ *
+ * @return array
+ */
+function _mcl_get_add_job_form_get_job_param($job_params_str) {
+  $param = array();
+  if (trim($job_params_str)) {
+    $job_params = preg_split("/((\r?\n)|(\r\n?))/", $job_params_str);
+    $tmp = array();
+    foreach ($job_params as $job_param_str) {
+      $job_param = preg_split("/::/", $job_param_str);
+      if (sizeof($job_param) == 2) {
+        $key = trim($job_param[0]);
+        $val = trim($job_param[1]);
+        if ($key && $val) {
+          $param[$key] = $val;
+        }
+      }
+    }
+  }
+  return $param;
 }
 
 /**
@@ -261,8 +310,18 @@ function mcl_upload_data_form_submit($form, &$form_state) {
   $user_name  = $mcl_user->getName();
   $user_dir   = $mcl_user->getUserDir();
 
-  // Gets the job info.
-  $job_name     = trim($form_state['values']['add_upload_job']['name']);
+  // Gets the values from the form_state.
+  $job_params = trim($form_state['values']['add_upload_job']['advanced']['job_params']);
+  $job_name   = trim($form_state['values']['add_upload_job']['name']);
+  $email_cb   = $form_state['values']['add_upload_job']['email_cb'];
+
+  // Parses the job parameters.
+  $param = _mcl_get_add_job_form_get_job_param($job_params);
+
+  // Adds 'email' option.
+  $param['send_email'] = $email_cb;
+
+  // Gets the Drupal file object.
   $drupal_file  = file_load($form_state['values']['add_upload_job']['upload_file']);
 
   // Create the user temp directory.
@@ -292,6 +351,7 @@ function mcl_upload_data_form_submit($form, &$form_state) {
     'user_id'     => $user->uid,
     'submit_date' => date("Y-m-d G:i:s"),
     'prop'        => json_encode(array('working_dir' => $drupal_user_directory)),
+    'param'       => json_encode($param),
   );
   $mcl_job = new MCL_JOB_UPLOAD($details);
   if ($mcl_job->insert()) {
@@ -316,28 +376,29 @@ function mcl_upload_data_form_submit($form, &$form_state) {
 
         // Gets 'no_transaction' option.
         $opt_no_transaction = '';
-        $no_transaction_cb = trim($form_state['values']['add_upload_job']['no_transaction_cb']);
+        $no_transaction_cb = trim($form_state['values']['add_upload_job']['advanced']['no_transaction_cb']);
         if ($no_transaction_cb) {
           $opt_no_transaction = '--no_transaction';
         }
 
         // Runs the job.
-        $cmd = "drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_no_transaction > /dev/null 2>/dev/null  & ";
+        $drush = mcl_get_config_setting('mcl_drush_binary');
+        $cmd = "$drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_no_transaction > /dev/null 2>/dev/null  & ";
         $pid = exec($cmd, $output, $return_var);
         if ($return_var) {
-          drupal_set_message("Failed to add a uploading job");
+          drupal_set_message("Failed o add an uploading job");
         }
       }
       else {
-        drupal_set_message("Failed to add a uploading job : Error on updating job property");
+        drupal_set_message("Failed o add an uploading job : Error on updating job property");
       }
     }
     else {
-      drupal_set_message("Failed to add a uploading job : Error on adding a file");
+      drupal_set_message("Failed o add an uploading job : Error on adding a file");
     }
   }
   else {
-    drupal_set_message("Failed to add a uploading job : Error on adding a job");
+    drupal_set_message("Failed o add an uploading job : Error on adding a job");
   }
 
   // Re-direct to "Data Uploading" page.

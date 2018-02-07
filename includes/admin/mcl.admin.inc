@@ -17,14 +17,14 @@ function mcl_admin_page() {
   drupal_set_breadcrumb($breadcrumb);
 
   // Page contents.
-  $content = '<b>MCL admin main page</b><br /><br />';
+  $content = '<b>MCL : Checking MCL variables</b><br /><br />';
 
-  // Check MCL directories.
+  // Checks MCL directories.
   $dirs = array();
   $working_dir = mcl_get_config_setting('mcl_working_dir');
   $dirs['working_dir']  = $working_dir;
   $dirs['user_dir']     = "$working_dir/user";
-  $content .= '<b>Checking MCL directories</b><br /><br />';
+  $content .= '<b>Checking MCL paths</b><br /><br />';
   foreach ($dirs as $name => $dir) {
     $content .= "<b>$name :</b> $dir";
     if (file_exists($dir)) {
@@ -40,6 +40,12 @@ function mcl_admin_page() {
         $content .= 'The directory has been created<br /><br />';
       }
     }
+  }
+
+  // Checks MCL directories.
+  $drush_binary = mcl_get_config_setting('mcl_drush_binary');
+  if (!file_exists($drush_binary)) {
+    drupal_set_message('Cannot find drush binary', 'warning');
   }
   return $content;
 }

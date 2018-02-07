@@ -2,7 +2,6 @@
 /**
  * Adds namespace.
  */
-
 /**
  * The declaration of PUBLIC_MCL_JOB class.
  *

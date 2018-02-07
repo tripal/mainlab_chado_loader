@@ -28,6 +28,17 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
   }
 
   /**
+   * Returns MCL_CHADO_ND_EXPERIMENT by ID.
+   *
+   * @param integer $nd_experiment_id
+   *
+   * @return MCL_CHADO_ND_EXPERIMENT
+   */
+  public static function byID($nd_experiment_id) {
+    return MCL_CHADO_ND_EXPERIMENT::bykey(array('nd_experiment_id' => $nd_experiment_id));
+  }
+
+  /**
    * @see CHADO_ND_EXPERIMENT::__destruct()
    */
   public function __destruct() {
@@ -35,7 +46,7 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
   }
 
   /**
-   * Checks the existance of contact. If not, write the error messasge
+   * Checks the existence of contact. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -76,6 +87,19 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
       return MCL_CHADO_STOCK::byKey(array('stock_id' => $nd_experiment_stock->getStockID()));
     }
     return NULL;
+  }
+
+  /**
+   * Gets property.
+   *
+   * @param string $cv_name
+   * @param string $cvterm_name
+   *
+   * @return string
+   */
+  public function getProp($cv_name, $cvterm_name) {
+    $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+    return $this->getProperty('nd_experimentprop', 'nd_experiment_id', $this->nd_experiment_id, $type_id);
   }
 
   /**
@@ -332,13 +356,39 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
    */
   public function addDataset(MCL_TEMPLATE $mcl_tmpl = NULL, $dataset_name) {
     if ($dataset_name) {
-      $dataset = MCL_CHADO_DATASET::getDataset($dataset_name);
+      $dataset = MCL_CHADO_DATASET::byName($dataset_name);
       if (!$dataset) {
         return FALSE;
       }
       return $this->addLink($mcl_tmpl, 'nd_experiment_project', 'nd_experiment_id', $this->nd_experiment_id, 'project_id', $dataset->getProjectID());
     }
     return TRUE;
+  }
+
+  /**
+   * Returns the evaluators.
+   *
+   * @param string $separator
+   *
+   * @return string
+   */
+  public function getEvaluators($separator = ';') {
+
+    // Gets all contacts.
+    $sql = "
+      SELECT C.name
+      FROM {chado.contact} C
+        INNER JOIN {chado.nd_experiment_contact} NEC on NEC.contact_id = C.contact_id
+      WHERE NEC.nd_experiment_id = :nd_experiment_id
+    ";
+    $results = db_query($sql, array(':nd_experiment_id' => $this->nd_experiment_id));
+    $contact_arr = array();
+    while ($name = $results->fetchField()) {
+      $contact_arr []= $name;
+    }
+
+    // Returns the list of the contacts.
+    return implode($separator, $contact_arr);
   }
 
   /**
@@ -356,7 +406,7 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
       $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
-        $contact = MCL_CHADO_CONTACT::getContact($name);
+        $contact = MCL_CHADO_CONTACT::byName($name);
         if ($contact) {
           if (!$this->addLink($mcl_tmpl, 'nd_experiment_contact', 'nd_experiment_id', $this->nd_experiment_id, 'contact_id', $contact->getContactID())) {
             $flag = FALSE;

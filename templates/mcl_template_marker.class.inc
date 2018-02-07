@@ -44,9 +44,12 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       'genus'                     => array('req' => TRUE,  'width' => 10, 'desc' => "The genus name of the organism from which the marker was developed."),
       'species'                   => array('req' => TRUE,  'width' => 10, 'desc' => "The species name of the organism from which the marker was developed. Enter 'sp.' to represent one unknown species, 'spp.' to represent multiple unknown species."),
       'alias'                     => array('req' => FALSE, 'width' => 10, 'desc' => "Other names used for the marker. Multiple aliases, separated by a semicolon (;), can be added."),
+      'marker_locus'              => array('req' => FALSE, 'width' => 10, 'desc' => "Name of the marker locus. Multiple loci, separated by a semicolon (;), can be added.."),
       'marker_sequence'           => array('req' => FALSE, 'width' => 10, 'desc' => "Sequence of the marker when available. For SNP, it should be in the format of 5'flanking sequence[A/T] 3'flanking sequence."),
       'gb_id'                     => array('req' => FALSE, 'width' => 10, 'desc' => "Associated GenBank ID of the marker or the source of the marker (eg. EST)."),
       'dbsnp_id'                  => array('req' => FALSE, 'width' => 10, 'desc' => "Associated dbSNP_ID. #ss number should be used."),
+      'gene'                      => array('req' => FALSE, 'width' => 10, 'desc' => "Associated genes."),
+      'mrna'                      => array('req' => FALSE, 'width' => 10, 'desc' => "Associated mRNAs."),
       'five_prime_flanking_seq'   => array('req' => FALSE, 'width' => 10, 'desc' => "5' flanking sequence of SNP or Indel."),
       'three_prime_flanking_seq'  => array('req' => FALSE, 'width' => 10, 'desc' => "3' flanking sequence of SNP or Indel."),
       'shared_species'            => array('req' => FALSE, 'width' => 10, 'desc' => "Species names of organisms that have been found to have the same SNP. If there are more than one other species, using ';' to separate."),
@@ -72,11 +75,12 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       'image'                     => array('req' => FALSE, 'width' => 10, 'desc' => "Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
       'contact'                   => array('req' => FALSE, 'width' => 10, 'desc' => "Contact person for the marker (Please provide the contact info of these researchers in 'Contact' sheet)."),
       'reference'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Reference where the marker is originally described (pub_id), Multiple references, separated by comma, can be added."),
-      '~idendifier'               => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (~) : An identifier must be either primer or probe followed by numerical number and name or seq. (e.g.) primer1_seq and primer1_name."),
+      '~identifier'               => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (~) : An identifier must be either primer or probe followed by numerical number and name or seq. (e.g.) primer1_seq and primer1_name."),
     );
 
     // Adds labels.
     $headers['gb_id']['label']          = 'GB_ID';
+    $headers['mrna']['label']           = 'mRNA';
     $headers['dbsnp_id']['label']       = 'dbSNP_ID';
     $headers['pcr_condition']['label']  = 'PCR_condition';
     return $headers;
@@ -105,6 +109,9 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['comments']                     = -1;
     $cvterms['SITE_CV']['SNP_chip']                     = -1;
     $cvterms['sequence']['genetic_marker']              = -1;
+    $cvterms['sequence']['marker_locus']                = -1;
+    $cvterms['sequence']['gene']                        = -1;
+    $cvterms['sequence']['mRNA']                        = -1;
     $cvterms['sequence']['primer']                      = -1;
     $cvterms['sequence']['probe']                       = -1;
     $cvterms['sequence']['associated_with']             = -1;
@@ -112,7 +119,9 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     $cvterms['sequence']['three_prime_flanking_region'] = -1;
     $cvterms['sequence']['allele']                      = -1;
     $cvterms['sequence']['SNP']                         = -1;
+    $cvterms['sequence']['associated_with']             = -1;
     $cvterms['relationship']['adjacent_to']             = -1;
+    $cvterms['relationship']['instance_of']             = -1;
     return $cvterms;
   }
 
@@ -125,17 +134,32 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     MCL_CHADO_DB::checkDB($this, 'dbSNP');
     MCL_CHADO_DB::checkDB($this, 'DB:genbank');
 
+    // Checks marker name for uniqueness.
+    MCL_CHADO_FEATURE::checkFeatureUniquenameForUniqueness($this, $line['marker_name'], $line['genus'], $line['species'], $this->cvterms['sequence']['genetic_marker']);
+
+    // Checks marker locus name for uniqueness.
+    MCL_CHADO_FEATURE::checkFeatureUniquenameForUniqueness($this, $line['marker_locus'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus']);
+
     // Checks organism.
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
+    // Checks residues.
+    MCL_CHADO_FEATURE::checkResidues($this, $line['marker_sequence'], $line['genus'], $line['species']);
+
     // Checks SNP_chip_name.
     MCL_CHADO_LIBRARY::checkLibrary($this, $line['snp_chip_name'], $this->cvterms['SITE_CV']['SNP_chip']);
+
+    // Checks genes.
+    MCL_CHADO_FEATURE::checkFeature($this, $line['gene'], '', '', $this->cvterms['sequence']['gene'], '[;,]');
+
+    // Checks mRNAs.
+    MCL_CHADO_FEATURE::checkFeature($this, $line['mrna'], '', '', $this->cvterms['sequence']['mRNA'], '[;,]');
 
     // Checks contacts.
     MCL_CHADO_CONTACT::checkContact($this, $line['contact'], '[;]');
 
     // Checks images.
-    MCL_CHADO_IMAGE::checkImage($this, $line['image'], '[;,]');
+    MCL_CHADO_IMAGE::checkImageID($this, $line['image'], '[;,]');
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
@@ -153,32 +177,58 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     $marker = MCL_CHADO_FEATURE::addFeature($this, $line['marker_name'], $line['marker_name'], $this->cvterms['sequence']['genetic_marker'], $organism->getOrganismID());
     if ($marker) {
 
-      // Updates feature.residues.
-      $marker_sequence          = $line['marker_sequence'];
-      $gb_id                    = $line['gb_id'];
-      $five_prime_flanking_seq  = $line['five_prime_flanking_seq'];
-      $three_prime_flanking_seq = $line['three_prime_flanking_seq'];
-      $alleles                  = $line['alleles'];
+      // Parses the residues.
+      $seq_info = MCL_CHADO_FEATURE::parseResidues($line['marker_sequence']);
+
+      // Gets residues.
+      $residues = $seq_info['residues'];
+
+      // Gets 5-prime flanking sequence.
+      $five_prime = $seq_info['five_prime'];
+      if ($line['five_prime_flanking_seq']) {
+        $five_prime = $line['five_prime_flanking_seq'];
+      }
+
+      // Gets 3-prime flanking sequence.
+      $three_prime = $seq_info['three_prime'];
+      if ($line['three_prime_flanking_seq']) {
+        $three_prime = $line['three_prime_flanking_seq'];
+      }
+
+      // Gets allele.
+      $allele = $seq_info['allele'];
+      if ($line['alleles']) {
+        $allele = $line['alleles'];
+      }
 
       // Sets the marker_sequence to the residues.
-      $residues = '';
-      if ($marker_sequence) {
-        $residues = $marker_sequence;
+      if ($residues == '') {
+
+        // Gets the sequence from GenBank.
+        if ($line['gb_id']) {
+          // TODO:
+          $residues = '';
+        }
+
+        // Concatenates five_prime_flanking_seq, alleles and three_prime_flanking_seq.
+        else if ($five_prime_flanking_seq && $alleles && $three_prime_flanking_seq) {
+          $residues = $five_prime_flanking_seq . $alleles . $three_prime_flanking_seq;
+        }
       }
 
-      // Gets the sequence from GenBank.
-      else if ($gb_id) {
-        $residues = '';
-      }
-
-      // Concatenates five_prime_flanking_seq, alleles and three_prime_flanking_seq.
-      else if ($five_prime_flanking_seq && $alleles && $three_prime_flanking_seq) {
-        $residues = $five_prime_flanking_seq . $alleles . $three_prime_flanking_seq;
-      }
+      // Updates the residues.
       if ($residues) {
         $marker->setResidues($residues);
         $marker->update();
       }
+
+      // Adds prime flanking sequences.
+      $marker->addProp($this, 'sequence', 'five_prime_flanking_region', $five_prime_flanking_seq);
+      $marker->addProp($this, 'sequence', 'three_prime_flanking_region', $three_prime_flanking_seq);
+
+      // Adds alleles.
+      $type = (strtolower($line['marker_type']) == 'snp') ? 'SNP' : 'allele';
+      $marker->addProp($this, 'sequence', $type, $allele);
 
       // Adds properties.
       $marker->addProp($this, 'SITE_CV', 'marker_type', $line['marker_type']);
@@ -197,16 +247,24 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       $marker->addProp($this, 'SITE_CV', 'legend', $line['legend']);
       $marker->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
-      // Adds prime flanking sequences.
-      $marker->addProp($this, 'sequence', 'five_prime_flanking_region', $line['five_prime_flanking_seq']);
-      $marker->addProp($this, 'sequence', 'three_prime_flanking_region', $line['three_prime_flanking_seq']);
-
-      // Adds alleles.
-      $type = (strtolower($line['marker_type']) == 'snp') ? 'SNP' : 'allele';
-      $marker->addProp($this, 'sequence', $type, $line['alleles']);
-
       // Adds aliases.
       $marker->addAlias($this, $this->cvterms['SITE_CV']['alias'], $line['alias'], "[;,]");
+
+      // Adds marker loci.
+      if ($line['marker_locus']) {
+        $loci = preg_split("/[;,]/", $line['marker_locus'], NULL, PREG_SPLIT_NO_EMPTY);
+        foreach ($loci as $locus_name) {
+
+          // Adds a marker locus.
+          $locus_name = trim($locus_name);
+          $locus = MCL_CHADO_FEATURE::addFeature($this, $locus_name, $locus_name, $this->cvterms['sequence']['marker_locus'], $organism->getOrganismID());
+
+          // Adds a relationship.
+          if ($locus) {
+            $marker->addRelatedFeature($this, $locus, $this->cvterms['relationship']['instance_of'], TRUE);
+          }
+        }
+      }
 
       // Adds gb_id (accession).
       $db = MCL_CHADO_DB::getDB('DB:genbank');
@@ -223,7 +281,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       $marker->addContact($this, $line['contact'], "[;]");
 
       // Adds images.
-      $marker->addImage($this, $line['image'], "[;,]");
+      $marker->addImageID($this, $line['image'], "[;,]");
 
       // Creates and adds snp_chip_id.
       $library = MCL_CHADO_LIBRARY::getLibrary($line['snp_chip_name'], $this->cvterms['SITE_CV']['SNP_chip']);
@@ -239,6 +297,12 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
         }
        }
 
+      // Adds genes.
+      $marker->addRelatedFeatures($this, $line['gene'], $this->cvterms['sequence']['gene'], FALSE, $this->cvterms['sequence']['associated_with'], "[;,]");
+
+      // Adds mRNAs.
+      $marker->addRelatedFeatures($this, $line['mrna'], $this->cvterms['sequence']['mRNA'], FALSE, $this->cvterms['sequence']['associated_with'], "[;,]");
+
       // Adds references.
       $marker->addReference($this, $line['reference'], "[;,]");
 
@@ -247,6 +311,41 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
 
       // Adds probe sequences.
       $marker->addSequence($this, $line, '~probe', $this->cvterms['sequence']['probe'], $this->cvterms['sequence']['associated_with'], TRUE);
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Checks for marker_name and marker_locus columns.
+    $dup_markers      = array();
+    $dup_marker_locus = array();
+    foreach ($data_lines as $data_line) {
+      $line_no      = $data_line['line_no'] + 1;
+      $marker_name  = $data_line['marker_name'];
+      $marker_locus = $data_line['marker_locus'];
+
+      // Checks for duplicated markers.
+      if (array_key_exists($marker_name, $dup_markers)) {
+        $msg = "Error : You have the duplicated marker name or the same marker " .
+            "name ($marker_name) with different organism at line $line_no";
+        $this->updateMsg('E', $msg, TRUE, -2);
+      }
+      else {
+        $dup_markers[$marker_name]++;
+      }
+
+      // Checks marker locus name for uniqueness.
+      if (array_key_exists($marker_locus, $dup_marker_locus)) {
+        $msg = "Error : You have the duplicated marker locus name or the same marker " .
+            "locus name ($marker_locus) with different organism at line $line_no";
+        $this->updateMsg('E', $msg, TRUE, -2);
+      }
+      else {
+        $dup_markers[$marker_locus]++;
+      }
     }
   }
 }

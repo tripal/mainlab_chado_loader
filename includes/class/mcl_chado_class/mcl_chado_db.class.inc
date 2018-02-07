@@ -28,6 +28,28 @@ class MCL_CHADO_DB extends CHADO_DB {
   }
 
   /**
+   * Returns MCL_CHADO_DB by ID.
+   *
+   * @param integer $db_id
+   *
+   * @return MCL_CHADO_DB
+   */
+  public static function byID($db_id) {
+    return MCL_CHADO_DB::bykey(array('db_id' => $db_id));
+  }
+
+  /**
+   * Returns the db by name.
+   *
+   * @param string $name
+   *
+   * @return MCL_CHADO_DB
+   */
+  public static function byName($name) {
+    return MCL_CHADO_DB::bykey(array('name' => $name));
+  }
+
+  /**
    * @see CHADO_DB::__destruct()
    */
   public function __destruct() {
@@ -35,7 +57,7 @@ class MCL_CHADO_DB extends CHADO_DB {
   }
 
   /**
-   * Checks the existance of db. If not, write the error messasge
+   * Checks the existence of db. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -47,8 +69,8 @@ class MCL_CHADO_DB extends CHADO_DB {
     if ($db) {
 
       // Gets the db.
-      $db = MCL_CHADO_DB::getDB($db);
-      if (!$db) {
+      $obj = MCL_CHADO_DB::getDB($db);
+      if (!$obj) {
         self::updateMsg($mcl_tmpl, 'E', "(name) = ($db) not found in db");
         return FALSE;
       }
@@ -69,7 +91,7 @@ class MCL_CHADO_DB extends CHADO_DB {
     if ($name == 'SITE_DB') {
       $name = MCL_VAR::getValueByName($name);
     }
-    return MCL_CHADO_DB::bykey(array('name' => $name));
+    return MCL_CHADO_DB::byName($name);
   }
 
   /**
@@ -79,7 +101,7 @@ class MCL_CHADO_DB extends CHADO_DB {
    */
   public static function addNull() {
 
-    // Checks if it has already exists.
+    // Checks if it already exists.
     $db = MCL_CHADO_DB::getDB('null');
     if (!$db) {
       $details = array('name' => 'null');

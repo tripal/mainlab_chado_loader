@@ -58,15 +58,7 @@ class MCL_TEMPLATE_CVTERM_BIMS extends MCL_TEMPLATE {
   /**
    * @see MCL_TEMPLATE::runErrorCheckDataLine()
    */
-  public function runErrorCheckDataLine($line) {
-
-    // Checks cv_id.
-    $cv_id = $this->getJob()->getParamByKey('cv_id');
-    MCL_CHADO_CV::checkCVByID($this, $cv_id, TRUE);
-
-    // Checks db.
-    MCL_CHADO_DB::checkDB($this, MCL_VAR::getValueByName('SITE_DB'));
-  }
+  public function runErrorCheckDataLine($line) {}
 
   /**
    * @see MCL_TEMPLATE::uploadDataLine()
@@ -76,16 +68,28 @@ class MCL_TEMPLATE_CVTERM_BIMS extends MCL_TEMPLATE {
     // Gets db.
     $db = MCL_CHADO_DB::getDB(MCL_VAR::getValueByName('SITE_DB'));
 
-    // Gets cv.
-    $cv_id = $this->getJob()->getParamByKey('cv_id');
-    $cv = MCL_CHADO_CV::byKey(array('cv_id' => $cv_id));
+    // Gets cv name.
+    $cv_name = $this->getJob()->getParamByKey('cv');
 
     // Adds a cvterm.
-    $cvterm = MCL_CHADO_CVTERM::addCvterm($this, $db->getName(), $cv->getName(), $line['cvterm_name'], $line['definition'], $line['accession']);
+    $cvterm = MCL_CHADO_CVTERM::addCvterm($this, $db->getName(), $cv_name, $line['cvterm_name'], $line['definition'], $line['accession']);
     if ($cvterm) {
 
       // Adds aliases.
       $cvterm->addAlias($this, 'SITE_CV', 'alias', $line['alias'], '[,;]');
     }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Checks db.
+    MCL_CHADO_DB::checkDB($this, MCL_VAR::getValueByName('SITE_DB'));
+
+    // Checks cv name.
+    $cv_name = $this->getJob()->getParamByKey('cv');
+    MCL_CHADO_CV::checkCV($this, $cv_name, TRUE);
   }
 }

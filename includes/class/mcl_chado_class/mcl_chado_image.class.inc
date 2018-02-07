@@ -35,21 +35,21 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
   }
 
   /**
-   * Checks the existance of eimage. If not, write the error messasge
+   * Checks the existence of eimage. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $image
+   * @param string $image_id_list
    * @param string $separator
    *
    * @return boolean
    */
-  public static function checkImage(MCL_TEMPLATE $mcl_tmpl = NULL, $image, $separator = '') {
+  public static function checkImageID(MCL_TEMPLATE $mcl_tmpl = NULL, $image_id_list, $separator = '') {
     $flag = TRUE;
-    if ($image) {
+    if ($image_id_list) {
 
       // Gets eimage_id.
-      $eimage_ids = preg_split(self::getSepRegex($separator), $image, NULL, PREG_SPLIT_NO_EMPTY);
+      $eimage_ids = preg_split(self::getSepRegex($separator), $image_id_list, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($eimage_ids as $eimage_id) {
         $eimage_id = trim($eimage_id);
         if (!is_int($eimage_id)) {
@@ -69,6 +69,34 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
   }
 
   /**
+   * Checks the existence of eimage. If not, write the error messasge
+   * to the log.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $image_list
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public static function checkImage(MCL_TEMPLATE $mcl_tmpl = NULL, $image_list, $separator = '') {
+    $flag = TRUE;
+    if ($image_list) {
+
+      // Gets eimage.
+      $images = preg_split(self::getSepRegex($separator), $image_list, NULL, PREG_SPLIT_NO_EMPTY);
+      foreach ($images as $image) {
+        $image = trim($image);
+        $image = MCL_CHADO_IMAGE::byKey(array('image_uri' => $image));
+        if (!$image) {
+          self::addMsg($mcl_tmpl, 'E', 'eimage', $args);
+          $flag = FALSE;
+        }
+      }
+    }
+    return $flag;
+  }
+
+  /**
    * Adds an image.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -76,7 +104,7 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
    * @param string $eimage_type
    * @param string $image_uri
    *
-   * @return MCL_CHADO_DBXREF
+   * @return MCL_CHADO_IMAGE
    */
   public static function addImage(MCL_TEMPLATE $mcl_tmpl = NULL, $eimage_data, $eimage_type, $image_uri) {
 

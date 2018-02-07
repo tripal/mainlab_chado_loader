@@ -69,7 +69,7 @@ function mcl_admin_data_valid_form($form, &$form_state) {
 function _mcl_get_mcl_data_valid_type_form(&$form) {
 
   // Gets all data valid types.
-  $data_valid_types = MCL_DATA_VALID_TYPE::getDataValidTypes(FALSE);
+  $data_valid_types = MCL_DATA_VALID_TYPE::getDataValidTypes();
   $rows = array();
   foreach ($data_valid_types as $data_valid_type) {
     $data_valid_type_id = $data_valid_type->getDataValidTypeID();
@@ -145,7 +145,7 @@ function _mcl_get_mcl_data_valid_type_form(&$form) {
  */
 function _mcl_get_mcl_data_valid_form(&$form, $target_data_valid_type_id = '') {
 
-  // Gets the site varibles.
+  // Gets the site variables.
   $data_valid_types = MCL_DATA_VALID_TYPE::getDataValidTypes(FALSE);
   foreach ($data_valid_types as $data_valid_type) {
     $data_valid_type_id = $data_valid_type->getDataValidTypeID();
@@ -219,26 +219,18 @@ function _mcl_get_mcl_data_valid_form(&$form, $target_data_valid_type_id = '') {
 
     // Adds the textfield and button.
     $id_add_btn = 'data_valid_btn_' . $data_valid_type_id . '_0';
-    $title      = 'Value';
-    $desc       = '';
-    $label      = 'Add new value';
     if ($cv_id) {
       $id_add_btn = 'data_valid_btn_' . $data_valid_type_id . '_' . $cv_id;
-      $title      = 'cvterm ID';
-      $desc       = '';
-      $label      = 'Add cvterm ID';
     }
     $form['data_valid'][$id_fieldset][$id_value] = array(
-      '#type'           => 'textfield',
-      '#title'          => $title,
-      '#description'    => $desc,
-      '#default_value'  => '',
-      '#attributes'     => array('style' => 'width:250px;'),
+      '#type'       => 'textfield',
+      '#title'      => 'Name of type',
+      '#attributes' => array('style' => 'width:250px;'),
     );
     $form['data_valid'][$id_fieldset][$id_add_btn] = array(
       '#type'   => 'submit',
       '#name'   => $id_add_btn,
-      '#value'  => $label,
+      '#value'  => 'Add a new type',
     );
   }
 }
@@ -310,32 +302,44 @@ function mcl_admin_data_valid_form_validate($form, &$form_state) {
       return;
     }
 
-    // Checks the value for duplication.
-    $attr = ($cv_id) ? 'cvterm_id' : 'name';
-    $data_valid = PUBLIC_MCL_DATA_VALID::byKey(array($attr => $value));
-    if ($data_valid) {
-      $msg = "'$value' has already exists.";
-      form_set_error("data_valid][$id_fieldset][$id_value", $msg);
-      return;
+    // Checks the duplication for non-cvterm.
+    if (!$cv_id) {
+      $data_valid = PUBLIC_MCL_DATA_VALID::byKey(array('name' => $value));
+      if ($data_valid) {
+        form_set_error("data_valid][$id_fieldset][$id_value", "'$value' has already exists.");
+        return;
+      }
     }
 
-    // Checks the value for cvterm_id.
-    if ($cv_id) {
+    // Checks the duplication for cvterm.
+    else {
+
+      // Checks for cv.
       $cv = MCL_CHADO_CV::byKey(array('cv_id' => $cv_id));
       if (!$cv) {
         $msg = "cv ID '$cv_id' does not exist in cv table.";
         form_set_error("data_valid][$id_fieldset][$id_value", $msg);
         return;
       }
-      $key = array(
-        'cv_id'     => $cv_id,
-        'cvterm_id' => $value,
-      );
-      $cvterm = MCL_CHADO_CVTERM::byKey($key);
-      if (!$cvterm) {
-        $msg = "cvterm ID ($value) and cv ID ($cv_id) does not exist in cvterm table.";
-        form_set_error("data_valid][$id_fieldset][$id_value", $msg);
-        return;
+
+      // Checks 'trait_category' if data_valid_type is trait category.
+      $data_valid_type = MCL_DATA_VALID_TYPE::byID($data_valid_type_id);
+      if ($data_valid_type->getType() == 'trait_category') {
+        $cvterm_tc = MCL_CHADO_CVTERM::getCvterm('SITE_CV', 'trait_category');
+        if (!$cvterm_tc) {
+          form_set_error("data_valid][$id_fieldset][$id_value", "The cvterm ('trait_category') does not exists in chado.cvterm table. Please add it.");
+          return;
+        }
+      }
+
+      // Checks the duplication for cvterm in BIMS.
+      $cvterm = MCL_CHADO_CVTERM::getCvterm($cv->getName(), $value);
+      if ($cvterm) {
+        $data_valid = PUBLIC_MCL_DATA_VALID::byKey(array('cvterm_id' => $cvterm->getCvtermID()));
+        if ($data_valid) {
+          form_set_error("data_valid][$id_fieldset][$id_value", "'$value' has already exists.");
+          return;
+        }
       }
     }
   }
@@ -385,22 +389,57 @@ function mcl_admin_data_valid_form_submit($form, &$form_state) {
     $id_value     = 'value_' . $data_valid_type_id;
     $value        = trim($form_state['values']['data_valid'][$id_fieldset][$id_value]);
 
-    // Add the value.
-    $details = array(
-      'data_valid_type_id' => $data_valid_type_id,
-      'name' => $value,
-    );
+    // Add the new type for a cvterm.
+    $details = array();
+    $err = '';
     if ($cv_id) {
-      $cvterm = MCL_CHADO_CVTERM::byKey(array('cvterm_id' => $value));
-      $details['name']      = $cvterm->getName();
-      $details['cvterm_id'] = $cvterm->getCvtermID();
+
+      // Gets cv and data_valid_type.
+      $data_valid_type = MCL_DATA_VALID_TYPE::byID($data_valid_type_id);
+      $cv = MCL_CHADO_CV::byID($cv_id);
+
+      // Adds new type as a 'trait category'.
+      $cvterm = NULL;
+      if ($data_valid_type->getType() == 'trait_category') {
+        $cvterm = MCL_CHADO_TRAIT::addTrait(NULL, $value, '', '', TRUE);
+      }
+
+      // Adds other types.
+      else {
+        $cvterm = MCL_CHADO_CVTERM::addCvterm(NULL, 'SITE_DB', $cv->getName(), $value, '');
+      }
+      if ($cvterm) {
+        $details = array(
+          'data_valid_type_id' => $data_valid_type_id,
+          'name' => $value,
+          'cvterm_id' => $cvterm->getCvtermID(),
+        );
+      }
+      else {
+        $err = "Error : Failed to add a new cvterm ($value).";
+      }
     }
-    $data_valid = new PUBLIC_MCL_DATA_VALID($details);
-    if ($data_valid->insert()) {
-      drupal_set_message("A new value added : $value");
+
+    // Add the new type for a non-cvterm.
+    else {
+      $details = array(
+        'data_valid_type_id' => $data_valid_type_id,
+        'name' => $value,
+      );
+    }
+
+    // Adds the new type.
+    if ($err) {
+      drupal_set_message("Error : $err");
     }
     else {
-      drupal_set_message("Failed to add a new value : $value");
+      $data_valid = new PUBLIC_MCL_DATA_VALID($details);
+      if ($data_valid->insert()) {
+        drupal_set_message("'$value' has been added");
+      }
+      else {
+        drupal_set_message("Failed to add '$value'");
+      }
     }
   }
 }

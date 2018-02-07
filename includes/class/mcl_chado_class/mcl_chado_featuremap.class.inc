@@ -35,7 +35,7 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
   }
 
   /**
-   * Checks the existance of featuremap. If not, write the error messasge
+   * Checks the existence of featuremap. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -278,7 +278,7 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
       $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
-        $contact = MCL_CHADO_CONTACT::getContact($name);
+        $contact = MCL_CHADO_CONTACT::byName($name);
         if ($contact) {
           if (!$this->addLink($mcl_tmpl, 'featuremap_contact', 'featuremap_id', $this->featuremap_id, 'contact_id', $contact->getContactID())) {
             $flag = FALSE;

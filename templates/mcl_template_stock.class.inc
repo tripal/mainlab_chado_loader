@@ -47,8 +47,8 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
       'subspecies'        => array('req' => FALSE, 'width' => 10, 'desc' => "Subspecies name."),
       'description'       => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the pollen parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
       'secondary_id'      => array('req' => FALSE, 'width' => 10, 'desc' => "Alternate ID or name that is commonly used to refer to the entry."),
-      'paternal_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the pollen parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
       'maternal_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the seed parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
+      'paternal_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the pollen parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
       'mutation_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name of the mutaion parent. This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
       'selfing_parent'    => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name of the selfing parent. This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
       'alias'             => array('req' => FALSE, 'width' => 10, 'desc' => "A concatenation of all other less commonly used names or designations for the entry.  the aliases. The format is 'Alias type1:Alias1; Alias type2:Alias2'. When there is no specific type for aliases, just write the aliases without the specific type.  (eg. Collector:98HT-227; Site:W6 21306; ABC-1; 21306) The format is 'Alias type1:Alias1; Alias type2:Alias2'. When there is no specific type for an alias, just write the aliases without the specific type. (eg. Collector:98HT-227; Site:W6 21306; ABC-1; 21306)."),
@@ -77,15 +77,7 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['alias']                      = -1;
     $cvterms['SITE_CV']['secondary_id']               = -1;
     $cvterms['SITE_CV']['germplasm_center']           = -1;
-    $cvterms['SITE_CV']['variety']                    = -1;
     $cvterms['SITE_CV']['cultivar']                   = -1;
-    $cvterms['SITE_CV']['breeding_research_material'] = -1;
-    $cvterms['SITE_CV']['wild_unimproved']            = -1;
-    $cvterms['SITE_CV']['tbd']                        = -1;
-    $cvterms['SITE_CV']['landrace']                   = -1;
-    $cvterms['SITE_CV']['germplasm']                  = -1;
-    $cvterms['SITE_CV']['population']                 = -1;
-    $cvterms['SITE_CV']['species']                    = -1;
     $cvterms['SITE_CV']['is_a_maternal_parent_of']    = -1;
     $cvterms['SITE_CV']['is_a_paternal_parent_of']    = -1;
     $cvterms['SITE_CV']['is_a_mutation_parent_of']    = -1;
@@ -118,7 +110,7 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
     MCL_CHADO_STOCK::checkAlias($this, $line['alias'], '[;,]');
 
     // Checks images.
-    MCL_CHADO_IMAGE::checkImage($this, $line['image'], '[;,]');
+    MCL_CHADO_IMAGE::checkImageID($this, $line['image'], '[;,]');
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
@@ -138,8 +130,8 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
     $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
     $organism_id = $organism->getOrganismID();
 
-    // Gets type_id.
-    $type_id = $this->cvterms['SITE_CV'][strtolower($line['germplasm_type'])];
+    // Gets stock type.
+    $type_id = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $line['germplasm_type'])->getCvtermID();
 
     // Updates name.
     $name = ($line['secondary_id']) ? $line['secondary_id'] : '';
@@ -178,13 +170,13 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
       $stock->addAlias($this, $line['alias'], "[,;]");
 
       // Adds parents.
-      $stock->addParent($this, $line['paternal_parent'], '', $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
-      $stock->addParent($this, $line['maternal_parent'], '', $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
+      $stock->addParent($this, $line['maternal_parent'], '', $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
+      $stock->addParent($this, $line['paternal_parent'], '', $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
       $stock->addParent($this, $line['mutation_parent'], '', $this->cvterms['SITE_CV']['is_a_mutation_parent_of']);
       $stock->addParent($this, $line['selfing_parent'], '', $this->cvterms['SITE_CV']['is_a_selfing_parent_of']);
 
       // Adds images.
-      $stock->addImage($this, $line['image'], "[,;]");
+      $stock->addImageID($this, $line['image'], "[,;]");
 
       // Adds references.
       $stock->addReference($this, $line['reference'], "[,;]");
