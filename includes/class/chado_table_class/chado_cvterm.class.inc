@@ -7,7 +7,7 @@
  * The declaration of CHADO_CVTERM class.
  *
  */
-class CHADO_CVTERM  {
+class CHADO_CVTERM  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_CVTERM.
@@ -103,6 +103,66 @@ class CHADO_CVTERM  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('dbxref_id' => array('fk_table' => 'dbxref', 'fk_attr' => 'dbxref_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'cvterm_id' => array(
+        array('table' => 'feature', 'attr' => 'type_id'),
+        array('table' => 'feature_cvterm', 'attr' => 'cvterm_id'),
+        array('table' => 'featureprop', 'attr' => 'type_id'),
+        array('table' => 'pub', 'attr' => 'type_id'),
+        array('table' => 'synonym', 'attr' => 'type_id'),
+        array('table' => 'contact', 'attr' => 'type_id'),
+        array('table' => 'contactprop', 'attr' => 'type_id'),
+        array('table' => 'cvterm_relationship', 'attr' => 'object_id'),
+        array('table' => 'cvterm_relationship', 'attr' => 'subject_id'),
+        array('table' => 'cvterm_relationship', 'attr' => 'type_id'),
+        array('table' => 'cvtermprop', 'attr' => 'cvterm_id'),
+        array('table' => 'cvtermprop', 'attr' => 'type_id'),
+        array('table' => 'cvtermsynonym', 'attr' => 'cvterm_id'),
+        array('table' => 'cvtermsynonym', 'attr' => 'type_id'),
+        array('table' => 'dbxrefprop', 'attr' => 'type_id'),
+        array('table' => 'eimageprop', 'attr' => 'type_id'),
+        array('table' => 'feature_genotype', 'attr' => 'cvterm_id'),
+        array('table' => 'feature_relationship', 'attr' => 'type_id'),
+        array('table' => 'feature_stock', 'attr' => 'type_id'),
+        array('table' => 'featuremap', 'attr' => 'unittype_id'),
+        array('table' => 'featuremapprop', 'attr' => 'type_id'),
+        array('table' => 'featureposprop', 'attr' => 'type_id'),
+        array('table' => 'genotype', 'attr' => 'type_id'),
+        array('table' => 'genotypeprop', 'attr' => 'type_id'),
+        array('table' => 'library', 'attr' => 'type_id'),
+        array('table' => 'libraryprop', 'attr' => 'type_id'),
+        array('table' => 'nd_experiment', 'attr' => 'type_id'),
+        array('table' => 'nd_experiment_stock', 'attr' => 'type_id'),
+        array('table' => 'nd_experimentprop', 'attr' => 'type_id'),
+        array('table' => 'nd_geolocationprop', 'attr' => 'type_id'),
+        array('table' => 'organism_relationship', 'attr' => 'type_id'),
+        array('table' => 'organismprop', 'attr' => 'type_id'),
+        array('table' => 'phenotype', 'attr' => 'assay_id'),
+        array('table' => 'phenotype', 'attr' => 'attr_id'),
+        array('table' => 'phenotype', 'attr' => 'cvalue_id'),
+        array('table' => 'phenotype', 'attr' => 'observable_id'),
+        array('table' => 'project_relationship', 'attr' => 'type_id'),
+        array('table' => 'projectprop', 'attr' => 'type_id'),
+        array('table' => 'stock', 'attr' => 'type_id'),
+        array('table' => 'stock_relationship', 'attr' => 'type_id'),
+        array('table' => 'stockprop', 'attr' => 'type_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -175,7 +235,7 @@ class CHADO_CVTERM  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

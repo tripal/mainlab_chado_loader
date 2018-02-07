@@ -59,7 +59,7 @@ class MCL_CHADO_SYNONYM extends CHADO_SYNONYM {
    *
    * @return MCL_CHADO_SYNONYM
    */
-  public static function addSynonym(MCL_TEMPLATE $mcl_tmpl, $name, $type_id) {
+  public static function addSynonym(MCL_TEMPLATE $mcl_tmpl = NULL, $name, $type_id) {
 
     // Sets the arguments.
     $args = array(
@@ -68,26 +68,27 @@ class MCL_CHADO_SYNONYM extends CHADO_SYNONYM {
     );
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
-    $mcl_synonym = MCL_CHADO_SYNONYM::byKey($args);
-    if ($mcl_synonym) {
-      $mcl_tmpl->addMsg('D', 'synonym', $args);
+    $synonym = MCL_CHADO_SYNONYM::byKey($args);
+    if ($synonym) {
+      self::addMsg($mcl_tmpl, 'D', 'synonym', $args);
     }
     else {
 
       // Adds a new synonym.
-      $mcl_synonym = new MCL_CHADO_SYNONYM($args);
-      if ($mcl_synonym->insert()) {
-        $mcl_tmpl->addMsg('N', 'synonym', $args);
+      $synonym = new MCL_CHADO_SYNONYM($args);
+      if ($synonym->insert()) {
+        self::addMsg($mcl_tmpl, 'N', 'synonym', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'synonym', $args);
+        self::addMsg($mcl_tmpl, 'E', 'synonym', $args);
+        return NULL;
       }
     }
-    return $mcl_synonym;
+    return $synonym;
   }
 }

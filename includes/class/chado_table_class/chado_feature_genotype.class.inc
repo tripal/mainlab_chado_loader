@@ -7,7 +7,7 @@
  * The declaration of CHADO_FEATURE_GENOTYPE class.
  *
  */
-class CHADO_FEATURE_GENOTYPE  {
+class CHADO_FEATURE_GENOTYPE  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_FEATURE_GENOTYPE.
@@ -103,6 +103,25 @@ class CHADO_FEATURE_GENOTYPE  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('chromosome_id' => array('fk_table' => 'feature', 'fk_attr' => 'feature_id')),
+      array('cvterm_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+      array('feature_id' => array('fk_table' => 'feature', 'fk_attr' => 'feature_id')),
+      array('genotype_id' => array('fk_table' => 'genotype', 'fk_attr' => 'genotype_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -173,7 +192,7 @@ class CHADO_FEATURE_GENOTYPE  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

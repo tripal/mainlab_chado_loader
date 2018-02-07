@@ -7,7 +7,7 @@
  * The declaration of CHADO_FEATUREMAPPROP class.
  *
  */
-class CHADO_FEATUREMAPPROP  {
+class CHADO_FEATUREMAPPROP  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_FEATUREMAPPROP.
@@ -97,6 +97,23 @@ class CHADO_FEATUREMAPPROP  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('featuremap_id' => array('fk_table' => 'featuremap', 'fk_attr' => 'featuremap_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -165,7 +182,7 @@ class CHADO_FEATUREMAPPROP  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

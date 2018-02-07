@@ -9,15 +9,18 @@ class MCL_CLASS_LOADER {
    *  Class data members.
    *
    */
-  private $module_path  = NULL;
-  private $class_path   = NULL;
+  private $module_path    = NULL;
+  private $class_path     = NULL;
+  private $template_path  = NULL;
 
   /**
    * Implements the class constructor.
    */
-  public function __construct($module_path) {
-    $this->module_path = $module_path;
-    $this->class_path = "$module_path/includes/class";
+  public function __construct() {
+    $module_path          = drupal_get_path('module', 'mcl');
+    $this->module_path    = $module_path;
+    $this->class_path     = $module_path . '/includes/class';
+    $this->template_path  = $module_path . '/templates';
   }
 
   /**
@@ -43,7 +46,18 @@ class MCL_CLASS_LOADER {
    *
    * @return boolean
    */
-  public  function loadClass($class_name) {
+  public function loadClass($class_name) {
+
+    // Template classes.
+    if (preg_match("/^MCL_TEMPLATE/", $class_name, $matches)) {
+      $path =  '/';
+      if (preg_match("/^MCL_(TEMPLATE|TEMPLATE_TYPE)$/", $class_name, $matches)) {
+        $path = '/core/';
+      }
+      $class_filepath = $this->template_path . $path . strtolower($class_name) . '.class.inc';
+      require_once($class_filepath);
+      return TRUE;
+    }
 
     // Gets the path to the class file.
     $path = '/';
@@ -65,15 +79,11 @@ class MCL_CLASS_LOADER {
     else if (preg_match("/^MCL_JOB/", $class_name, $matches)) {
       $path .= 'job/';
     }
-
+    else if (preg_match("/^MCL_DATA_VALID/", $class_name, $matches)) {
+      $path .= 'data_valid/';
+    }
     else if (preg_match("/^MCL_TABLE/", $class_name, $matches)) {
       $path .= 'table/';
-    }
-    else if (preg_match("/^MCL_(TEMPLATE|TEMPLATE_TYPE)$/", $class_name, $matches)) {
-      $path .= 'template/';
-    }
-    else if (preg_match("/^MCL_TEMPLATE/", $class_name, $matches)) {
-      $path .= 'template/module/';
     }
     else if (preg_match("/^MCL_([A-Z\_]+)/", $class_name, $matches)) {
       // Does nothing. The file is in the root of class directory.
@@ -86,5 +96,27 @@ class MCL_CLASS_LOADER {
     $class_filepath = $this->class_path . $path . strtolower($class_name) . '.class.inc';
     require_once($class_filepath);
     return TRUE;
+  }
+
+  /*
+   * Defines getters and setters below.
+   */
+  /**
+   * Returns the module path.
+   */
+  public function getModulePath() {
+    return $this->module_path;
+  }
+  /**
+   * Returns the class path.
+   */
+  public function getClassPath() {
+    return $this->class_path;
+  }
+  /**
+   * Returns the template path.
+   */
+  public function getTemplatePath() {
+    return $this->template_path;
   }
 }

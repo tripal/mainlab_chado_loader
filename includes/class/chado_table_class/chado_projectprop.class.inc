@@ -7,7 +7,7 @@
  * The declaration of CHADO_PROJECTPROP class.
  *
  */
-class CHADO_PROJECTPROP  {
+class CHADO_PROJECTPROP  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_PROJECTPROP.
@@ -97,6 +97,23 @@ class CHADO_PROJECTPROP  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('project_id' => array('fk_table' => 'project', 'fk_attr' => 'project_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -165,7 +182,7 @@ class CHADO_PROJECTPROP  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

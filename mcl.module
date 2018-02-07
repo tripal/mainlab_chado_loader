@@ -15,8 +15,8 @@ function mcl_init() {
 
   // Registers autoloader.
   require_once "$module_path/includes/class/mcl_class_loader.class.inc";
-  $bims_autoloader = new MCL_CLASS_LOADER($module_path);
-  $bims_autoloader->register();
+  $mcl_autoloader = new MCL_CLASS_LOADER();
+  $mcl_autoloader->register();
 
   // Includes .inc file.
   require_once("$module_path/includes/mcl.inc");
@@ -64,7 +64,6 @@ function mcl_access($access_args) {
 * Implementation of hook_theme().
 */
 function mcl_theme () {
-  $template_path = drupal_get_path('module', 'mcl') . '/theme/templates';
   return array(
     'mcl_admin_template_form' => array('render element' => 'form'),
   );
@@ -147,6 +146,17 @@ function mcl_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => $weight++,
   );
+  $items['admin/mcl/data_valid'] = array(
+    'title' => 'Data Validation',
+    'description' => 'MCL Data Validation',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_admin_data_valid_form'),
+    'access arguments' => array('admin_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/admin/mcl.admin.data_valid.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => $weight++,
+  );
   $items['admin/mcl/config'] = array(
     'title' => 'Configuration',
     'description' => 'The configuration for MCL',
@@ -176,6 +186,14 @@ function mcl_menu() {
     'file' => '/includes/form/mcl.drush.form.inc',
     'type' => MENU_CALLBACK,
   );
+  $items['mcl/data_query/%'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mcl_data_query_form', 2),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'file' => '/includes/form/mcl.data_query.form.inc',
+    'type' => MENU_CALLBACK,
+  );
   $items['mcl/upload_data'] = array(
     'page callback' => 'drupal_get_form',
     'page arguments' => array('mcl_upload_data_form'),
@@ -194,6 +212,20 @@ function mcl_menu() {
   );
   $items['mcl/delete_job/%'] = array(
     'page callback' => 'mcl_delete_job',
+    'page arguments' => array(2),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'type' => MENU_CALLBACK,
+  );
+  $items['mcl/delete_data_valid_type/%'] = array(
+    'page callback' => 'mcl_delete_data_valid_type',
+    'page arguments' => array(2),
+    'access arguments' => array('view_mcl'),
+    'access callback' => 'mcl_access',
+    'type' => MENU_CALLBACK,
+  );
+  $items['mcl/delete_data_valid/%'] = array(
+    'page callback' => 'mcl_delete_data_valid',
     'page arguments' => array(2),
     'access arguments' => array('view_mcl'),
     'access callback' => 'mcl_access',
@@ -308,6 +340,32 @@ function mcl_delete_job($job_id) {
   $commands = array();
   $commands[] = ajax_command_invoke(NULL, "reload_page", array('/mcl/upload_data'));
   print ajax_render($commands);
+  exit;
+}
+
+/**
+ * Delete a data validation type.
+ */
+function mcl_delete_data_valid_type($data_valid_type_id) {
+  $mcl_data_valid_type = MCL_DATA_VALID_TYPE::byKey(array('data_valid_type_id' => $data_valid_type_id));
+  $mcl_data_valid_type->delete();
+  $commands = array();
+  $commands[] = ajax_command_invoke(NULL, "reload_page", array('/admin/mcl/data_valid'));
+  print ajax_render($commands);
+  exit;
+}
+
+/**
+ * Delete a data validation.
+ */
+function mcl_delete_data_valid($data_valid_id) {
+  db_delete('mcl_data_valid')
+    ->condition('data_valid_id', $data_valid_id)
+    ->execute();
+  $commands = array();
+  $commands[] = ajax_command_invoke(NULL, "reload_page", array('/admin/mcl/data_valid'));
+  print ajax_render($commands);
+  exit;
 }
 
 /**
@@ -359,6 +417,22 @@ function mcl_download_template_excel($args) {
   $excel = new MCL_EXCEL($details);
   $excel->create($type);
   return TRUE;
+}
+
+/**
+ * Adds additional ajax commands to be returned by the bims_ajax_render_alter hook().
+ * This is useful in the case of ajax callbacks on forms where the form still needs
+ * to be returned as usual via the form callback hook but ajax commands also need
+ * to be executed
+ *
+ * @param $commands
+ *   A single Drupal compatible ajax command created by calling ajax_command_invoke().
+ */
+function mcl_add_ajax_command($command) {
+  if(!array_key_exists('mcl-ajax-commands', $_SESSION)) {
+    $_SESSION['mcl-ajax-commands'] = array();
+  }
+  $_SESSION['mcl-ajax-commands'][] = $command;
 }
 
 /************************************************/

@@ -91,6 +91,20 @@ class PUBLIC_MCL_TEMPLATE_TYPE  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return NULL;
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +169,7 @@ class PUBLIC_MCL_TEMPLATE_TYPE  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

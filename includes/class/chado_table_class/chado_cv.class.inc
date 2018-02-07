@@ -7,7 +7,7 @@
  * The declaration of CHADO_CV class.
  *
  */
-class CHADO_CV  {
+class CHADO_CV  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_CV.
@@ -91,6 +91,20 @@ class CHADO_CV  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return NULL;
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +169,7 @@ class CHADO_CV  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

@@ -44,7 +44,7 @@ class MCL_CHADO_GENOTYPE extends CHADO_GENOTYPE {
    *
    * @return MCL_CHADO_GENOTYPE
    */
-  public static function addGenotype(MCL_TEMPLATE $mcl_tmpl, $uniquename, $type_id, $description) {
+  public static function addGenotype(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $type_id, $description) {
 
     // Sets the arguments.
     $args = array(
@@ -53,28 +53,46 @@ class MCL_CHADO_GENOTYPE extends CHADO_GENOTYPE {
     );
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
-    $mcl_genotype = MCL_CHADO_GENOTYPE::byKey($args);
-    if ($mcl_genotype) {
-      $mcl_tmpl->addMsg('D', 'genotype', $args);
+    $genotype = MCL_CHADO_GENOTYPE::byKey($args);
+    if ($genotype) {
+      self::addMsg($mcl_tmpl, 'D', 'genotype', $args);
     }
     else {
 
       // Adds a new genotype.
       $args['description'] = $description;
-      $mcl_genotype = new MCL_CHADO_GENOTYPE($args);
-      if ($mcl_genotype->insert()) {
-        $mcl_tmpl->addMsg('N', 'genotype', $args);
+      $genotype = new MCL_CHADO_GENOTYPE($args);
+      if ($genotype->insert()) {
+        self::addMsg($mcl_tmpl, 'N', 'genotype', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'genotype', $args);
+        self::addMsg($mcl_tmpl, 'E', 'genotype', $args);
+        return NULL;
       }
     }
-    return $mcl_genotype;
+    return $genotype;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'genotypeprop', 'genotype_id', $this->genotype_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -85,9 +103,14 @@ class MCL_CHADO_GENOTYPE extends CHADO_GENOTYPE {
    * @param string $cvterm_name
    * @param string $value
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name, $value, $separator = '') {
-    $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
-    $mcl_tmpl->addProperty('genotypeprop', 'genotype_id', $this->genotype_id, $type_id, $value, $separator);
+  public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
+    if ($value != '') {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->addProperty($mcl_tmpl, 'genotypeprop', 'genotype_id', $this->genotype_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 }

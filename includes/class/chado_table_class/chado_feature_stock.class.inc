@@ -7,7 +7,7 @@
  * The declaration of CHADO_FEATURE_STOCK class.
  *
  */
-class CHADO_FEATURE_STOCK  {
+class CHADO_FEATURE_STOCK  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_FEATURE_STOCK.
@@ -94,6 +94,24 @@ class CHADO_FEATURE_STOCK  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('feature_id' => array('fk_table' => 'feature', 'fk_attr' => 'feature_id')),
+      array('stock_id' => array('fk_table' => 'stock', 'fk_attr' => 'stock_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -158,7 +176,7 @@ class CHADO_FEATURE_STOCK  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

@@ -35,26 +35,30 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
   }
 
   /**
-   * Checks the existance of contact. If not, write the error messasge
+   * Checks the existence of contact. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $contact
    * @param string $separator
+   *
+   * @return boolean
    */
-  public static function checkContact(MCL_TEMPLATE $mcl_tmpl, $contact, $separator = '') {
+  public static function checkContact(MCL_TEMPLATE $mcl_tmpl = NULL, $contact, $separator = '') {
+    $flag = TRUE;
     if ($contact) {
 
-      // Gets contacts.
-      $names = preg_split($mcl_tmpl->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
+      // Gets the contacts.
+      $names = preg_split(self::getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
-        $name = trim($name);
-        $mcl_contact = MCL_CHADO_CONTACT::getContact($name);
-        if (!$mcl_contact) {
-          $mcl_tmpl->updateMsg('E', "(name) = ($name) not found in contact");
+        $contact = MCL_CHADO_CONTACT::getContact(trim($name));
+        if (!$contact) {
+          self::updateMsg($mcl_tmpl, 'E', "(name) = ($name) not found in contact");
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   }
 
   /**
@@ -76,7 +80,7 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
    *
    * @return MCL_CHADO_CONTACT
    */
-  public static function addContact(MCL_TEMPLATE $mcl_tmpl, $name, $type_id, $description) {
+  public static function addContact(MCL_TEMPLATE $mcl_tmpl = NULL, $name, $type_id, $description) {
 
     // Sets the arguments.
     $args = array(
@@ -84,29 +88,47 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
     );
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
-    $mcl_contact = MCL_CHADO_CONTACT::byKey($args);
-    if ($mcl_contact) {
-      $mcl_tmpl->addMsg('D', 'contact', $args);
+    $contact = MCL_CHADO_CONTACT::byKey($args);
+    if ($contact) {
+      self::addMsg($mcl_tmpl, 'D', 'contact', $args);
     }
     else {
 
       // Adds a new contact.
-      $args['type_id'] = $type_id;
-      $args['description'] = $description;
-      $mcl_contact = new MCL_CHADO_CONTACT($args);
-      if ($mcl_contact->insert()) {
-        $mcl_tmpl->addMsg('N', 'contact', $args);
+      $args['type_id']      = $type_id;
+      $args['description']  = $description;
+      $contact = new MCL_CHADO_CONTACT($args);
+      if ($contact->insert()) {
+        self::addMsg($mcl_tmpl, 'N', 'contact', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'contact', $args);
+        self::addMsg($mcl_tmpl, 'E', 'contact', $args);
+        return NULL;
       }
     }
-    return $mcl_contact;
+    return $contact;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'contactprop', 'contact_id', $this->contact_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -117,9 +139,14 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
    * @param string $cvterm_name
    * @param string $value
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name, $value, $separator = '') {
-    $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
-    $mcl_tmpl->addProperty('contactprop', 'contact_id', $this->contact_id, $type_id, $value, $separator);
+  public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
+    if ($value != '') {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->addProperty($mcl_tmpl, 'contactprop', 'contact_id', $this->contact_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 }

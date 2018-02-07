@@ -7,7 +7,7 @@
  * The declaration of CHADO_FEATUREPOS class.
  *
  */
-class CHADO_FEATUREPOS  {
+class CHADO_FEATUREPOS  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_FEATUREPOS.
@@ -97,6 +97,28 @@ class CHADO_FEATUREPOS  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('feature_id' => array('fk_table' => 'feature', 'fk_attr' => 'feature_id')),
+      array('featuremap_id' => array('fk_table' => 'featuremap', 'fk_attr' => 'featuremap_id')),
+      array('map_feature_id' => array('fk_table' => 'feature', 'fk_attr' => 'feature_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'featurepos_id' => array(
+        array('table' => 'featureposprop', 'attr' => 'featurepos_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -165,7 +187,7 @@ class CHADO_FEATUREPOS  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

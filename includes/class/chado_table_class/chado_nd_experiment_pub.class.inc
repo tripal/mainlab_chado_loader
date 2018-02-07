@@ -7,7 +7,7 @@
  * The declaration of CHADO_ND_EXPERIMENT_PUB class.
  *
  */
-class CHADO_ND_EXPERIMENT_PUB  {
+class CHADO_ND_EXPERIMENT_PUB  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_ND_EXPERIMENT_PUB.
@@ -91,6 +91,23 @@ class CHADO_ND_EXPERIMENT_PUB  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('nd_experiment_id' => array('fk_table' => 'nd_experiment', 'fk_attr' => 'nd_experiment_id')),
+      array('pub_id' => array('fk_table' => 'pub', 'fk_attr' => 'pub_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +172,7 @@ class CHADO_ND_EXPERIMENT_PUB  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

@@ -37,8 +37,10 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string site_code
+   *
+   * @return boolean
    */
-  public static function checkSiteCode(MCL_TEMPLATE $mcl_tmpl, $site_code) {
+  public static function checkSiteCode(MCL_TEMPLATE $mcl_tmpl = NULL, $site_code) {
     if ($site_code) {
 
       // TODO:
@@ -50,9 +52,11 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       );
       $bim_location = MCL_CHADO_LOCATION::byKey($args);
       if (!$bim_location) {
-        $mcl_tmpl->addMsg('E', 'nd_geolocation', $args);
+        self::addMsg($mcl_tmpl, 'E', 'nd_geolocation', $args);
+        return FALSE;
       }
     }
+    return TRUE;
   }
 
   /**
@@ -64,7 +68,9 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    * @return integer nd_geolocation_id
    */
   public static function getLocationIDBySiteCode($site_code) {
-    $nd_geolocation_id = NULL;
+
+    // Sets the default nd_geolocation_id.
+    $nd_geolocation_id = MCL_VAR::getValueByName('ND_GEOLOCATION_ID');
 
     if ($site_code) {
 
@@ -75,18 +81,13 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       $args = array(
         'description' => $description,
       );
-      $mcl_location = MCL_CHADO_LOCATION::byKey($args);
-      if ($mcl_location) {
-        $nd_geolocation_id = $mcl_location->getNdGeolocationID();
+      $location = MCL_CHADO_LOCATION::byKey($args);
+      if ($location) {
+        $nd_geolocation_id = $location->getNdGeolocationID();
       }
       else {
-        $mcl_tmpl->addMsg('E', 'nd_geolocation', $args);
+        return NULL;
       }
-    }
-    else {
-
-      // Returns a default nd_geolocation_id.
-      $nd_geolocation_id = MCL_VAR::getValueByName('ND_GEOLOCATION_ID');
     }
     return $nd_geolocation_id;
   }
@@ -96,8 +97,10 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $site_name
+   *
+   * @return boolean
    */
-  public static function checkSite(MCL_TEMPLATE $mcl_tmpl, $site_name) {
+  public static function checkSite(MCL_TEMPLATE $mcl_tmpl = NULL, $site_name) {
     if ($site_name) {
 
       // Gets nd_geolocation.
@@ -106,9 +109,11 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       );
       $bim_location = MCL_CHADO_LOCATION::byKey($args);
       if (!$bim_location) {
-        $mcl_tmpl->updateMsg('E', "(description) = ($site_name) not found in nd_geolocation");
+        self::updateMsg($mcl_tmpl, 'E', "(description) = ($site_name) not found in nd_geolocation");
+        return FALSE;
       }
     }
+    return TRUE;
   }
 
   /**
@@ -131,12 +136,12 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       $args = array(
         'description' => $site_name,
       );
-      $mcl_location = MCL_CHADO_LOCATION::byKey($args);
-      if ($mcl_location) {
-        $nd_geolocation_id = $mcl_location->getNdGeolocationID();
+      $location = MCL_CHADO_LOCATION::byKey($args);
+      if ($location) {
+        $nd_geolocation_id = $location->getNdGeolocationID();
       }
       else {
-        $mcl_tmpl->addMsg('E', 'nd_geolocation', $args);
+        return NULL;
       }
     }
     return $nd_geolocation_id;
@@ -149,16 +154,16 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    */
   public static function addNA() {
 
-    // Checks if it has already exists.
-    $mcl_location = MCL_CHADO_LOCATION::byKey(array('description' => 'Not Available'));
-    if (!$mcl_location) {
+    // Checks if it already exists.
+    $location = MCL_CHADO_LOCATION::byKey(array('description' => 'Not Available'));
+    if (!$location) {
       $details = array('description' => 'Not Available');
-      $mcl_location = new MCL_CHADO_LOCATION($details);
-      if (!$mcl_location->insert()) {
+      $location = new MCL_CHADO_LOCATION($details);
+      if (!$location->insert()) {
         return NULL;
       }
     }
-    return $mcl_location;
+    return $location;
   }
 
   /**
@@ -175,13 +180,13 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    *
    * @return MCL_CHADO_LOCATION
    */
-  public static function addLocation(MCL_TEMPLATE $mcl_tmpl, $name, $loc_info = NULL) {
+  public static function addLocation(MCL_TEMPLATE $mcl_tmpl = NULL, $name, $loc_info = NULL) {
 
     // Sets the arguments.
     $args = array('description' => $name);
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
@@ -190,16 +195,16 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       $valid_keys = array('latitude', 'longitude', 'altitude', 'geodetic_datum');
       foreach ($loc_info as $key => $value) {
         if (!in_array($key, $valid_keys)) {
-          $mcl_tmpl->updateMsg('E', "$key is an invalid attribute of nd_geolocation table");
+          self::updateMsg($mcl_tmpl, 'E', "$key is an invalid attribute of nd_geolocation table");
           return NULL;
         }
       }
     }
 
     // Checks for duplication.
-    $mcl_location = MCL_CHADO_LOCATION::byKey($args);
-    if ($mcl_location) {
-      $mcl_tmpl->addMsg('D', 'nd_geolocation', $args);
+    $location = MCL_CHADO_LOCATION::byKey($args);
+    if ($location) {
+      self::addMsg($mcl_tmpl, 'D', 'nd_geolocation', $args);
     }
     else {
 
@@ -210,15 +215,33 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
       }
 
       // Adds a new location.
-      $mcl_location = new MCL_CHADO_LOCATION($args);
-      if ($mcl_location->insert()) {
-        $mcl_tmpl->addMsg('N', 'nd_geolocation', $args);
+      $location = new MCL_CHADO_LOCATION($args);
+      if ($location->insert()) {
+        self::addMsg($mcl_tmpl, 'N', 'nd_geolocation', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'nd_geolocation', $args);
+        self::addMsg($mcl_tmpl, 'E', 'nd_geolocation', $args);
+        return NULL;
       }
     }
-    return $mcl_location;
+    return $location;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'nd_geolocationprop', 'nd_geolocation_id', $this->nd_geolocation_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -229,9 +252,32 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    * @param string $cvterm_name
    * @param string $value
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name, $value, $separator = '') {
-    $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
-    $mcl_tmpl->addProperty('nd_geolocationprop', 'nd_geolocation_id', $this->nd_geolocation_id, $type_id, $value, $separator);
+  public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
+    if ($value != '') {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->addProperty($mcl_tmpl, 'nd_geolocationprop', 'nd_geolocation_id', $this->nd_geolocation_id, $type_id, $value, $separator);
+    }
+    return TRUE;
+  }
+
+  /**
+   * Updates the property.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $cv_name
+   * @param string $cvterm_name
+   * @param string $value
+   *
+   * @return boolean
+   */
+  public function updateProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value) {
+    if ($value != '') {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->updateProperty($mcl_tmpl, 'nd_geolocationprop', 'nd_geolocation_id', $this->nd_geolocation_id, $type_id, $value);
+    }
+    return TRUE;
   }
 }

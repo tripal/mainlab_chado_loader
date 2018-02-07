@@ -7,7 +7,7 @@
  * The declaration of CHADO_PUB class.
  *
  */
-class CHADO_PUB  {
+class CHADO_PUB  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_PUB.
@@ -124,6 +124,35 @@ class CHADO_PUB  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'pub_id' => array(
+        array('table' => 'feature_cvterm', 'attr' => 'pub_id'),
+        array('table' => 'feature_pub', 'attr' => 'pub_id'),
+        array('table' => 'feature_synonym', 'attr' => 'pub_id'),
+        array('table' => 'featuremap_pub', 'attr' => 'pub_id'),
+        array('table' => 'library_pub', 'attr' => 'pub_id'),
+        array('table' => 'library_synonym', 'attr' => 'pub_id'),
+        array('table' => 'nd_experiment_pub', 'attr' => 'pub_id'),
+        array('table' => 'organism_pub', 'attr' => 'pub_id'),
+        array('table' => 'project_pub', 'attr' => 'pub_id'),
+        array('table' => 'stock_pub', 'attr' => 'pub_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -208,7 +237,7 @@ class CHADO_PUB  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

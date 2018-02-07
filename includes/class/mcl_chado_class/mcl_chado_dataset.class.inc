@@ -35,21 +35,47 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
   }
 
   /**
-   * Checks the existance of dataset. If not, write the error messasge
+   * Checks the existence of dataset. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $name
+   *
+   * @return boolean
    */
-  public static function checkDataset(MCL_TEMPLATE $mcl_tmpl, $name) {
+  public static function checkDataset(MCL_TEMPLATE $mcl_tmpl = NULL, $name) {
     if ($name) {
 
       // Gets the dataset.
-      $mcl_dataset = MCL_CHADO_DATASET::getDataset($name);
-      if (!$mcl_dataset) {
-        $mcl_tmpl->updateMsg('E', "(name) = ($name) not found in project");
+      $dataset = MCL_CHADO_DATASET::getDataset($name);
+      if (!$dataset) {
+        self::updateMsg($mcl_tmpl, 'E', "(name) = ($name) not found in project");
+        return FALSE;
       }
     }
+    return TRUE;
+  }
+
+  /**
+   * Checks the existence of dataset by ID. If not, write the error messasge
+   * to the log.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $project_id
+   *
+   * @return boolean
+   */
+  public static function checkDatasetByID(MCL_TEMPLATE $mcl_tmpl = NULL, $project_id) {
+    if ($project_id) {
+
+      // Gets the dataset.
+      $dataset = MCL_CHADO_DATASET::byKey(array('project_id' => $project_id));
+      if (!$dataset) {
+        self::updateMsg($mcl_tmpl, 'E', "(project_id) = ($project_id) not found in project");
+        return FALSE;
+      }
+    }
+    return TRUE;
   }
 
   /**
@@ -64,6 +90,19 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
   }
 
   /**
+   * Gets property.
+   *
+   * @param string $cv_name
+   * @param string $cvterm_name
+   *
+   * @return string
+   */
+  public function getProp($cv_name, $cvterm_name) {
+    $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+    return $this->getProperty('projectprop', 'project_id', $this->project_id, $type_id);
+  }
+
+  /**
    * Adds a dataset.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -74,33 +113,51 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
    *
    * @return MCL_CHADO_DATASET
    */
-  public static function addDataset(MCL_TEMPLATE $mcl_tmpl, $name) {
+  public static function addDataset(MCL_TEMPLATE $mcl_tmpl = NULL, $name) {
 
     // Sets the arguments.
     $args = array('name' => $name);
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
-    $mcl_dataset = MCL_CHADO_DATASET::byKey($args);
-    if ($mcl_dataset) {
-      $mcl_tmpl->addMsg('D', 'project', $args);
+    $dataset = MCL_CHADO_DATASET::byKey($args);
+    if ($dataset) {
+      self::addMsg($mcl_tmpl, 'D', 'project', $args);
     }
     else {
 
       // Adds a new dataset.
-      $mcl_dataset = new MCL_CHADO_DATASET($args);
-      if ($mcl_dataset->insert()) {
-        $mcl_tmpl->addMsg('N', 'project', $args);
+      $dataset = new MCL_CHADO_DATASET($args);
+      if ($dataset->insert()) {
+        self::addMsg($mcl_tmpl, 'N', 'project', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'project', $args);
+        self::addMsg($mcl_tmpl, 'E', 'project', $args);
+        return NULL;
       }
     }
-    return $mcl_dataset;
+    return $dataset;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'projectprop', 'project_id', $this->project_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -111,25 +168,16 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
    * @param string $cvterm_name
    * @param string $value
    * @param string $separator
-   */
-  public function addProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name, $value, $separator = '') {
-    $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
-    $mcl_tmpl->addProperty('projectprop', 'project_id', $this->project_id, $type_id, $value, $separator);
-  }
-
-  /**
-   * Gets property.
    *
-   * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $cv_name
-   * @param string $cvterm_name
-   *
-   * @return string
+   * @return boolean
    */
-  public function getProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name) {
-    $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
-    return $mcl_tmpl->getProperty('projectprop', 'project_id', $this->project_id, $type_id);
-  }
+  public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
+    if ($value != '') {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->addProperty($mcl_tmpl, 'projectprop', 'project_id', $this->project_id, $type_id, $value, $separator);
+    }
+    return TRUE;
+   }
 
   /**
    * Adds contact to project_contact.
@@ -137,18 +185,26 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $contact
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addContact(MCL_TEMPLATE $mcl_tmpl, $contact, $separator = '') {
+  public function addContact(MCL_TEMPLATE $mcl_tmpl = NULL, $contact, $separator = '') {
+    $flag = TRUE;
     if ($contact) {
-      $names = preg_split($mcl_tmpl->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
+      $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
-        $name = trim($name);
-        $mcl_contact = MCL_CHADO_CONTACT::byKey(array('name' => $name));
-        if ($mcl_contact) {
-          $mcl_tmpl->addLink('project_contact', 'project_id', $this->project_id, 'contact_id', $mcl_contact->getContactID());
+        $contact = MCL_CHADO_CONTACT::byKey(array('name' => trim($name)));
+        if ($contact) {
+          if (!$this->addLink($mcl_tmpl, 'project_contact', 'project_id', $this->project_id, 'contact_id', $contact->getContactID())) {
+            $flag = FALSE;
+          }
+        }
+        else {
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   }
 
   /**
@@ -156,15 +212,18 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $dataset_name
+   *
+   * @return boolean
    */
-  public function addParentDataset(MCL_TEMPLATE $mcl_tmpl, $dataset_name) {
+  public function addParentDataset(MCL_TEMPLATE $mcl_tmpl = NULL, $dataset_name) {
     if ($dataset_name) {
       $parent = MCL_CHADO_DATASET::getDataset($dataset_name);
       if ($parent) {
-        $type_id = $mcl_tmpl->getCvtermID('SITE_CV', 'is_a_subproject_of');
-        $mcl_tmpl->addLink('project_relationship', 'subject_project_id', $this->project_id, 'object_project_id', $parent->getProjectID(), $type_id);
+        $type_id = MCL_CHADO_CVTERM::getCvterm('SITE_CV', 'is_a_subproject_of')->getCvtermID();
+        return $this->addLink($mcl_tmpl, 'project_relationship', 'subject_project_id', $this->project_id, 'object_project_id', $parent->getProjectID(), $type_id);
       }
     }
+    return TRUE;
   }
 
   /**
@@ -173,17 +232,27 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $reference
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addReference(MCL_TEMPLATE $mcl_tmpl, $reference, $separator = '') {
+  public function addReference(MCL_TEMPLATE $mcl_tmpl = NULL, $reference, $separator = '') {
+
+    $flag = TRUE;
     if ($reference) {
-      $pub_ids = preg_split($mcl_tmpl->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
+      $pub_ids = preg_split($this->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);
-        $mcl_pub = MCL_CHADO_PUB::getPub($pub_id);
-        if ($mcl_pub) {
-          $mcl_tmpl->addLink('project_pub', 'project_id', $this->project_id, 'pub_id', $pub_id);
+        $pub = MCL_CHADO_PUB::getPub($pub_id);
+        if ($pub) {
+          if ($this->addLink($mcl_tmpl, 'project_pub', 'project_id', $this->project_id, 'pub_id', $pub_id)) {
+            $flag = FALSE;
+          }
+        }
+        else {
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   }
 }

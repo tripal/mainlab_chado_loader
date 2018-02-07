@@ -73,6 +73,16 @@ function mcl_drush_command() {
       'Standard example' => 'drush mcl-rerun-job [job_id] [filepath] --status=0 --force --working_dir=/yourpath',
     ),
   );
+  $items['mcl-test-template'] = array(
+    'description' => t('Test templates.'),
+    'arguments' => array(),
+    'options' => array(
+      'filepath' => t('List of templates to be tested.'),
+    ),
+    'examples' => array(
+        'Standard example' => 'drush mcl-test-template --filepath=/filepath',
+    ),
+  );
   $items['mcl-get-template'] = array(
     'description' => t('Generates a template in Excel format.'),
     'arguments' => array(
@@ -83,7 +93,7 @@ function mcl_drush_command() {
     ),
   );
   $items['mcl-submit-uploading-job'] = array(
-    'description' => t('Submits a uploading job.'),
+    'description' => t('Submits an uploading job.'),
     'arguments' => array(
       'username'  => t('Drupal user name.'),
       'filepath'  => t('The filename of the uploading file with path.'),
@@ -143,6 +153,7 @@ function mcl_drush_command() {
     ),
     'options' => array(
       'namespace'   => t('Specifies the namespace.'),
+      'extends'     => t('Specifies the extends.'),
       'overwrite'   => t('Overwrite all class files in the class directory.'),
       'working_dir' => t('Specifies the working directory.'),
       'class_dir'   => t('Specifies the class directory.'),
@@ -155,7 +166,8 @@ function mcl_drush_command() {
   $items['mcl-fix-data'] = array(
     'description' => t('Fix data.'),
     'arguments' => array(
-      'input_file'   => t('The input filename.'),
+      'inc_file'   => t('The include filename.'),
+      'input_file' => t('The input filename.'),
     ),
     'options' => array(),
     'examples' => array(
@@ -213,11 +225,9 @@ function drush_mcl_rerun_job($job_id, $filepath) {
 
   // Checks arguments.
   $args = array(
-    'job_id' => $job_id,
+    'job_id'    => $job_id,
+    'filepath'  => $filepath,
   );
-  if ($filepath) {
-    $args['filepath'] = $filepath;
-  }
   if (!mcl_check_arguments($args)) {
     mcl_print("Error : Please check arguments", 1, 3);
     exit;
@@ -300,6 +310,11 @@ function drush_mcl_rerun_job($job_id, $filepath) {
   if ($mcl_job->getStatus() < 0 || $filepath) {
     $mcl_job->setStatus(0);
   }
+
+  // Gets process ID.
+  $pid = getmypid();
+  $mcl_job->setPID($pid);
+  print "\tProcess ID = $pid\n\n";
 
   // Updates all changes of the job properties.
   $mcl_job->update();
@@ -457,6 +472,56 @@ function drush_mcl_delete_jobs($job_ids) {
 }
 
 /**
+ * Callback for testing templates.
+ *
+ * @param string $template
+ *
+ * @return boolean
+ */
+function drush_mcl_test_template() {
+
+  // Gets all templates to be tested. If the filepath option is provided,
+  // the listed templates in the file are tested.
+  $templates = MCL_TEMPLATE::getTemplates();
+  $filepath = drush_get_option('filepath');
+  if ($filepath) {
+    $templates = array();
+    if (!file_exists($filepath)) {
+      mcl_print("Error : The file ($filepath) dose not exist", 1, 3);
+      exit;
+    }
+    if (!($fdr = fopen($filepath, 'r'))) {
+      mcl_print("Error : Cannot open file ($filepath)", 1, 3);
+      exit;
+    }
+    while (!feof($fdr)) {
+      $template = trim(fgets($fdr));
+      if ($template) {
+        $templates []= MCL_TEMPLATE::getByTemplate($template);
+      }
+    }
+    fclose($fdr);
+  }
+
+  // Creates a temporary directory.
+  $tmp_dir = file_directory_temp() . '/mcl-test-temp-' . date(Y-m-d-G-i-s);
+  if (!mcl_create_dir($tmp_dir)) {
+    mcl_print("Error : Failed to create temporary directory for MCL test templates", 1, 3);
+    exit;
+  }
+
+  // Tests templates.
+  //MCL_TEMPLATE::testTemplates($templates, $tmp_dir);
+
+  // Cleanup the emporary directory.
+  if (!mcl_remove_dir($tmp_dir)) {
+    mcl_print("Error : Failed to remove temporary directory for MCL test templates", 1, 3);
+    exit;
+  }
+  mcl_print("Done testing templates", 1, 3);
+}
+
+/**
  * Callback for uploading cvterms from an Excel file.
  *
  * @param string $template
@@ -496,7 +561,7 @@ function drush_mcl_get_template($template) {
 }
 
 /**
- * Callback for submitting a uploading job.
+ * Callback for submitting an uploading job.
  *
  * @param string $username
  * @param string $filepath
@@ -528,10 +593,10 @@ function drush_mcl_submit_uploading_job($username, $filepath) {
   // Gets MCL_USER.
   $mcl_user = MCL_USER::byKey(array('name' => $username));
 
-  // Prepares a uploading job.
+  // Prepares an uploading job.
   $mcl_job = mcl_prepare_uploading_job($mcl_user, $filepath, $working_dir, $job_name, FALSE);
   if ($mcl_job) {
-    mcl_print("Error : Failed to prepare a uploading job", 1, 3);
+    mcl_print("Error : Failed to prepare an uploading job", 1, 3);
     exit;
   }
 
@@ -574,7 +639,7 @@ function drush_mcl_upload_data($username, $filepath) {
 
   // Gets the transaction option.
   $no_transaction = drush_get_option('no_transaction');
-  $transaction = ($no_transaction) ? FALSE : TRUE;
+  $trans = ($no_transaction) ? FALSE : TRUE;
 
   // Check the move_input option.
   $move_input = drush_get_option('move_input');
@@ -599,10 +664,10 @@ function drush_mcl_upload_data($username, $filepath) {
   // Gets MCL_USER.
   $mcl_user = MCL_USER::byKey(array('name' => $username));
 
-  // Prepares a uploading job.
-  $mcl_job = mcl_prepare_uploading_job($mcl_user, $filepath, $move_input, $working_dir, $job_name, $param);
+  // Prepares an uploading job.
+  $mcl_job = mcl_prepare_uploading_job($mcl_user, $filepath, $move_input, $trans, $working_dir, $job_name, $param);
   if (!$mcl_job) {
-    mcl_print("Error : Failed to prepare a uploading job", 1, 3);
+    mcl_print("Error : Failed to prepare an uploading job", 1, 3);
     exit;
   }
 
@@ -610,6 +675,7 @@ function drush_mcl_upload_data($username, $filepath) {
   $pid = getmypid();
   $mcl_job->setPID($pid);
   $mcl_job->update();
+  print "\tProcess ID = $pid\n\n";
 
   // Uploads the file.
   $job_id   = $mcl_job->getJobID();
@@ -631,7 +697,7 @@ function drush_mcl_upload_data($username, $filepath) {
     $job_id = $mcl_job->getJobID();
     $opt_working_dir  = ($working_dir) ? "--working_dir=$working_dir" : '';
     $opt_move_input   = ($move_input) ? '--move_input' : '';
-    $opt_transaction  = ($transaction) ? '' : '--no_transaction';
+    $opt_transaction  = ($trans) ? '' : '--no_transaction';
 
     mcl_print("DONE : The job (Job ID = $job_id) was completed with some errors", 1);
     mcl_print("Please fix the errors and re-run this job ", 2, 2);
@@ -647,7 +713,7 @@ function drush_mcl_upload_data($username, $filepath) {
 }
 
 /**
- * Prepares for a uploading job.
+ * Prepares for an uploading job.
  *
  * 1. Checks arguments.
  * 2. Copies an input file to job folder.
@@ -660,14 +726,17 @@ function drush_mcl_upload_data($username, $filepath) {
  *
  * @return MCL_JOB_UPLOAD
  */
-function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $working_dir = '', $job_name = '', $param = array()) {
+function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $trans, $working_dir = '', $job_name = '', $param = array()) {
   $mcl_job  = NULL;
 
-  // Sets job directory to working directory.
+  // Sets the job directory as working directory.
   $prop = array();
   if ($working_dir) {
     $prop['working_dir'] = $working_dir;
   }
+
+  // Sets the transaction.
+  $prop['transaction'] = $trans;
 
   // Sets the job name.
   $name = 'Uploading-' . basename($filepath);
@@ -675,7 +744,7 @@ function mcl_prepare_uploading_job(MCL_USER $mcl_user, $filepath, $move_input, $
     $name = $job_name;
   }
 
-  // Prepares for a uploading job.
+  // Prepares for an uploading job.
   $transaction = db_transaction();
   try {
 
@@ -795,8 +864,9 @@ function drush_mcl_generate_class($module, $schema, $dump_file, $table_file) {
     exit;
   }
 
-  // Checks the namespace option.
-  $namespace = drush_get_option('namespace');
+  // Checks the namespace and extends options.
+  $namespace  = drush_get_option('namespace');
+  $extends    = drush_get_option('extends');
 
   // Creates a tempolary directory and move the current class files.
   $tmp_dir = "$working_dir/tmp";
@@ -806,7 +876,7 @@ function drush_mcl_generate_class($module, $schema, $dump_file, $table_file) {
   $mcl_table_info = new MCL_TABLE_INFO($dump_file, $table_file);
 
   // Generats claa files.
-  $writer = new MCL_TABLE_WRITER($mcl_table_info, $tmp_dir, $namespace);
+  $writer = new MCL_TABLE_WRITER($mcl_table_info, $tmp_dir, $namespace, $extends);
   if ($writer->generateClassFiles()) {
 
     // Overwrites all the class files with newly generated ones.
@@ -832,16 +902,41 @@ function drush_mcl_generate_class($module, $schema, $dump_file, $table_file) {
  *
  * @param string $input_file.
  */
-function drush_mcl_fix_data($input_file = NULL) {
+function drush_mcl_fix_data($inc_file, $input_file = NULL) {
 
-  $module_path = drupal_get_path('module', 'mcl');
-  $filepath = "$module_path/schema/mcl_fix_data.inc";
-  if (file_exists($filepath)) {
-    require_once($filepath);
-    mcl_fix_data_func($input_file);
+  // Checks arguments.
+  $args = array(
+    'inc_file' => $inc_file,
+  );
+  if (!mcl_check_arguments($args)) {
+    mcl_print("Error : Please check arguments", 1, 3);
+    exit;
+  }
+
+  // Checks the include file.
+  $fix_data_dir = drupal_get_path('module', 'mcl') . '/fix_data/';
+  $inc_filepath = "$fix_data_dir/$inc_file";
+  if (file_exists($inc_filepath)) {
+    require_once($inc_filepath);
+
+    // Gets the working directory.
+    $working_dir = dirname($inc_filepath);
+
+    // Checks the input file.
+    $input_filepath = NULL;
+    if ($input_file) {
+      $input_filepath = "$working_dir/$input_file";
+      if (!file_exists($input_filepath)) {
+        print "The input file cannot found : $input_filepath\n\n";
+        exit;
+      }
+    }
+    $inc_filename = basename($inc_file);
+    $func_name = str_replace('.inc', '', $inc_filename);
+    call_user_func($func_name, $working_dir, $input_filepath);
   }
   else {
-    print "$filepath cannot found\n\n";
+    print "The include file cannot found : $inc_filepath\n\n";
   }
 }
 
@@ -857,7 +952,7 @@ function mcl_check_working_dir($working_dir) {
   // Checks the working directory.
   if ($working_dir) {
 
-    // Checks the existance.
+    // Checks the existence.
     if (!file_exists($working_dir)) {
       mcl_print("Error : The working directory ($working_dir) dose not exist", 1, 3);
       return FALSE;

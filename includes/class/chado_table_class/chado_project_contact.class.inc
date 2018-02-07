@@ -7,7 +7,7 @@
  * The declaration of CHADO_PROJECT_CONTACT class.
  *
  */
-class CHADO_PROJECT_CONTACT  {
+class CHADO_PROJECT_CONTACT  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_PROJECT_CONTACT.
@@ -91,6 +91,23 @@ class CHADO_PROJECT_CONTACT  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('contact_id' => array('fk_table' => 'contact', 'fk_attr' => 'contact_id')),
+      array('project_id' => array('fk_table' => 'project', 'fk_attr' => 'project_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +172,7 @@ class CHADO_PROJECT_CONTACT  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

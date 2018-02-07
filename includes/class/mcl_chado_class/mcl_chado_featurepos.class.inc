@@ -38,13 +38,13 @@ class MCL_CHADO_FEATUREPOS extends CHADO_FEATUREPOS {
    * Adds a featurepos.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param MCL_CHADO_FEATRUE $target_feature
-   * @param MCL_CHADO_FEATRUEMAP $map
-   * @param MCL_CHADO_FEATRUE $linkage_group
+   * @param MCL_CHADO_FEATURE $target_feature
+   * @param MCL_CHADO_FEATUREMAP $map
+   * @param MCL_CHADO_FEATURE $linkage_group
    *
    * @return MCL_CHADO_FEATUREPOS
    */
-  public static function addFeaturepos(MCL_TEMPLATE $mcl_tmpl, MCL_CHADO_FEATRUE $feature, MCL_CHADO_FEATRUEMAP $map, MCL_CHADO_FEATRUE $map_feature) {
+  public static function addFeaturepos(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_FEATURE $feature, MCL_CHADO_FEATUREMAP $map, MCL_CHADO_FEATURE $map_feature) {
 
     // Sets the arguments.
     $args = array(
@@ -54,28 +54,46 @@ class MCL_CHADO_FEATUREPOS extends CHADO_FEATUREPOS {
     );
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
     $featurepos = MCL_CHADO_FEATUREPOS::byKey($args);
     if ($featurepos) {
-      $mcl_tmpl->addMsg('D', 'featurepos', $args);
+      self::addMsg($mcl_tmpl, 'D', 'featurepos', $args);
     }
     else {
 
       // Adds a new featurepos.
       $args['mappos'] = 0.0;
-      $featurepos = new MCL_CHADO_FEATUREPOS($args);
+      $featurepos     = new MCL_CHADO_FEATUREPOS($args);
       if ($featurepos->insert()) {
-         $mcl_tmpl->addMsg('N', 'featurepos', $args);
+        self::addMsg($mcl_tmpl, 'N', 'featurepos', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'featurepos', $args);
+        self::addMsg($mcl_tmpl, 'E', 'featurepos', $args);
+        return NULL;
       }
     }
     return $featurepos;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'featureposprop', 'featurepos_id', $this->featurepos_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -86,9 +104,14 @@ class MCL_CHADO_FEATUREPOS extends CHADO_FEATUREPOS {
    * @param string $cvterm_name
    * @param string $value
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name, $value, $separator = '') {
-    $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
-    $mcl_tmpl->addProperty('featureposprop', 'featurepos_id', $this->featurepos_id, $type_id, $value, $separator);
+  public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
+    if ($value || $value == '0') {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->addProperty($mcl_tmpl, 'featureposprop', 'featurepos_id', $this->featurepos_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 }

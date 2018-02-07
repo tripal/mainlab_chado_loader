@@ -7,7 +7,7 @@
  * The declaration of CHADO_DBXREF class.
  *
  */
-class CHADO_DBXREF  {
+class CHADO_DBXREF  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_DBXREF.
@@ -97,6 +97,30 @@ class CHADO_DBXREF  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return NULL;
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return array(
+      'dbxref_id' => array(
+        array('table' => 'feature', 'attr' => 'dbxref_id'),
+        array('table' => 'cvterm', 'attr' => 'dbxref_id'),
+        array('table' => 'feature_dbxref', 'attr' => 'dbxref_id'),
+        array('table' => 'dbxrefprop', 'attr' => 'dbxref_id'),
+        array('table' => 'organism_dbxref', 'attr' => 'dbxref_id'),
+        array('table' => 'stock', 'attr' => 'dbxref_id'),
+        array('table' => 'stock_dbxref', 'attr' => 'dbxref_id'),
+      ),
+    );
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -165,7 +189,7 @@ class CHADO_DBXREF  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

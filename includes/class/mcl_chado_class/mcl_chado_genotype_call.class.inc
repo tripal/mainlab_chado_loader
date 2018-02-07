@@ -41,29 +41,30 @@ class MCL_CHADO_GENOTYPE_CALL extends CHADO_GENOTYPE_CALL {
    *
    * @return MCL_CHADO_GENOTYPE_CALL
    */
-  public static function addGenotypeCall(MCL_TEMPLATE $mcl_tmpl, $args) {
+  public static function addGenotypeCall(MCL_TEMPLATE $mcl_tmpl = NULL, $args) {
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
-    $mcl_genotype_call = MCL_CHADO_GENOTYPE_CALL::byKey($args);
-    if ($mcl_genotype_call) {
-      $mcl_tmpl->addMsg('D', 'genotype_call', $args);
+    $genotype_call = MCL_CHADO_GENOTYPE_CALL::byKey($args);
+    if ($genotype_call) {
+      self::addMsg($mcl_tmpl, 'D', 'genotype_call', $args);
     }
     else {
 
       // Adds a new genotype.
-      $mcl_genotype_call = new MCL_CHADO_GENOTYPE_CALL($args);
-      if ($mcl_genotype_call->insert()) {
-        $mcl_tmpl->addMsg('N', 'genotype_call', $args);
+      $genotype_call = new MCL_CHADO_GENOTYPE_CALL($args);
+      if ($genotype_call->insert()) {
+        self::addMsg($mcl_tmpl, 'N', 'genotype_call', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'genotype_call', $args);
+        self::addMsg($mcl_tmpl, 'E', 'genotype_call', $args);
+        return NULL;
       }
     }
-    return $mcl_genotype_call;
+    return $genotype_call;
   }
 }

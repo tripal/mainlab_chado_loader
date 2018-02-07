@@ -8,15 +8,6 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
  /**
   *  Class data members.
   */
-  // Valid stock types.
-  public static $stock_types = array(
-    'breeding_research_material',
-    'cultivar',
-    'landrace',
-    'population',
-    'species',
-    'wild_unimproved',
-  );
 
   /**
    * @see CHADO_STOCK::__construct()
@@ -44,45 +35,7 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
   }
 
   /**
-   * Returns stock types.
-   *
-   * @return array of stock types.
-   */
-  public static function getStockTypeArray() {
-
-    // Gets all stock types.
-    $stock_arr = array();
-    foreach (self::$stock_types as $stock_type) {
-      $mcl_cvterm = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $stock_type);
-      if ($mcl_cvterm) {
-        $stock_arr[$mcl_cvterm->getCvtermID()] = $stock_type;
-      }
-    }
-    return $stock_arr;
-  }
-
-  /**
-   * Checks the type of stock. If not, write the error messasge to the log.
-   *
-   * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $stock_type
-   */
-  public static function checkType(MCL_TEMPLATE $mcl_tmpl, $stock_type) {
-    if ($stock_type) {
-      if (!in_array(strtolower($stock_type), $mcl_tmpl->valid_stock_types)) {
-        $mcl_tmpl->updateMsg('E', "Error - germplasm_type : '$stock_type' is not valid germplasm type");
-      }
-      else {
-        $cvterm = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $stock_type);
-        if (!$cvterm) {
-          $mcl_tmpl->updateMsg('E', "Error - germplasm_type : '$stock_type' does not exist");
-        }
-      }
-    }
-  }
-
-  /**
-   * Checks the existance of stock. If not, write the error messasge
+   * Checks the existence of stock. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -90,19 +43,26 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param string $genus
    * @param string $species
    * @param string $separator
+   *
+   * @return boolean
    */
-  public static function checkStock(MCL_TEMPLATE $mcl_tmpl, $stock, $genus = '', $species = '', $separator = '') {
+  public static function checkStock(MCL_TEMPLATE $mcl_tmpl = NULL, $stock, $genus = '', $species = '', $separator = '') {
+    $flag = TRUE;
     if ($stock) {
 
       // Gets the organism_id.
       $organism_id = NULL;
       if ($genus && $species) {
         $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
+        if (!$organism) {
+          self::updateMsg($mcl_tmpl, 'E', "$genus $species not found in organism");
+          return FALSE;
+        }
         $organism_id = $organism->getOrganismID();
       }
 
       // Gets the uniquenames.
-      $uniquenames = preg_split($mcl_tmpl->getSepRegex($separator), $stock, NULL, PREG_SPLIT_NO_EMPTY);
+      $uniquenames = preg_split(self::getSepRegex($separator), $stock, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($uniquenames as $uniquename) {
         $uniquename = trim($uniquename);
 
@@ -122,18 +82,20 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
             $args['organism_id'] = $diff_organism->getOrganismID();
           }
           else {
-            $mcl_tmpl->updateMsg('E', "$genus $species not found in organism");
-            return;
+            self::updateMsg($mcl_tmpl, 'E', "$genus $species not found in organism");
+            $flag = FALSE;
           }
         }
 
         // Checks the stock.
-        $mcl_stock = MCL_CHADO_STOCK::byKey($args);
-        if (!$mcl_stock) {
-          $mcl_tmpl->updateMsg('E', $mcl_tmpl->arrStr($args) . " not found in stock");
+        $stock = MCL_CHADO_STOCK::byKey($args);
+        if (!$stock) {
+          self::updateMsg($mcl_tmpl, 'E', self::arrStr($args) . " not found in stock");
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   }
 
   /**
@@ -142,20 +104,25 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $alias
    * @param string $separator
+   *
+   * @return boolean
    */
-  public static function checkAlias(MCL_TEMPLATE $mcl_tmpl, $alias, $separator = '') {
+  public static function checkAlias(MCL_TEMPLATE $mcl_tmpl = NULL, $alias, $separator = '') {
+    $flag = TRUE;
     if ($alias) {
 
       // Gets the alias.
-      $aliases = preg_split($mcl_tmpl->getSepRegex($separator), $alias, NULL, PREG_SPLIT_NO_EMPTY);
+      $aliases = preg_split(self::getSepRegex($separator), $alias, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($aliases as $value) {
         $tmp = preg_split("/:/", $value);
         $num_elem = sizeof($tmp);
         if ($num_elem > 2) {
-          $mcl_tmpl->updateMsg('E', "$value is not a valid format. It should be alias_type:alias");
+          self::updateMsg($mcl_tmpl, 'E', "$value is not a valid format. It should be alias_type:alias");
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   }
 
   /**
@@ -187,13 +154,13 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $uniquename
+   * @param string $name
    * @param integer $organism_id
    * @param integer $type_id
-   * @param string $name
    *
    * @return MCL_CHADO_STOCK
    */
-  public static function addStock(MCL_TEMPLATE $mcl_tmpl, $uniquename, $name, $organism_id, $type_id) {
+  public static function addStock(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $name, $organism_id, $type_id) {
 
     // Sets the arguments.
     $args = array(
@@ -202,29 +169,114 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
     );
 
     // Checks the arguments.
-    if (!$mcl_tmpl->checkReqArgs($args)) {
+    if (!self::checkReqArgs($args)) {
       return NULL;
     }
 
     // Checks for duplication.
-    $mcl_stock = MCL_CHADO_STOCK::byKey($args);
-    if ($mcl_stock) {
-      $mcl_tmpl->addMsg('D', 'stock', $args);
+    $stock = MCL_CHADO_STOCK::byKey($args);
+    if ($stock) {
+      self::addMsg($mcl_tmpl, 'D', 'stock', $args);
     }
     else {
 
       // Adds a new stock.
       $args['type_id']  = $type_id;
       $args['name']     = $name;
-      $mcl_stock = new MCL_CHADO_STOCK($args);
-      if ($mcl_stock->insert()) {
-        $mcl_tmpl->addMsg('N', 'stock', $args);
+      $stock = new MCL_CHADO_STOCK($args);
+      if ($stock->insert()) {
+        self::addMsg($mcl_tmpl, 'N', 'stock', $args);
       }
       else {
-        $mcl_tmpl->addMsg('E', 'stock', $args);
+        self::addMsg($mcl_tmpl, 'E', 'stock', $args);
+        return NULL;
       }
     }
-    return $mcl_stock;
+    return $stock;
+  }
+
+  /**
+   * Adds a stock by a secondary ID.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $uniquename
+   * @param string $secondary_id
+   * @param integer $organism_id
+   * @param integer $type_id
+   *
+   * @return MCL_CHADO_STOCK
+   */
+  public static function addStockBy2ndID(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $secondary_id, $organism_id, $type_id) {
+
+    // Sets the arguments.
+    $args = array(
+      'uniquename'  => $uniquename,
+      'name'        => $secondary_id,
+      'organism_id' => $organism_id,
+    );
+
+    // Checks the arguments.
+    if (!self::checkReqArgs($args)) {
+      return NULL;
+    }
+
+    // Checks for duplication with the secondary ID.
+    $args = array(
+      'name'        => $secondary_id,
+      'organism_id' => $organism_id,
+    );
+    $stock = MCL_CHADO_STOCK::byKey($args);
+    if ($stock) {
+      self::addMsg($mcl_tmpl, 'D', 'stock', $args);
+    }
+    else {
+
+      // Checks for duplication with the uniquename.
+      $args = array(
+        'uniquename'  => $uniquename,
+        'organism_id' => $organism_id,
+      );
+      $stock = MCL_CHADO_STOCK::byKey($args);
+      if ($stock) {
+        self::updateMsg($mcl_tmpl, 'E', "The uniquename ($uniquename) has a different secondary ID");
+      }
+      else {
+
+        // Adds a new stock.
+        $args = array(
+          'uniquename'  => $uniquename,
+          'name'        => $secondary_id,
+          'organism_id' => $organism_id,
+          'type_id'     => $type_id,
+        );
+        $stock = new MCL_CHADO_STOCK($args);
+        if ($stock->insert()) {
+          self::addMsg($mcl_tmpl, 'N', 'stock', $args);
+        }
+        else {
+          self::addMsg($mcl_tmpl, 'E', 'stock', $args);
+          return NULL;
+        }
+      }
+    }
+    return $stock;
+  }
+
+  /**
+   * Adds a property by type ID (cvterm ID).
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $value
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addPropByID(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $value, $separator = '') {
+    if ($value != '') {
+      return $this->addProperty($mcl_tmpl, 'stockprop', 'stock_id', $this->stock_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -235,10 +287,15 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param string $cvterm_name
    * @param string $value
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addProp(MCL_TEMPLATE $mcl_tmpl, $cv_name, $cvterm_name, $value, $separator = '') {
-    $type_id = $mcl_tmpl->getCvtermID($cv_name, $cvterm_name);
-    $mcl_tmpl->addProperty('stockprop', 'stock_id', $this->stock_id, $type_id, $value, $separator);
+  public function addProp(MCL_TEMPLATE $mcl_tmpl = NULL, $cv_name, $cvterm_name, $value, $separator = '') {
+    if ($value != '') {
+      $type_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+      return $this->addProperty($mcl_tmpl, 'stockprop', 'stock_id', $this->stock_id, $type_id, $value, $separator);
+    }
+    return TRUE;
   }
 
   /**
@@ -247,11 +304,14 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param MCL_CHADO_STOCK $stock
    * @param integer $type_id_relationship
+   *
+   * @return boolean
    */
-  public function addRelatedStock(MCL_TEMPLATE $mcl_tmpl, MCL_CHADO_STOCK $stock, $type_id_relationship) {
+  public function addRelatedStock(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_STOCK $stock, $type_id_relationship) {
     if ($stock) {
-      $mcl_tmpl->addRelationship('stock_relationship', 'subject_id', $this->stock_id, 'object_id', $stock->getStockID(), $type_id_relationship);
+      return $this->addRelationship($mcl_tmpl, 'stock_relationship', 'subject_id', $this->stock_id, 'object_id', $stock->getStockID(), $type_id_relationship);
     }
+    return TRUE;
   }
 
   /**
@@ -260,13 +320,14 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param MCL_CHADO_ND_EXPERIMENT $cross
    * @param integer $type_id
+   *
+   * @return boolean
    */
-  public function addCross(MCL_TEMPLATE $mcl_tmpl, $cross, $type_id) {
+  public function addCross(MCL_TEMPLATE $mcl_tmpl = NULL, $cross, $type_id) {
     if ($cross) {
-
-      // Links this progeny and dataset cross_number.
-      $mcl_tmpl->addLink('nd_experiment_stock', 'stock_id', $this->stock_id, 'nd_experiment_id', $cross->getNdExperimentID(), $type_id);
+      return $this->addLink($mcl_tmpl, 'nd_experiment_stock', 'stock_id', $this->stock_id, 'nd_experiment_id', $cross->getNdExperimentID(), $type_id);
     }
+    return TRUE;
   }
 
   /**
@@ -276,8 +337,10 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param string $uniquename
    * @param integer $organism_id
    * @param integer $type_id_relationship
+   *
+   * @return boolean
    */
-  public function addParent(MCL_TEMPLATE $mcl_tmpl, $uniquename, $organism_id, $type_id_relationship) {
+  public function addParent(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $organism_id, $type_id_relationship) {
     if ($uniquename && $type_id_relationship) {
 
       // If '::' found in uniquename, update uniquename and organism_id.
@@ -298,12 +361,75 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
       }
       $parent = MCL_CHADO_STOCK::byKey($args);
       if ($parent) {
-        $parent->addRelatedStock($mcl_tmpl, $this, $type_id_relationship);
+        if (!$parent->addRelatedStock($mcl_tmpl, $this, $type_id_relationship)) {
+          return FALSE;
+        }
       }
       else {
-        $mcl_tmpl->updateMsg('E', "Parent '$uniquename' dose not exists in stock table.");
+
+        if ($mcl_tmpl) {
+
+          // Saves the parent that could not find in stock table. It may be in the
+          // later row of the same Excel file. Adds them after processing the
+          // stock sheet.
+          $missing_parent = array(
+            'uniquename'  => $uniquename,
+            'organism_id' => $organism_id,
+            'type_id'     => $type_id_relationship,
+          );
+          $parents = $mcl_tmpl->getTmpByKey('stock_parents');
+          if (!is_array($parents)) {
+            $parents = array();
+          }
+          $parents[$this->stock_id] = $missing_parent;
+          $mcl_tmpl->setTmpByKey('stock_parents', $parents);
+        }
+        else {
+          return FALSE;
+        }
       }
     }
+    return TRUE;
+  }
+
+  /**
+   * Updates the parent by stock ID.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $stock_id
+   * @param integer $type_id
+   *
+   * @return boolean
+   */
+  public function updateParentByID(MCL_TEMPLATE $mcl_tmpl = NULL, $stock_id, $type_id) {
+    if ($type_id) {
+
+      // Sets properties.
+      $args = array(
+        'object_id' => $this->stock_id,
+        'type_id'   => $type_id,
+      );
+      $rel = CHADO_STOCK_RELATIONSHIP::byKey($args);
+      if ($rel) {
+
+        // Updates the relationship.
+        if ($stock_id) {
+          $rel->setSubjectID($stock_id);
+          return $rel->update();
+        }
+
+        // Removes the relationship if stock ID is empty.
+        else {
+          return $rel->delete();
+        }
+      }
+      else {
+        $args['subject_id'] = $stock_id;
+        $rel = new CHADO_STOCK_RELATIONSHIP($args);
+        return $rel->insert();
+      }
+    }
+    return FALSE;
   }
 
   /**
@@ -312,10 +438,13 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $reference
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addAlias(MCL_TEMPLATE $mcl_tmpl, $alias, $separator = '') {
+  public function addAlias(MCL_TEMPLATE $mcl_tmpl = NULL, $alias, $separator = '') {
+    $flag = TRUE;
     if ($alias) {
-      $aliases = preg_split($mcl_tmpl->getSepRegex($separator), $alias, NULL, PREG_SPLIT_NO_EMPTY);
+      $aliases = preg_split($this->getSepRegex($separator), $alias, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($aliases as $value) {
         $tmp = preg_split("/:/", $value);
         $alias_type = 'alias';
@@ -324,9 +453,12 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
           $value = $tmp[1];
         }
         $alias_type = (strtolower($alias_type) == 'cultivar') ? 'cultivar' : 'alias';
-        $this->addProp($mcl_tmpl, 'SITE_CV', $alias_type, $value);
+        if (!$this->addProp($mcl_tmpl, 'SITE_CV', $alias_type, $value)) {
+          $flag = FALSE;
+        }
       }
     }
+    return $flag;
   }
 
   /**
@@ -334,9 +466,14 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param MCL_CHADO_DBXREF $dbxref
+   *
+   * @return boolean
    */
-  public function addDBXref(MCL_TEMPLATE $mcl_tmpl, MCL_CHADO_DBXREF $dbxref) {
-    $mcl_tmpl->addLink('stock_dbxref', 'stock_id', $this->stock_id, 'dbxref_id', $dbxref->getDbxrefID());
+  public function addDBXref(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_DBXREF $dbxref) {
+    if ($dbxref) {
+      return $this->addLink($mcl_tmpl, 'stock_dbxref', 'stock_id', $this->stock_id, 'dbxref_id', $dbxref->getDbxrefID());
+    }
+    return TRUE;
   }
 
   /**
@@ -345,18 +482,27 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $contact
    * @param string $separator
+   *
+   * @return boolean
 
-  public function addContact(MCL_TEMPLATE $mcl_tmpl, $contact, $separator = '') {
+  public function addContact(MCL_TEMPLATE $mcl_tmpl = NULL, $contact, $separator = '') {
+    $flag = TRUE;
     if ($contact) {
-      $names = preg_split($mcl_tmpl->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
+      $names = preg_split($this->getSepRegex($separator), $contact, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($names as $name) {
         $name = trim($name);
-        $mcl_contact = MCL_CHADO_CONTACT::getContact($name);
-        if ($mcl_contact) {
-          $mcl_tmpl->addLink('stock_contact', 'stock_id', $this->stock_id, 'contact_id', $mcl_contact->getContactID());
+        $contact = MCL_CHADO_CONTACT::getContact($name);
+        if ($contact) {
+          if (!$this->addLink($mcl_tmpl, 'stock_contact', 'stock_id', $this->stock_id, 'contact_id', $contact->getContactID())) {
+            $flag = FALSE;
+          }
+        }
+        else {
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   } */
 
   /**
@@ -365,18 +511,27 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $reference
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addImage(MCL_TEMPLATE $mcl_tmpl, $image, $separator = '') {
+  public function addImage(MCL_TEMPLATE $mcl_tmpl = NULL, $image, $separator = '') {
+    $flag = TRUE;
     if ($image) {
-      $eimage_ids = preg_split($mcl_tmpl->getSepRegex($separator), $image, NULL, PREG_SPLIT_NO_EMPTY);
+      $eimage_ids = preg_split($this->getSepRegex($separator), $image, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($eimage_ids as $eimage_id) {
         $eimage_id = trim($eimage_id);
-        $mcl_image = MCL_CHADO_IMAGE::byKey(array('eimage_id' => $eimage_id));
-        if ($mcl_image) {
-          $mcl_tmpl->addLink('stock_image', 'stock_id', $this->stock_id, 'eimage_id', $mcl_image->getEimageID());
+        $image = MCL_CHADO_IMAGE::byKey(array('eimage_id' => $eimage_id));
+        if ($image) {
+          if (!$this->addLink($mcl_tmpl, 'stock_image', 'stock_id', $this->stock_id, 'eimage_id', $image->getEimageID())) {
+            $flag = FALSE;
+          }
+        }
+        else {
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   }
 
   /**
@@ -385,18 +540,27 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $reference
    * @param string $separator
+   *
+   * @return boolean
    */
-  public function addReference(MCL_TEMPLATE $mcl_tmpl, $reference, $separator = '') {
+  public function addReference(MCL_TEMPLATE $mcl_tmpl = NULL, $reference, $separator = '') {
+    $flag = TRUE;
     if ($reference) {
-      $pub_ids = preg_split($mcl_tmpl->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
+      $pub_ids = preg_split($this->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);
-        $mcl_pub = MCL_CHADO_PUB::getPub($pub_id);
-        if ($mcl_pub) {
-          $mcl_tmpl->addLink('stock_pub', 'stock_id', $this->stock_id, 'pub_id', $pub_id);
+        $pub = MCL_CHADO_PUB::getPub($pub_id);
+        if ($pub) {
+          if (!$this->addLink($mcl_tmpl, 'stock_pub', 'stock_id', $this->stock_id, 'pub_id', $pub_id)) {
+            $flag = FALSE;
+          }
+        }
+        else {
+          $flag = FALSE;
         }
       }
     }
+    return $flag;
   }
 
   /**
@@ -404,8 +568,11 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $previous_entry
+   *
+   * @return boolean
    */
-  public function addPreviousEntry(MCL_TEMPLATE $mcl_tmpl, $previous_entry) {
+  public function addPreviousEntry(MCL_TEMPLATE $mcl_tmpl = NULL, $previous_entry) {
+    $flag = TRUE;
     if ($previous_entry) {
 
       // Checks the sample.
@@ -413,11 +580,15 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
       if ($sample) {
 
         // Adds the sample_id in stockprop.
-        $this->addProp($mcl_tmpl, 'SITE_CV', 'previous_entry', $sample->getStockID());
+        if (!$this->addProp($mcl_tmpl, 'SITE_CV', 'previous_entry', $sample->getStockID())) {
+          $flag = FALSE;
+        }
       }
       else {
-        $mcl_tmpl->updateMsg('E', "Error - sample : '$previous_entry' does not exist");
+        $this->updateMsg($mcl_tmpl, 'E', "Error - sample : '$previous_entry' does not exist");
+        $flag = FALSE;
       }
     }
+    return $flag;
   }
 }

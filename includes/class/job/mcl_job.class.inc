@@ -14,8 +14,8 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   protected $user_dir     = NULL;
   protected $job_dir      = NULL;
   protected $log_dir      = NULL;
+  protected $std_dir      = NULL;
   protected $file_dir     = NULL;
-  protected $progress     = NULL;
   protected $pid          = NULL;
 
   // Message types.
@@ -89,13 +89,13 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     if ($log_dir) {
       $this->log_dir = $log_dir;
     }
+    $std_dir = $this->getPropByKey('std_dir');
+    if ($std_dir) {
+      $this->std_dir = $std_dir;
+    }
     $file_dir = $this->getPropByKey('file_dir');
     if ($file_dir) {
       $this->file_dir = $file_dir;
-    }
-    $progress = $this->getPropByKey('progress');
-    if ($progress) {
-      $this->progress = $progress;
     }
     $pid = $this->getPropByKey('pid');
     if ($pid) {
@@ -147,19 +147,21 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
       $this->user_dir = "$working_dir/$username";
       $this->job_dir  = $this->user_dir . '/' . $this->job_id;
       $this->log_dir  = $this->job_dir . '/logs';
+      $this->std_dir  = $this->job_dir . '/std';
       $this->file_dir = $this->job_dir . '/files';
       $this->setPropByKey('working_dir', $this->user_dir);
       $this->setPropByKey('user_dir', $this->user_dir);
       $this->setPropByKey('job_dir', $this->job_dir);
       $this->setPropByKey('log_dir', $this->log_dir);
+      $this->setPropByKey('std_dir', $this->std_dir);
       $this->setPropByKey('file_dir', $this->file_dir);
-      $this->setPropByKey('progress', $this->progress);
       $this->setPropByKey('pid', $this->pid);
       $this->update();
 
       // Creates directories.
       mcl_create_dir($this->job_dir);
       mcl_create_dir($this->log_dir);
+      mcl_create_dir($this->std_dir);
       mcl_create_dir($this->file_dir);
     }
     else {
@@ -203,18 +205,27 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
    * Returns jobs that belong to the user.
    *
    * @parma integer $user_id
+   * @parma string $type
    *
    * @return array of MCL_UPLOAD_JOB
    */
 
-  public static function getJobsByUser($user_id) {
+  public static function getJobsByUser($user_id, $type = NULL) {
     $sql = "
       SELECT J.job_id, J.class_name
       FROM {mcl_job} J
       WHERE J.user_id = :user_id
-      ORDER BY J.submit_date DESC
     ";
-    $results = db_query($sql, array(':user_id' => $user_id));
+    $args =array (':user_id' => $user_id);
+
+    // Adds conditions.
+    if ($type) {
+      $sql .= ' AND J.type = :type';
+      $args[':type'] = $type;
+    }
+
+    $sql .= ' ORDER BY J.submit_date DESC';
+    $results = db_query($sql, $args);
     $mcl_jobs = array();
     while ($obj = $results->fetchObject()) {
       $class_name = $obj->class_name;
@@ -262,6 +273,17 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     if (array_key_exists($type, $this->msgs)) {
       $this->msgs[$type] = '';
     }
+  }
+
+  /**
+   * Returns the name of the std file.
+   *
+   * @param string $ext
+   *
+   * @return string
+   */
+  public function getStdFile($ext) {
+    return $this->getStdDir() . '/mcl-' . date("Y-m-d-G-i-s") . '.' . $ext;
   }
 
   /**
@@ -358,7 +380,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   }
 
   /**
-   * Changes the working directory. Needs to update job_dir, log_dir
+   * Changes the working directory. Needs to update job_dir, log_dir, std_dir
    * and file_dir.
    *
    * @param string $working_dir
@@ -370,6 +392,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
     $this->setWorkingDir($working_dir);
     $this->setJobDir($job_dir);
     $this->setLogDir("$job_dir/logs");
+    $this->setStdDir("$job_dir/std");
     $this->setFileDir("$job_dir/files");
     return $this->update();
   }
@@ -383,6 +406,57 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
    */
   public function getMessageType($type) {
     return $this->msg_types[$type];
+  }
+
+  /**
+   * Resets the progress file.
+   */
+  public function resetProgress() {
+    $progress_file = $this->getJobDir() . '/progress';
+    if (file_exists($progress_file)) {
+      unlink($progress_file);
+    }
+
+    // Creates a progress file.
+    file_put_contents($progress_file, 'RESET PROGRESS');
+  }
+
+  /**
+   * Retrieves the progress of the job.
+   *
+   * @retrun string
+   */
+  public function getProgress() {
+
+    // Gets the process file.
+    $progress_file = $this->getJobDir() . '/progress';
+    if (file_exists($progress_file)) {
+      return file_get_contents($progress_file);
+    }
+    else {
+      return 'No progress report.';
+    }
+  }
+
+  /**
+   * Updates the progress of the job.
+   *
+   * @param string $progress
+   * @param boolean $append
+   */
+  public function setProgress($progress, $append = FALSE) {
+
+    // Gets the process file.
+    $progress_file = $this->getJobDir() . '/progress';
+
+    // Appends the previous message.
+    $old_progress = '';
+    if ($append) {
+      if (file_exists($progress_file)) {
+        $old_progress = file_get_contents($progress_file) . "\n";
+      }
+    }
+    file_put_contents($progress_file, $old_progress . $progress);
   }
 
   /*
@@ -492,6 +566,25 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   }
 
   /**
+   * Retrieves the directory of the std files.
+   *
+   * @retrun string
+   */
+  public function getStdDir() {
+    return $this->std_dir;
+  }
+
+  /**
+   * Updates the directory of the std files.
+   *
+   * @param string $std_dir
+   */
+  public function setStdDir($std_dir) {
+    $this->std_dir = $std_dir;
+    $this->setPropByKey('std_dir', $std_dir);
+  }
+
+  /**
    * Retrieves the directory of the files.
    *
    * @retrun string
@@ -511,7 +604,7 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   }
 
   /**
-   * Retrieves the progress ID.
+   * Retrieves the process ID.
    *
    * @retrun integer
    */
@@ -520,37 +613,13 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   }
 
   /**
-   * Updates the progress ID.
+   * Updates the process ID.
    *
    * @param integer $pid
    */
   public function setPID($pid) {
     $this->pid = $pid;
     $this->setPropByKey('pid', $pid);
-    $this->update();
-  }
-
-  /**
-   * Retrieves the progress of the job.
-   *
-   * @retrun string
-   */
-  public function getProgress() {
-    return $this->progress;
-  }
-
-  /**
-   * Updates the progress of the job.
-   *
-   * @param string $progress
-   * @param boolean $append
-   */
-  public function setProgress($progress, $append = FALSE) {
-    $new_progress = $progress;
-    if ($append) {
-      $new_progress = $this->progress . '<br />' . $progress;
-    }
-    $this->setPropByKey('progress', $new_progress);
     $this->update();
   }
 

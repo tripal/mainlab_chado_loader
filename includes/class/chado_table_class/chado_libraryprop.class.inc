@@ -7,7 +7,7 @@
  * The declaration of CHADO_LIBRARYPROP class.
  *
  */
-class CHADO_LIBRARYPROP  {
+class CHADO_LIBRARYPROP  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_LIBRARYPROP.
@@ -97,6 +97,23 @@ class CHADO_LIBRARYPROP  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('library_id' => array('fk_table' => 'library', 'fk_attr' => 'library_id')),
+      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -165,7 +182,7 @@ class CHADO_LIBRARYPROP  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 

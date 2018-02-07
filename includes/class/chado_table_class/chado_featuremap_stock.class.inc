@@ -7,7 +7,7 @@
  * The declaration of CHADO_FEATUREMAP_STOCK class.
  *
  */
-class CHADO_FEATUREMAP_STOCK  {
+class CHADO_FEATUREMAP_STOCK  extends CHADO_TABLE {
 
   /**
    *  Data members for CHADO_FEATUREMAP_STOCK.
@@ -91,6 +91,23 @@ class CHADO_FEATUREMAP_STOCK  {
   }
 
   /**
+   * Returns the foreign keys.
+   */
+  public static function getFK() {
+    return array(
+      array('featuremap_id' => array('fk_table' => 'featuremap', 'fk_attr' => 'featuremap_id')),
+      array('stock_id' => array('fk_table' => 'stock', 'fk_attr' => 'stock_id')),
+    );
+  }
+
+  /**
+   * Returns the related tables.
+   */
+  public static function getRelTable() {
+    return NULL;
+  }
+
+  /**
    * Adds a new record.
    */
   public function insert() {
@@ -155,7 +172,7 @@ class CHADO_FEATUREMAP_STOCK  {
   }
 
   /**
-   * Delete the record.
+   * Deletes the record.
    */
   public function delete() {
 
