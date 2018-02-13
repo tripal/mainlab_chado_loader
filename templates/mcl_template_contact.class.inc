@@ -39,24 +39,25 @@ class MCL_TEMPLATE_CONTACT extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $headers = array(
-      'contact_name'  => array('req' => TRUE,   'width' => 10, 'desc' => "Name of the contact (person, institution, etc)."),
-      'alias'         => array('req' => FALSE,  'width' => 10, 'desc' => "Any alias of the contact."),
-      'type'          => array('req' => TRUE,   'width' => 10, 'desc' => "Name of the contact - choose one from person, company, institution, lab or organization)."),
-      'first_name'    => array('req' => FALSE,  'width' => 12, 'desc' => "First name of the person."),
-      'last_name'     => array('req' => FALSE,  'width' => 12, 'desc' => "Last name of the person."),
-      'institution'   => array('req' => FALSE,  'width' => 12, 'desc' => "Name of the institution the person belongs to."),
-      'lab'           => array('req' => FALSE,  'width' => 10, 'desc' => "Name of the lab the person belongs to."),
-      'address'       => array('req' => FALSE,  'width' => 10, 'desc' => "Address of the contact."),
-      'email'         => array('req' => FALSE,  'width' => 10, 'desc' => "Email of the contact."),
-      'phone'         => array('req' => FALSE,  'width' => 10, 'desc' => "Phone number of the contact."),
-      'fax'           => array('req' => FALSE,  'width' => 10, 'desc' => "Fax number of the contact."),
-      'title'         => array('req' => FALSE,  'width' => 10, 'desc' => "Job title of the person."),
-      'country'       => array('req' => FALSE,  'width' => 10, 'desc' => "Country of the contact."),
-      'source'        => array('req' => FALSE,  'width' => 10, 'desc' => "Source of the data when the contact information is obtained from other databases."),
-      'last_update'   => array('req' => FALSE,  'width' => 12, 'desc' => "Date of the last update."),
-      'url'           => array('req' => FALSE,  'width' => 10, 'desc' => "URL of home page."),
-      'comments'      => array('req' => FALSE,  'width' => 14, 'desc' => "Any comments of the contact."),
-      'keywords'      => array('req' => FALSE,  'width' => 15, 'desc' => "A maximum of 5 keywords that best describe the person's area of work."),
+      'contact_name'    => array('req' => TRUE,   'width' => 10, 'desc' => "Name of the contact (person, institution, etc)."),
+      'alias'           => array('req' => FALSE,  'width' => 10, 'desc' => "Any alias of the contact."),
+      'type'            => array('req' => TRUE,   'width' => 10, 'desc' => "Name of the contact - choose one from person, company, institution, lab or organization)."),
+      'first_name'      => array('req' => FALSE,  'width' => 12, 'desc' => "First name of the person."),
+      'last_name'       => array('req' => FALSE,  'width' => 12, 'desc' => "Last name of the person."),
+      'institution'     => array('req' => FALSE,  'width' => 12, 'desc' => "Name of the institution the person belongs to."),
+      'lab'             => array('req' => FALSE,  'width' => 10, 'desc' => "Name of the lab the person belongs to."),
+      'address'         => array('req' => FALSE,  'width' => 10, 'desc' => "Address of the contact."),
+      'email'           => array('req' => FALSE,  'width' => 10, 'desc' => "Email of the contact."),
+      'phone'           => array('req' => FALSE,  'width' => 10, 'desc' => "Phone number of the contact."),
+      'fax'             => array('req' => FALSE,  'width' => 10, 'desc' => "Fax number of the contact."),
+      'title'           => array('req' => FALSE,  'width' => 10, 'desc' => "Job title of the person."),
+      'country'         => array('req' => FALSE,  'width' => 10, 'desc' => "Country of the contact."),
+      'source'          => array('req' => FALSE,  'width' => 10, 'desc' => "Source of the data when the contact information is obtained from other databases."),
+      'last_update'     => array('req' => FALSE,  'width' => 12, 'desc' => "Date of the last update."),
+      'url'             => array('req' => FALSE,  'width' => 10, 'desc' => "URL of home page."),
+      'comments'        => array('req' => FALSE,  'width' => 14, 'desc' => "Any comments of the contact."),
+      'keywords'        => array('req' => FALSE,  'width' => 15, 'desc' => "A maximum of 5 keywords that best describe the person's area of work."),
+      '##property_name' => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
     return $headers;
   }
@@ -111,14 +112,14 @@ class MCL_TEMPLATE_CONTACT extends MCL_TEMPLATE {
    */
   public function uploadDataLine($line) {
 
-    // Gets contact type.
+    // Gets the contact type.
     $type_id = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $line['type'])->getCvtermID();
 
-    // Adds a contact.
+    // Adds the contact.
     $contact = MCL_CHADO_CONTACT::addContact($this, $line['contact_name'], $type_id, $line['description']);
     if ($contact) {
 
-      // Adds properties.
+      // Adds the properties.
       $contact->addProp($this, 'SITE_CV', 'institution', $line['institution']);
       $contact->addProp($this, 'SITE_CV', 'lab', $line['lab']);
       $contact->addProp($this, 'SITE_CV', 'first_name', $line['first_name']);
@@ -134,8 +135,29 @@ class MCL_TEMPLATE_CONTACT extends MCL_TEMPLATE {
       $contact->addProp($this, 'SITE_CV', 'comments', $line['comments']);
       $contact->addProp($this, 'SITE_CV', 'keywords', $line['keywords'], '[,;]');
 
-      // Adds aliases.
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $contact, $line);
+
+      // Adds the aliases.
       $contact->addProp($this, 'SITE_CV', 'alias', $line['alias'], '[,;]');
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

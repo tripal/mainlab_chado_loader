@@ -709,33 +709,30 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
     return $flag;
   }
 
-
   /**
-   * Adds images to stock_image.
+   * Adds images to stock_image as a trait.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $type
    * @param string $image_list
+   * @param integer $cvterm_id
    * @param string $separator
    *
    * @return boolean
    */
-  public function addImage(MCL_TEMPLATE $mcl_tmpl = NULL, $type, $image_list, $separator = '') {
+  public function addImage(MCL_TEMPLATE $mcl_tmpl = NULL, $type, $image_list, $cvterm_id = '', $separator = '') {
     $flag = TRUE;
     if ($image_list) {
       $eimages = preg_split($this->getSepRegex($separator), $image_list, NULL, PREG_SPLIT_NO_EMPTY);
-      foreach ($eimages as $eimage) {
-        $eimage = trim($eimage);
+      foreach ($eimages as $eimage_filename) {
+        $eimage_filename = trim($eimage_filename);
 
-        // Checks duplication.
-        $args = array(
-          'eimage_data' => $eimage,
-          'eimage_type' => $type,
-          'eimage_url'  => $eimage,
-        );
-        $image = MCL_CHADO_IMAGE::byKey($args);
-        if ($image) {
-          if (!$this->addLink($mcl_tmpl, 'stock_image', 'stock_id', $this->stock_id, 'eimage_id', $image->getEimageID())) {
+        // Add image.
+        $eimage = MCL_CHADO_IMAGE::addImage($eimage_filename, $type, $eimage_filename, $cvterm_id);
+        if ($eimage) {
+
+          // Associated with stock.
+          if (!$this->addLink($mcl_tmpl, 'stock_image', 'stock_id', $this->stock_id, 'eimage_id', $eimage->getEimageID())) {
             $flag = FALSE;
           }
         }

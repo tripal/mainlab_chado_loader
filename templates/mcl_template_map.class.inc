@@ -54,6 +54,7 @@ class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
       'genome_group'    => array('req' => FALSE, 'width' => 10, 'desc' => "Specific genome groups if available (eg. A, D etc for cotton)."),
       'contact'         => array('req' => FALSE, 'width' => 10, 'desc' => "Contact person for the map."),
       'reference'       => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id of the reference."),
+      '##property_name' => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
     return $headers;
   }
@@ -105,7 +106,7 @@ class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
     $map = MCL_CHADO_FEATUREMAP::addMap($this, $line['map_name'], $line['map_unit'], $line['description']);
     if ($map) {
 
-      // Adds properties.
+      // Adds the properties.
       $map->addProp($this, 'SITE_CV', 'analysis_method', $line['analysis_method']);
       $map->addProp($this, 'SITE_CV', 'software', $line['software']);
       $map->addProp($this, 'SITE_CV', 'map_type', $line['map_type']);
@@ -115,17 +116,38 @@ class MCL_TEMPLATE_MAP extends MCL_TEMPLATE {
       $map->addProp($this, 'SITE_CV', 'genome_group', $line['genome_group']);
       $map->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
-      // Adds organisms.
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $map, $line);
+
+      // Adds the organisms.
       $map->addOrganism($this, $line['genus'], $line['species'], "[;]");
 
-      // Adds stocks.
+      // Adds the stocks.
       $map->addStock($this, $line['population_name'], '', '', "[;]");
 
-      // Adds contacts.
+      // Adds the contacts.
       $map->addContact($this, $line['contact'], "[;]");
 
-      // Adds references.
+      // Adds the references.
       $map->addReference($this, $line['reference'], "[,;]");
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

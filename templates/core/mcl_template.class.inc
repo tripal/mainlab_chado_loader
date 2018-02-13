@@ -503,6 +503,27 @@ DESC;
   }
 
   /**
+   * Overwrite the headings.
+   *
+   * @param array $ref_arr
+   */
+  protected function updateHeaders($ref_arr) {
+
+    // Updates the columns if defined.
+    $headers = $this->getHeaders();
+    $new_headers = array();
+    foreach ($headers as $name => $info) {
+      if (array_key_exists($name, $ref_arr) && $ref_arr[$name]) {
+        $new_headers[$ref_arr[$name]] = $info;
+      }
+      else {
+        $new_headers[$name] = $info;
+      }
+    }
+    $this->setHeaders($new_headers);
+  }
+
+  /**
    * Updates cvterms array.
    *
    * @return boolean
@@ -549,15 +570,23 @@ DESC;
   /**
    * Returns the information of the headers in table.
    *
+   * @param array $overwrite_cols
+   *   Overwrites the headers with the headings with ones in the provided columns.
+   *
    * @return string
    */
-  public function getHeaderTable() {
+  public function getHeaderTable($overwrite_cols = NULL) {
 
     // Sets red star.
     $star = '<b><span style="color:red;">*</span></b>';
 
     // Gets the regular expression for special columns.
     $regex = $this->getRegExSpCol();
+
+    // Updates the headings.
+    if ($overwrite_cols) {
+      $this->updateHeaders($overwrite_cols);
+    }
 
     // Populates the rows with the headers.
     $rows = array();
@@ -570,7 +599,7 @@ DESC;
       $heading = ($prop['req']) ? "$star $heading" : $heading;
 
       // If the column is special colmn, make it italic.
-      if (preg_match($regex, $name)) {
+      if (preg_match($regex, $heading)) {
         $heading = "<em>$heading</em>";
       }
       $row = array($heading, $prop['desc']);
@@ -938,30 +967,6 @@ DESC;
           // Handles the special coulmns.
           else if (preg_match($regex, $column_name, $matches)) {
             $this->headers[$column_name]['col'] = $i;
-            $prefix = $matches[0];
-            $prefix_len = strlen($prefix);
-
-            // Type 1 : double special character + cvterm.name.
-            if ($prefix_len == 2) {
-
-              // Gets cv_id.
-              $cv = $this->getCvByPrefix($prefix);
-              if ($cv) {
-
-                // Gets the cvterm.
-                $cvterm_name = substr($column_name, $prefix_len);
-                $cvterm = MCL_CHADO_CVTERM::getCvtermByCvID($cv->getCvID(), $cvterm_name);
-                if ($cvterm) {
-                  $this->headers[$column_name]['cvterm_id'] = $cvterm->getCvtermID();
-                }
-                else {
-                  $this->updateMsg('E', "Error : $cvterm_name not found in cvterm table.");
-                }
-              }
-              else {
-                $this->updateMsg('E', "Error : cv could not found for the prefix ($prefix).");
-              }
-            }
           }
 
           // Handles the valid columns provided in the job paramters.
@@ -1000,31 +1005,6 @@ DESC;
     // Runs the pre-process.
     $this->preProcess($data_lines);
     return $this->isPassed();
-
-  }
-
-  /**
-   * Returns cv.cv_id from the parameter of this job if found. Otherwise,
-   * returns cv_id of 'SITE_CV'.
-   *
-   * @param string $prefix
-   *
-   * @return MCL_CHADO_CV
-   */
-  public function getCvByPrefix($prefix) {
-
-    // Returns cv_id for this prefix if it found in job param array.
-    $cv_id_map = $this->getJob()->getParamByKey('cv_id_map');
-    if (is_array($cv_id_map)) {
-      if (array_key_exists($this->template, $cv_id_map)) {
-        if (array_key_exists($prefix, $cv_id_map[$this->template])) {
-          return MCL_CHADO_CV::byID($cv_id_map[$this->template][$prefix]);
-        }
-      }
-    }
-
-    // Returns MCL_CHADO_CV for 'SITE_TRAIT_ONTOLOGY'.
-    return MCL_CHADO_CV::getCV('SITE_TRAIT_ONTOLOGY');
   }
 
   /**
@@ -1164,6 +1144,21 @@ DESC;
   }
 
   /**
+   * Checks for alpha numeric.
+   *
+   * @param string $str
+   *
+   * @return boolean
+   */
+  public function checkAlpahNumeric($str) {
+    if (!preg_match("/^[a-zA-z0-9 _\-]+$/", $str)) {
+      $this->updateMsg('E', "Please use alpha-numeric and [_-]");
+      return FALSE;
+    }
+    return TRUE;
+  }
+
+  /**
    * Returns the special columns that start with the provided prefix.
    *
    * @param string $prefix
@@ -1187,22 +1182,116 @@ DESC;
   }
 
   /**
+   * Checks special columns.
+   *
+   * @param string $prefix
+   * @param integer $cv_id
+   * @param array $line
+   *
+   * @return boolean
+   */
+  public function saveSpecialColumns($prefix, $cv_id, $line) {
+    if ($prefix == '##') {
+      return $this->_saveProperty($prefix, $cv_id, $line);
+    }
+    else if ($prefix == '#') {
+      return $this->_saveDescriptor($prefix, $cv_id, $line);
+    }
+    return TRUE;
+  }
+
+
+  /**
+   * Saves the user-specific properties in job.param.
+   *
+   * @param string $prefix
+   * @param integer $cv_id
+   * @param array $line
+   *
+   * @return boolean
+   */
+  private function _saveProperty($prefix, $cv_id, $line) {
+    $flag = TRUE;
+
+    // Goes through headers stored in the line array.
+    $properties = array();
+    foreach ($line as $column => $value) {
+      $regex = '/^' . $prefix . '[A-Za-z0-9\_]/';
+      if (preg_match($regex, $column)) {
+        $cvterm_name = str_replace($prefix, '', $column);
+
+        // Gets the cvterm.
+        $cvterm = MCL_CHADO_CVTERM::getCvtermByCvID($cv_id, $cvterm_name);
+        if ($cvterm) {
+          $properties[$cvterm->getCvtermID()] = $cvterm;
+        }
+        else {
+          $this->updateMsg('E', "$cvterm_name (property) not found in cvterm");
+          $flag = FALSE;
+        }
+      }
+    }
+    if ($flag) {
+      $this->getJob()->setParamByKey($prefix, $properties);
+      $this->getJob()->update();
+    }
+    return $flag;
+  }
+
+  /**
+   * Saves trait descriptors for cvterm_id. Save them in job.param.
+   *
+   * @param string $prefix
+   * @param integer $cv_id
+   * @param array $line
+   *
+   * @return boolean
+   */
+  private function _saveDescriptor($prefix, $cv_id, $line) {
+    $flag = TRUE;
+
+    // Gets the site CV name.
+    $site_cv_name = MCL_VAR::getValueByName('SITE_CV');
+
+    // Goes through headers stored in the line array.
+    $descriptors = array();
+    foreach ($line as $column => $value) {
+      if (preg_match("/^#[A-Za-z0-9\_]/", $column)) {
+        $cvterm_name = str_replace('#', '', $column);
+
+        // Gets the Field Book descriptor.
+        $descriptor = MCL_CHADO_CVTERM::getFBDescriptor($site_cv_name, $cv_id, $cvterm_name);
+        if ($descriptor) {
+          $descriptors[$descriptor['cvterm_id']] = $descriptor;
+        }
+        else {
+          $this->updateMsg('E', "$cvterm_name not found in cvterm");
+        }
+      }
+    }
+    if ($flag) {
+      $this->getJob()->setParamByKey($prefix, $descriptors);
+      $this->getJob()->update();
+    }
+    return $flag;
+  }
+
+  /**
    * Adds special columns.
    *
    * @param string $prefix
-   * @param MCL_TEMPLATE $mcl_template
+   * @param CHADO_TABLE $table_obj
    * @param array $line
    */
-  public function addSpecialColumns($prefix, $mcl_template, $line) {
+  public function addSpecialColumns($prefix, $table_obj, $line) {
 
     // Gets the special columns.
-    $columns  = $this->getSpecialColumns($prefix);
-    if (!empty($columns)) {
-      foreach ($columns as $column_name => $prop) {
-        $value = $line[$column_name];
-        if ($value != '') {
-          $mcl_template->addPropByID($this, $prop['cvterm_id'], $value);
-        }
+    $columns = $this->getJob()->getParamByKey($prefix);
+    foreach ((array)$columns as $cvterm_id => $cvterm) {
+      $cvterm_name = strtolower($cvterm->getName());
+      $value = $line[$prefix . $cvterm_name];
+      if ($value != '') {
+        $table_obj->addPropByID($this, $cvterm_id, $value);
       }
     }
   }

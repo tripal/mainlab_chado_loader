@@ -46,6 +46,7 @@ class MCL_TEMPLATE_CROSS_BIMS extends MCL_TEMPLATE {
       'father'          => array('req' => TRUE,  'width' => 13, 'desc' => "ID name or number for the pollen parent for the cross.  This ID must also be an entry in the Stock sheet."),
       'father_location' => array('req' => FALSE, 'width' => 17, 'desc' => "Location details for the father of this cross (eg. Plant location, individual stock name, etc)."),
       'cross_date'      => array('req' => FALSE, 'width' => 15, 'desc' => "Date for the cross."),
+      '##property_name' => array('req' => FALSE, 'width' => 10, 'desc' => "Followed by property (cvterm) name. The data will be stored in property table."),
     );
     return $headers;
   }
@@ -106,8 +107,12 @@ class MCL_TEMPLATE_CROSS_BIMS extends MCL_TEMPLATE {
    */
   public function uploadDataLine($line) {
 
-    // Gets the program_id.
+    // Gets the job paramters.
     $program_id = $this->getJob()->getParamByKey('program_id');
+    $cv_name    = $this->getJob()->getParamByKey('cv');
+
+    // Gets cv.
+    $cv = MCL_CHADO_CV::getCV($cv_name);
 
     // Gets cross dataset.
     $project_id_cross = $this->getJob()->getParamByKey('project_id_cross');
@@ -131,6 +136,9 @@ class MCL_TEMPLATE_CROSS_BIMS extends MCL_TEMPLATE {
       $cross->addProp($this, 'SITE_CV', 'mother_location', $line['mother_location']);
       $cross->addProp($this, 'SITE_CV', 'father_location', $line['father_location']);
 
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $cross, $line);
+
       // Adds a dataset.
       $cross->addDataset($this, $cross_dataset->getName());
 
@@ -147,6 +155,24 @@ class MCL_TEMPLATE_CROSS_BIMS extends MCL_TEMPLATE {
         $paternal_parent = MCL_CHADO_STOCK::getStock($father);
         $cross->addStock($this, $paternal_parent, $this->cvterms['SITE_CV']['paternal_parent']);
       }
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+      // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'));
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

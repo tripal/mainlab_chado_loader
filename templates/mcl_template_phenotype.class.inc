@@ -63,6 +63,7 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
       'storage_regime'    => array('req' => FALSE, 'width' => 10, 'desc' => "The condition of sample storage between the collection and phenotyping."),
       'comments'          => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments for the phenotyping."),
       '#descriptor_name'  => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (#) : followed by descriptor name."),
+      '##property_name'   => array('req' => FALSE, 'width' => 10, 'desc' => "Followed by property (cvterm) name. The data will be stored in property table."),
     );
 
     // Adds labels.
@@ -197,11 +198,14 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
       $sample->addProp($this, 'SITE_CV', 'storage_regime', $line['storage_regime']);
       $sample->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
+      // Adds user-specific properties.
+      $this->addSpecialColumns('##', $sample, $line);
+
       // Adds previous-entry.
       $sample->addPreviousEntry($this, $line['previous-entry']);
 
       // Adds phenotyping data for each descriptor.
-      $descriptors = $this->getJob()->getParamByKey('descriptors');
+      $descriptors = $this->getJob()->getParamByKey('#');
       foreach ($descriptors as $cvterm_id => $descriptor) {
         $name = strtolower($descriptor['name']);
 
@@ -255,10 +259,25 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
-    // Saves the descriptor.
-    $descriptors = $this->_saveDescriptors($data_lines[0]);
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'));
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
+    }
+
+    // Saves the descriptors.
+    if (! $this->saveSpecialColumns('#', $cv->getCvID(), $data_lines[0])) {
+      return;
+    }
 
     // Checks the evaluation data for each descriptor.
+    $descriptors = $this->getJob()->getParamByKey('#');
     foreach ($data_lines as $data_line) {
       foreach ($descriptors as $cvterm_id => $descriptor) {
 
@@ -278,58 +297,5 @@ class MCL_TEMPLATE_PHENOTYPE extends MCL_TEMPLATE {
         }
       }
     }
-  }
-
-  /**
-   * Saves trait descriptors for cvterm_id. Save them in job.param.
-   *
-   * @param array $line
-   *
-   * @return array
-   */
-  private function _saveDescriptors($line) {
-
-    // Gets the site CV name.
-    $site_cv_name = MCL_VAR::getValueByName('SITE_CV');
-
-    // Gets the cv for the descriptors.
-    $cv_id = '';
-    $cv_name = $this->getJob()->getParamByKey('cv');
-    if ($cv_name) {
-      $cv = MCL_CHADO_CV::getCV($cv_name);
-      if (!$cv) {
-        $this->updateMsg('E', "cv does not exist for prefix '#'.");
-        return;
-      }
-      $cv_id = $cv->getCvID();
-    }
-    if (!$cv_id) {
-      $cv = $this->getCvByPrefix('#');
-      if (!$cv) {
-        $this->updateMsg('E', "cv does not exist for prefix '#'.");
-        return;
-      }
-      $cv_id = $cv->getCvID();
-    }
-
-    // Goes through headers stored in the line array.
-    $descriptors = array();
-    foreach ($line as $column => $value) {
-      if (preg_match("/^#[A-Za-z0-9\_]/", $column)) {
-        $cvterm_name = str_replace('#', '', $column);
-
-        // Gets the Field Book descriptor.
-        $descriptor = MCL_CHADO_CVTERM::getFBDescriptor($site_cv_name, $cv_id, $cvterm_name);
-        if ($descriptor) {
-          $descriptors[$descriptor['cvterm_id']] = $descriptor;
-        }
-        else {
-          $this->updateMsg('E', "$cvterm_name not found in cvterm");
-        }
-      }
-    }
-    $this->getJob()->setParamByKey('descriptors', $descriptors);
-    $this->getJob()->update();
-    return $descriptors;
   }
 }

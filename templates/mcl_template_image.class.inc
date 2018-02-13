@@ -39,10 +39,11 @@ class MCL_TEMPLATE_IMAGE extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $headers = array(
-      'file_name'   => array('req' => TRUE,'width' => 10, 'desc' => "Name of the image file."),
-      'image_type'  => array('req' => TRUE,'width' => 10, 'desc' => "The type of the image file."),
-      'file_legend' => array('req' => TRUE,'width' => 10, 'desc' => "Legend of the image file."),
-      'comments'    => array('req' => TRUE,'width' => 10, 'desc' => "Any comments for the image file."),
+      'file_name'       => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the image file."),
+      'image_type'      => array('req' => TRUE,  'width' => 10, 'desc' => "The type of the image file."),
+      'file_legend'     => array('req' => TRUE,  'width' => 10, 'desc' => "Legend of the image file."),
+      'comments'        => array('req' => TRUE,  'width' => 10, 'desc' => "Any comments for the image file."),
+      '##property_name' => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
     return $headers;
   }
@@ -70,5 +71,24 @@ class MCL_TEMPLATE_IMAGE extends MCL_TEMPLATE {
 
 
 
+
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
+    }
   }
 }

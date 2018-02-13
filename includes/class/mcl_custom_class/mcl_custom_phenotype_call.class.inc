@@ -47,8 +47,8 @@ class MCL_CUSTOM_PHENOTYPE_CALL extends MCL_CUSTOM_TABLE {
    * @return integer
    */
   public function getNextval() {
-    $sql = "select nextval('phenotype_call_phenotype_call_id_seq'::regclass)";
-    return db_query($sql);
+    $sql = "select nextval('chado.phenotype_call_phenotype_call_id_seq'::regclass)";
+    return db_query($sql)->fetchField();
   }
 
   /**
@@ -103,6 +103,37 @@ class MCL_CUSTOM_PHENOTYPE_CALL extends MCL_CUSTOM_TABLE {
       }
     }
     return $data;
+  }
+
+  /**
+   * Returns the sample.
+   *
+   * @param array $keys
+   *
+   * @return MCL_CHADO_STOCK
+   */
+  public function getSample($keys) {
+
+    // Gets the sample.
+    $args = array(
+      ':project_id'       => $keys['project_id'],
+      ':unique_id'        => $keys['unique_id'],
+      ':primary_order'    => $keys['primary_order'],
+      ':secondary_order'  => $keys['secondary_order'],
+    );
+    $table_name = $this->getTableName();
+    $sql = "
+      SELECT T.stock_id
+      FROM {$table_name} T
+      WHERE T.project_id = :project_id AND T.unique_id = :unique_id
+        AND T.primary_order = :primary_order
+        AND T.secondary_order = :secondary_order
+    ";
+    $stock_id = db_query($sql, $args)->fetchField();
+    if ($stock_id) {
+      return MCL_CHADO_STOCK::byID($stock_id);
+    }
+    return NULL;
   }
 
   /**

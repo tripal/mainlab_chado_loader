@@ -61,6 +61,7 @@ class MCL_TEMPLATE_STOCK_COTTON extends MCL_TEMPLATE {
       'comments'          => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments on the stock."),
       'image'             => array('req' => FALSE, 'width' => 10, 'desc' => "Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
       'reference'         => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id if any publication is associated with the stock."),
+      '##property_name'   => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
 
     // Adds labels.
@@ -163,6 +164,9 @@ class MCL_TEMPLATE_STOCK_COTTON extends MCL_TEMPLATE {
       $stock->addProp($this, 'SITE_CV', 'germplasm_center', $line['germplasm_center']);
       $stock->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $stock, $line);
+
       // Adds aliases.
       $stock->addAlias($this, $line['alias'], "[,;]");
 
@@ -181,11 +185,29 @@ class MCL_TEMPLATE_STOCK_COTTON extends MCL_TEMPLATE {
   }
 
   /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
+    }
+  }
+
+  /**
    * @see MCL_TEMPLATE::postProcess()
    */
   public function postProcess() {
 
-    // Adds all missing parents now.
+    // Adds all the missing parents now.
     $parents = $this->getTmpByKey('stock_parents');
     foreach ((array)$parents as $stock_id => $info) {
 

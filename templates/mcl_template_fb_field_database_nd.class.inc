@@ -70,14 +70,14 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE_ND extends MCL_TEMPLATE {
   public function runErrorCheckDataLine($line) {
 
     // Gets the job paremters.
-    $program_id   = $this->getJob()->getParamByKey('program_id');
-    $cv_name      = $this->getJob()->getParamByKey('cv');
-    $trial_name   = $this->getJob()->getParamByKey('trial_name');
-    $site_name    = $this->getJob()->getParamByKey('site_name');
-    $fb_req_cols  = $this->getJob()->getParamByKey('fb_req_cols');
+    $program_id = $this->getJob()->getParamByKey('program_id');
+    $cv_name    = $this->getJob()->getParamByKey('cv');
+    $trial_name = $this->getJob()->getParamByKey('trial_name');
+    $site_name  = $this->getJob()->getParamByKey('site_name');
+    $bims_cols  = $this->getJob()->getParamByKey('bims_cols');
 
     // Gets the accession.
-    $accession = $line[strtolower($fb_req_cols['accession'])];
+    $accession = $line[strtolower($bims_cols['accession'])];
 
     // Adds prefix.
     $accession  = $program_id . '.' . $accession;
@@ -108,11 +108,11 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE_ND extends MCL_TEMPLATE {
     $trial_name   = $this->getJob()->getParamByKey('trial_name');
     $site_name    = $this->getJob()->getParamByKey('site_name');
     $sample_props = $this->getJob()->getParamByKey('sample_props');
-    $fb_req_cols  = $this->getJob()->getParamByKey('fb_req_cols');
+    $bims_cols    = $this->getJob()->getParamByKey('bims_cols');
     $cv_name      = $this->getJob()->getParamByKey('cv');
 
     // Gets the accession.
-    $accession = $line[strtolower($fb_req_cols['accession'])];
+    $accession = $line[strtolower($bims_cols['accession'])];
 
     // Adds prefix.
     $trial_name = $program_id . '.' . $trial_name;
@@ -138,10 +138,10 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE_ND extends MCL_TEMPLATE {
     $accession = MCL_CHADO_STOCK::byKey(array('uniquename' => $accession));
     if ($accession) {
 
-      // Gets FB required columns.
-      $unique_id        = $line[$fb_req_cols['unique_id']];
-      $primary_order    = $line[$fb_req_cols['primary_order']];
-      $secondary_order  = $line[$fb_req_cols['secondary_order']];
+      // Gets BIMS columns.
+      $unique_id        = $line[$bims_cols['unique_id']];
+      $primary_order    = $line[$bims_cols['primary_order']];
+      $secondary_order  = $line[$bims_cols['secondary_order']];
 
       // Creates sample ID.
       $sample_id = sprintf("%d.%d.%d.%d.%s.%s.%s", $program_id, $dataset->getProjectID(), $nd_geolocation_id, $accession->getStockID(), $unique_id, $primary_order, $secondary_order);
@@ -222,8 +222,8 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE_ND extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
-    // Checks Field Book required columns.
-    $this->_checkFBReqCols($data_lines[0]);
+    // Checks the BIMS columns.
+    $this->_checkBIMSCols($data_lines[0]);
 
     // Gets the site CV name.
     $site_cv_name = MCL_VAR::getValueByName('SITE_CV');
@@ -275,17 +275,15 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE_ND extends MCL_TEMPLATE {
   }
 
   /**
-   * Checks if Field Book required columns exist.
+   * Checks the BIMS columns exist.
    *
    * @param array $line
    */
-  private function _checkFBReqCols($line) {
-
-    // Gets Field Book required columns.
-    $fb_req_cols = $this->getJob()->getParamByKey('fb_req_cols');
-    foreach ($fb_req_cols as $req_col => $label) {
+  private function _checkBIMSCols($line) {
+    $bims_cols = $this->getJob()->getParamByKey('bims_cols');
+    foreach ($bims_cols as $bims_col => $label) {
       if (!array_key_exists(strtolower($label), $line)) {
-        $this->updateMsg('E', "The required column ($label) is missing");
+        $this->updateMsg('E', "The BIMS column ($label) is missing");
       }
     }
   }

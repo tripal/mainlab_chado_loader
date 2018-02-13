@@ -77,11 +77,11 @@ class MCL_TEMPLATE_DESCRIPTOR_FB extends MCL_TEMPLATE {
     // Checks cv for trait_descriptor_set.
     MCL_CHADO_CV::checkCV($this, $line['trait_descriptor_set']);
 
-    // Checks categories.
-    MCL_CHADO_CVTERM::checkCategories($this, $line['categories']);
-
     // Checks format.
     MCL_CHADO_CVTERM::checkCvterm($this, 'BIMS_FIELD_BOOK_FORMAT', $line['format']);
+
+    // Checks categories.
+    MCL_CHADO_CVTERM::checkCategories($this, $line['format'], $line['categories']);
 
     // Checks trait_name.
     MCL_CHADO_CVTERM::checkCvterm($this, MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY'), $line['trait_name']);

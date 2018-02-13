@@ -933,17 +933,6 @@ CREATE FUNCTION featureloc_slice(integer, integer) RETURNS SETOF featureloc
 
 
 --
--- Name: featureloc_slice(integer, integer, integer); Type: FUNCTION; Schema: chado; Owner: -
---
-
-CREATE FUNCTION featureloc_slice(integer, integer, integer) RETURNS SETOF featureloc
-    LANGUAGE sql
-    AS $_$SELECT * 
-   FROM featureloc 
-   WHERE boxquery($1, $2, $3) && boxrange(srcfeature_id,fmin,fmax)$_$;
-
-
---
 -- Name: featureloc_slice(character varying, integer, integer); Type: FUNCTION; Schema: chado; Owner: -
 --
 
@@ -957,12 +946,42 @@ CREATE FUNCTION featureloc_slice(character varying, integer, integer) RETURNS SE
 
 
 --
+-- Name: featureloc_slice(integer, integer, integer); Type: FUNCTION; Schema: chado; Owner: -
+--
+
+CREATE FUNCTION featureloc_slice(integer, integer, integer) RETURNS SETOF featureloc
+    LANGUAGE sql
+    AS $_$SELECT * 
+   FROM featureloc 
+   WHERE boxquery($1, $2, $3) && boxrange(srcfeature_id,fmin,fmax)$_$;
+
+
+--
 -- Name: featureslice(integer, integer); Type: FUNCTION; Schema: chado; Owner: -
 --
 
 CREATE FUNCTION featureslice(integer, integer) RETURNS SETOF featureloc
     LANGUAGE sql
     AS $_$SELECT * from featureloc where boxquery($1, $2) @ boxrange(fmin,fmax)$_$;
+
+
+--
+-- Name: fill_cvtermpath(character varying); Type: FUNCTION; Schema: chado; Owner: -
+--
+
+CREATE FUNCTION fill_cvtermpath(character varying) RETURNS integer
+    LANGUAGE plpgsql
+    AS $_$
+DECLARE
+    cvname alias for $1;
+    cv_id   int;
+    rtn     int;
+BEGIN
+    SELECT INTO cv_id cv.cv_id from cv WHERE cv.name = cvname;
+    SELECT INTO rtn fill_cvtermpath(cv_id);
+    RETURN rtn;
+END;   
+$_$;
 
 
 --
@@ -981,25 +1000,6 @@ BEGIN
         PERFORM _fill_cvtermpath4root(root.cvterm_id, root.cv_id);
     END LOOP;
     RETURN 1;
-END;   
-$_$;
-
-
---
--- Name: fill_cvtermpath(character varying); Type: FUNCTION; Schema: chado; Owner: -
---
-
-CREATE FUNCTION fill_cvtermpath(character varying) RETURNS integer
-    LANGUAGE plpgsql
-    AS $_$
-DECLARE
-    cvname alias for $1;
-    cv_id   int;
-    rtn     int;
-BEGIN
-    SELECT INTO cv_id cv.cv_id from cv WHERE cv.name = cvname;
-    SELECT INTO rtn fill_cvtermpath(cv_id);
-    RETURN rtn;
 END;   
 $_$;
 
@@ -1086,6 +1086,25 @@ CREATE FUNCTION get_cv_id_for_featureprop() RETURNS integer
 
 
 --
+-- Name: get_cycle_cvterm_id(character varying); Type: FUNCTION; Schema: chado; Owner: -
+--
+
+CREATE FUNCTION get_cycle_cvterm_id(character varying) RETURNS integer
+    LANGUAGE plpgsql
+    AS $_$
+DECLARE
+    cvname alias for $1;
+    cv_id int;
+    rtn int;
+BEGIN
+    SELECT INTO cv_id cv.cv_id from cv WHERE cv.name = cvname;
+    SELECT INTO rtn  get_cycle_cvterm_id(cv_id);
+    RETURN rtn;
+END;   
+$_$;
+
+
+--
 -- Name: get_cycle_cvterm_id(integer); Type: FUNCTION; Schema: chado; Owner: -
 --
 
@@ -1108,25 +1127,6 @@ BEGIN
     END LOOP;
     DROP TABLE tmpcvtermpath;
     RETURN 0;
-END;   
-$_$;
-
-
---
--- Name: get_cycle_cvterm_id(character varying); Type: FUNCTION; Schema: chado; Owner: -
---
-
-CREATE FUNCTION get_cycle_cvterm_id(character varying) RETURNS integer
-    LANGUAGE plpgsql
-    AS $_$
-DECLARE
-    cvname alias for $1;
-    cv_id int;
-    rtn int;
-BEGIN
-    SELECT INTO cv_id cv.cv_id from cv WHERE cv.name = cvname;
-    SELECT INTO rtn  get_cycle_cvterm_id(cv_id);
-    RETURN rtn;
 END;   
 $_$;
 
@@ -5096,18 +5096,11 @@ will have at least 1';
 --
 
 CREATE TABLE cv_root_mview (
-    name character varying(255) NOT NULL,
-    cvterm_id integer NOT NULL,
-    cv_id integer NOT NULL,
-    cv_name character varying(255) NOT NULL
+    name character varying(1024),
+    cvterm_id integer,
+    cv_id integer,
+    cv_name character varying(255)
 );
-
-
---
--- Name: TABLE cv_root_mview; Type: COMMENT; Schema: chado; Owner: -
---
-
-COMMENT ON TABLE cv_root_mview IS 'A list of the root terms for all controlled vocabularies. This is needed for viewing CV trees';
 
 
 --
@@ -6679,6 +6672,25 @@ CREATE TABLE feature_nd_geolocation (
 
 
 --
+-- Name: feature_nd_geolocation_feature_id_seq; Type: SEQUENCE; Schema: chado; Owner: -
+--
+
+CREATE SEQUENCE feature_nd_geolocation_feature_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: feature_nd_geolocation_feature_id_seq; Type: SEQUENCE OWNED BY; Schema: chado; Owner: -
+--
+
+ALTER SEQUENCE feature_nd_geolocation_feature_id_seq OWNED BY feature_nd_geolocation.feature_id;
+
+
+--
 -- Name: feature_nd_geolocation_feature_nd_geolocation_id_seq; Type: SEQUENCE; Schema: chado; Owner: -
 --
 
@@ -6695,6 +6707,25 @@ CREATE SEQUENCE feature_nd_geolocation_feature_nd_geolocation_id_seq
 --
 
 ALTER SEQUENCE feature_nd_geolocation_feature_nd_geolocation_id_seq OWNED BY feature_nd_geolocation.feature_nd_geolocation_id;
+
+
+--
+-- Name: feature_nd_geolocation_nd_geolocation_id_seq; Type: SEQUENCE; Schema: chado; Owner: -
+--
+
+CREATE SEQUENCE feature_nd_geolocation_nd_geolocation_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: feature_nd_geolocation_nd_geolocation_id_seq; Type: SEQUENCE OWNED BY; Schema: chado; Owner: -
+--
+
+ALTER SEQUENCE feature_nd_geolocation_nd_geolocation_id_seq OWNED BY feature_nd_geolocation.nd_geolocation_id;
 
 
 --
@@ -9621,6 +9652,40 @@ COMMENT ON COLUMN phenotype.assay_id IS 'Evidence type.';
 
 
 --
+-- Name: phenotype_call; Type: TABLE; Schema: chado; Owner: -; Tablespace: 
+--
+
+CREATE TABLE phenotype_call (
+    phenotype_call_id integer NOT NULL,
+    project_id integer NOT NULL,
+    stock_id integer NOT NULL,
+    cvterm_id integer NOT NULL,
+    phenotype_id integer NOT NULL,
+    nd_geolocation_id integer NOT NULL,
+    "time" timestamp without time zone
+);
+
+
+--
+-- Name: phenotype_call_phenotype_call_id_seq; Type: SEQUENCE; Schema: chado; Owner: -
+--
+
+CREATE SEQUENCE phenotype_call_phenotype_call_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: phenotype_call_phenotype_call_id_seq; Type: SEQUENCE OWNED BY; Schema: chado; Owner: -
+--
+
+ALTER SEQUENCE phenotype_call_phenotype_call_id_seq OWNED BY phenotype_call.phenotype_call_id;
+
+
+--
 -- Name: phenotype_comparison; Type: TABLE; Schema: chado; Owner: -; Tablespace: 
 --
 
@@ -12099,44 +12164,6 @@ ALTER SEQUENCE tableinfo_tableinfo_id_seq OWNED BY tableinfo.tableinfo_id;
 
 
 --
--- Name: test1; Type: TABLE; Schema: chado; Owner: -; Tablespace: 
---
-
-CREATE TABLE test1 (
-    id integer NOT NULL,
-    uniquename character varying,
-    a character varying,
-    r character varying,
-    z character varying
-);
-
-
---
--- Name: test2; Type: TABLE; Schema: chado; Owner: -; Tablespace: 
---
-
-CREATE TABLE test2 (
-    id integer NOT NULL,
-    uniquename character varying,
-    a character varying,
-    b character varying,
-    p character varying
-);
-
-
---
--- Name: test3; Type: TABLE; Schema: chado; Owner: -; Tablespace: 
---
-
-CREATE TABLE test3 (
-    id integer NOT NULL,
-    uniquename character varying,
-    a character varying,
-    c character varying
-);
-
-
---
 -- Name: treatment; Type: TABLE; Schema: chado; Owner: -; Tablespace: 
 --
 
@@ -12216,6 +12243,17 @@ CREATE TABLE tripal_gffprotein_temp (
 
 
 --
+-- Name: tripal_obo_temp; Type: TABLE; Schema: chado; Owner: -; Tablespace: 
+--
+
+CREATE TABLE tripal_obo_temp (
+    id character varying(255) NOT NULL,
+    stanza text NOT NULL,
+    type character varying(50) NOT NULL
+);
+
+
+--
 -- Name: type_feature_count; Type: VIEW; Schema: chado; Owner: -
 --
 
@@ -12253,20 +12291,6 @@ ALTER TABLE ONLY acquisition_relationship ALTER COLUMN acquisition_relationship_
 --
 
 ALTER TABLE ONLY acquisitionprop ALTER COLUMN acquisitionprop_id SET DEFAULT nextval('acquisitionprop_acquisitionprop_id_seq'::regclass);
-
-
---
--- Name: analysis_id; Type: DEFAULT; Schema: chado; Owner: -
---
-
-ALTER TABLE ONLY analysis ALTER COLUMN analysis_id SET DEFAULT nextval('analysis_analysis_id_seq'::regclass);
-
-
---
--- Name: analysisfeature_id; Type: DEFAULT; Schema: chado; Owner: -
---
-
-ALTER TABLE ONLY analysisfeature ALTER COLUMN analysisfeature_id SET DEFAULT nextval('analysisfeature_analysisfeature_id_seq'::regclass);
 
 
 --
@@ -12753,6 +12777,20 @@ ALTER TABLE ONLY feature_nd_geolocation ALTER COLUMN feature_nd_geolocation_id S
 
 
 --
+-- Name: feature_id; Type: DEFAULT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY feature_nd_geolocation ALTER COLUMN feature_id SET DEFAULT nextval('feature_nd_geolocation_feature_id_seq'::regclass);
+
+
+--
+-- Name: nd_geolocation_id; Type: DEFAULT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY feature_nd_geolocation ALTER COLUMN nd_geolocation_id SET DEFAULT nextval('feature_nd_geolocation_nd_geolocation_id_seq'::regclass);
+
+
+--
 -- Name: feature_phenotype_id; Type: DEFAULT; Schema: chado; Owner: -
 --
 
@@ -13222,6 +13260,13 @@ ALTER TABLE ONLY phenotype ALTER COLUMN phenotype_id SET DEFAULT nextval('phenot
 
 
 --
+-- Name: phenotype_call_id; Type: DEFAULT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY phenotype_call ALTER COLUMN phenotype_call_id SET DEFAULT nextval('phenotype_call_phenotype_call_id_seq'::regclass);
+
+
+--
 -- Name: phenotype_comparison_id; Type: DEFAULT; Schema: chado; Owner: -
 --
 
@@ -13662,35 +13707,11 @@ ALTER TABLE ONLY acquisitionprop
 
 
 --
--- Name: analysis_pkey; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY analysis
-    ADD CONSTRAINT analysis_pkey PRIMARY KEY (analysis_id);
-
-
---
--- Name: analysisfeature_feature_id_analysis_id_key; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY analysisfeature
-    ADD CONSTRAINT analysisfeature_feature_id_analysis_id_key UNIQUE (feature_id, analysis_id);
-
-
---
 -- Name: analysisfeature_id_type_id_rank; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY analysisfeatureprop
     ADD CONSTRAINT analysisfeature_id_type_id_rank UNIQUE (analysisfeature_id, type_id, rank);
-
-
---
--- Name: analysisfeature_pkey; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY analysisfeature
-    ADD CONSTRAINT analysisfeature_pkey PRIMARY KEY (analysisfeature_id);
 
 
 --
@@ -14750,14 +14771,6 @@ ALTER TABLE ONLY feature_image
 
 
 --
--- Name: feature_nd_geolocation_feature_id_nd_geolocation_id_key; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY feature_nd_geolocation
-    ADD CONSTRAINT feature_nd_geolocation_feature_id_nd_geolocation_id_key UNIQUE (feature_id, nd_geolocation_id);
-
-
---
 -- Name: feature_nd_geolocation_pkey; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
 --
 
@@ -15123,6 +15136,14 @@ ALTER TABLE ONLY featurerange
 
 ALTER TABLE ONLY genotype
     ADD CONSTRAINT genotype_c1 UNIQUE (uniquename);
+
+
+--
+-- Name: genotype_call_project_id_feature_id_stock_id_key; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY genotype_call
+    ADD CONSTRAINT genotype_call_project_id_feature_id_stock_id_key UNIQUE (project_id, feature_id, stock_id);
 
 
 --
@@ -15675,6 +15696,22 @@ ALTER TABLE ONLY phendesc
 
 ALTER TABLE ONLY phenotype
     ADD CONSTRAINT phenotype_c1 UNIQUE (uniquename);
+
+
+--
+-- Name: phenotype_call_a_pkey; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY phenotype_call
+    ADD CONSTRAINT phenotype_call_a_pkey PRIMARY KEY (phenotype_call_id);
+
+
+--
+-- Name: phenotype_call_project_id_stock_id_cvterm_id_nd_geolocation_key; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY phenotype_call
+    ADD CONSTRAINT phenotype_call_project_id_stock_id_cvterm_id_nd_geolocation_key UNIQUE (project_id, stock_id, cvterm_id, nd_geolocation_id);
 
 
 --
@@ -16518,30 +16555,6 @@ ALTER TABLE ONLY tableinfo
 
 
 --
--- Name: test2_pkey; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY test2
-    ADD CONSTRAINT test2_pkey PRIMARY KEY (id);
-
-
---
--- Name: test_join_1_pkey; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY test3
-    ADD CONSTRAINT test_join_1_pkey PRIMARY KEY (id);
-
-
---
--- Name: test_join_1_pkey1; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY test1
-    ADD CONSTRAINT test_join_1_pkey1 PRIMARY KEY (id);
-
-
---
 -- Name: treatment_pkey; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
 --
 
@@ -16571,6 +16584,14 @@ ALTER TABLE ONLY tripal_gff_temp
 
 ALTER TABLE ONLY tripal_gffprotein_temp
     ADD CONSTRAINT tripal_gffprotein_temp_tripal_gff_temp_uq0_key UNIQUE (feature_id);
+
+
+--
+-- Name: tripal_obo_temp_tripal_obo_temp_uq0_key; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY tripal_obo_temp
+    ADD CONSTRAINT tripal_obo_temp_tripal_obo_temp_uq0_key UNIQUE (id);
 
 
 --
@@ -17040,20 +17061,6 @@ CREATE INDEX control_idx3 ON control USING btree (tableinfo_id);
 --
 
 CREATE INDEX control_idx4 ON control USING btree (row_id);
-
-
---
--- Name: cv_root_mview_cv_root_mview_indx1_idx; Type: INDEX; Schema: chado; Owner: -; Tablespace: 
---
-
-CREATE INDEX cv_root_mview_cv_root_mview_indx1_idx ON cv_root_mview USING btree (cvterm_id);
-
-
---
--- Name: cv_root_mview_cv_root_mview_indx2_idx; Type: INDEX; Schema: chado; Owner: -; Tablespace: 
---
-
-CREATE INDEX cv_root_mview_cv_root_mview_indx2_idx ON cv_root_mview USING btree (cv_id);
 
 
 --
@@ -17994,6 +18001,20 @@ CREATE INDEX genotypeprop_idx1 ON genotypeprop USING btree (genotype_id);
 --
 
 CREATE INDEX genotypeprop_idx2 ON genotypeprop USING btree (type_id);
+
+
+--
+-- Name: idx_cv_root_mview_cv_id; Type: INDEX; Schema: chado; Owner: -; Tablespace: 
+--
+
+CREATE INDEX idx_cv_root_mview_cv_id ON cv_root_mview USING btree (cv_id);
+
+
+--
+-- Name: idx_cv_root_mview_cvterm_id; Type: INDEX; Schema: chado; Owner: -; Tablespace: 
+--
+
+CREATE INDEX idx_cv_root_mview_cvterm_id ON cv_root_mview USING btree (cvterm_id);
 
 
 --
@@ -19712,6 +19733,13 @@ CREATE INDEX tripal_gffprotein_temp_tripal_gff_temp_idx0_idx ON tripal_gffprotei
 
 
 --
+-- Name: tripal_obo_temp_tripal_obo_temp_idx0_idx; Type: INDEX; Schema: chado; Owner: -; Tablespace: 
+--
+
+CREATE INDEX tripal_obo_temp_tripal_obo_temp_idx0_idx ON tripal_obo_temp USING btree (type);
+
+
+--
 -- Name: acquisition_assay_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
 --
 
@@ -19781,22 +19809,6 @@ ALTER TABLE ONLY acquisitionprop
 
 ALTER TABLE ONLY analysis_organism
     ADD CONSTRAINT analysis_organism_organism_id_fkey FOREIGN KEY (organism_id) REFERENCES organism(organism_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
-
-
---
--- Name: analysisfeature_analysis_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
---
-
-ALTER TABLE ONLY analysisfeature
-    ADD CONSTRAINT analysisfeature_analysis_id_fkey FOREIGN KEY (analysis_id) REFERENCES analysis(analysis_id) ON DELETE CASCADE;
-
-
---
--- Name: analysisfeature_feature_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
---
-
-ALTER TABLE ONLY analysisfeature
-    ADD CONSTRAINT analysisfeature_feature_id_fkey FOREIGN KEY (feature_id) REFERENCES feature(feature_id) ON DELETE CASCADE;
 
 
 --
@@ -20944,22 +20956,6 @@ ALTER TABLE ONLY feature_image
 
 
 --
--- Name: feature_nd_geolocation_feature_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
---
-
-ALTER TABLE ONLY feature_nd_geolocation
-    ADD CONSTRAINT feature_nd_geolocation_feature_id_fkey FOREIGN KEY (feature_id) REFERENCES feature(feature_id) ON DELETE CASCADE;
-
-
---
--- Name: feature_nd_geolocation_nd_geolocation_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
---
-
-ALTER TABLE ONLY feature_nd_geolocation
-    ADD CONSTRAINT feature_nd_geolocation_nd_geolocation_id_fkey FOREIGN KEY (nd_geolocation_id) REFERENCES nd_geolocation(nd_geolocation_id) ON DELETE CASCADE;
-
-
---
 -- Name: feature_organism_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
 --
 
@@ -21469,6 +21465,22 @@ ALTER TABLE ONLY genotypeprop
 
 ALTER TABLE ONLY genotypeprop
     ADD CONSTRAINT genotypeprop_type_id_fkey FOREIGN KEY (type_id) REFERENCES cvterm(cvterm_id) ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: library_contact_contact_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY library_contact
+    ADD CONSTRAINT library_contact_contact_id_fkey FOREIGN KEY (contact_id) REFERENCES contact(contact_id) ON DELETE CASCADE;
+
+
+--
+-- Name: library_contact_library_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY library_contact
+    ADD CONSTRAINT library_contact_library_id_fkey FOREIGN KEY (library_id) REFERENCES library(library_id) ON DELETE CASCADE;
 
 
 --
@@ -22085,6 +22097,46 @@ ALTER TABLE ONLY phenotype
 
 ALTER TABLE ONLY phenotype
     ADD CONSTRAINT phenotype_attr_id_fkey FOREIGN KEY (attr_id) REFERENCES cvterm(cvterm_id) ON DELETE SET NULL;
+
+
+--
+-- Name: phenotype_call_cvterm_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY phenotype_call
+    ADD CONSTRAINT phenotype_call_cvterm_id_fkey FOREIGN KEY (cvterm_id) REFERENCES cvterm(cvterm_id) ON DELETE CASCADE;
+
+
+--
+-- Name: phenotype_call_nd_geolocation_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY phenotype_call
+    ADD CONSTRAINT phenotype_call_nd_geolocation_id_fkey FOREIGN KEY (nd_geolocation_id) REFERENCES nd_geolocation(nd_geolocation_id) ON DELETE CASCADE;
+
+
+--
+-- Name: phenotype_call_phenotype_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY phenotype_call
+    ADD CONSTRAINT phenotype_call_phenotype_id_fkey FOREIGN KEY (phenotype_id) REFERENCES phenotype(phenotype_id) ON DELETE CASCADE;
+
+
+--
+-- Name: phenotype_call_project_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY phenotype_call
+    ADD CONSTRAINT phenotype_call_project_id_fkey FOREIGN KEY (project_id) REFERENCES project(project_id) ON DELETE CASCADE;
+
+
+--
+-- Name: phenotype_call_stock_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY phenotype_call
+    ADD CONSTRAINT phenotype_call_stock_id_fkey FOREIGN KEY (stock_id) REFERENCES stock(stock_id) ON DELETE CASCADE;
 
 
 --

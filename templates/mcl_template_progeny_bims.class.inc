@@ -48,6 +48,7 @@ class MCL_TEMPLATE_PROGENY_BIMS extends MCL_TEMPLATE {
       'advanced_to_2nd' => array('req' => FALSE, 'width' => 10, 'desc' => "Yes if it is advanced to 2nd phase, No otherwise. Leave it empty if the selection decision is yet to be made."),
       'advanced_to_3rd' => array('req' => FALSE, 'width' => 10, 'desc' => "Yes if it is advanced to 3rd phase, No otherwise."),
       'advanced_to_4th' => array('req' => FALSE, 'width' => 10, 'desc' => "Yes if it is advanced to 4th phase, No otherwise."),
+      '##property_name' => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
     return $headers;
   }
@@ -66,6 +67,7 @@ class MCL_TEMPLATE_PROGENY_BIMS extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['paternal_parent']            = -1;
     $cvterms['SITE_CV']['is_a_maternal_parent_of']    = -1;
     $cvterms['SITE_CV']['is_a_paternal_parent_of']    = -1;
+    $cvterms['SITE_CV']['description']                = -1;
     return $cvterms;
   }
 
@@ -93,7 +95,7 @@ class MCL_TEMPLATE_PROGENY_BIMS extends MCL_TEMPLATE {
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
     // Checks cross_number.
-    MCL_CHADO_ND_EXPERIMENT::checkCrossNumber($this, $project_id_cross, $line['cross_number'], $this->cvterms['SITE_CV']['cross_experiment'], $this->cvterms['SITE_CV']['cross_experiment']);
+    //MCL_CHADO_ND_EXPERIMENT::checkCrossNumber($this, $project_id_cross, $line['cross_number'], $this->cvterms['SITE_CV']['cross_experiment'], $this->cvterms['SITE_CV']['cross_experiment']);
   }
 
   /**
@@ -109,21 +111,24 @@ class MCL_TEMPLATE_PROGENY_BIMS extends MCL_TEMPLATE {
     $program_id = $this->getJob()->getParamByKey('program_id');
     $uniquename = $program_id . '.' . $line['progeny_name'];
 
-    // Gets cross dataset.
+    // Gets the cross project.
     $project_id_cross = $this->getJob()->getParamByKey('project_id_cross');
 
     // Adds a progeny.
     $progeny = MCL_CHADO_STOCK::addStock($this, $uniquename, $line['progeny_name'], $organism_id, $this->cvterms['SITE_CV']['breeding_research_material']);
     if ($progeny) {
 
+      // Adds the properties.
+      $progeny->addProp($this, 'SITE_CV', 'description', $line['description']);
+
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $progeny, $line);
+
       // Gets the cross.
       $cross = MCL_CHADO_ND_EXPERIMENT::byCrossNumber($project_id_cross, $line['cross_number'], $this->cvterms['SITE_CV']['cross_experiment'], $this->cvterms['SITE_CV']['cross_experiment']);
 
-      // Adds parents and links this progeny and cross.
+      // Adds the parents and the links this progeny and cross.
       if ($cross) {
-
-        // Adds properties.
-        $progeny->addProp($this, 'SITE_CV', 'description', $line['description']);
 
         // Adds the cross.
         $progeny->addCross($this, $cross, $this->cvterms['SITE_CV']['progeny']);
@@ -131,15 +136,33 @@ class MCL_TEMPLATE_PROGENY_BIMS extends MCL_TEMPLATE {
         // Adds the maternal parent.
         $mother = $cross->getRelatedStock($this->cvterms['SITE_CV']['maternal_parent']);
         if ($mother) {
-          $progeny->addRelatedStock($this, $mother, $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
+          $mother->addRelatedStock($this, $progeny, $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
         }
 
         // Adds the paternal parent.
         $father = $cross->getRelatedStock($this->cvterms['SITE_CV']['paternal_parent']);
-        if ($mother) {
-          $progeny->addRelatedStock($this, $mother, $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
+        if ($father) {
+          $father->addRelatedStock($this, $progeny, $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
         }
       }
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'));
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

@@ -423,4 +423,29 @@ class MCL_TABLE {
   public function setUniqueKeys($unique_keys) {
     $this->unique_keys = $unique_keys;
   }
+
+  /**
+   * Sets the values to be NULL.
+   *
+   * @param string $table_name
+   * @param array $fields
+   * @param array $conditions
+   */
+  public static function setValueToNULL($table_name, $fields, $conditions) {
+    $query = db_update($table_name);
+
+    // Adds fields.
+    $fields_arr = array();
+    foreach ($fields as $field) {
+      $fields_arr[$field] =NULL;
+    }
+    $query->fields($fields_arr);
+
+    // Adds conditions.
+    foreach ($conditions as $idx => $condition) {
+      $operator = $condition['operator'] ? $condition['operator'] : '=';
+      $query->condition($condition['field'], $condition['value'], $operator);
+    }
+    $query->execute();
+  }
 }

@@ -61,7 +61,7 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
       'storage_regime'    => array('req' => FALSE, 'width' => 10, 'desc' => "The condition of sample storage between the collection and phenotyping."),
       'comments'          => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments for the phenotyping."),
       '#descriptor_name'  => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (#) : followed by descriptor name."),
-      '##'                => array('req' => FALSE, 'width' => 10, 'desc' => "Followed by cvterm name. The data will be stored in stockprop table."),
+      '##property_name'   => array('req' => FALSE, 'width' => 10, 'desc' => "Followed by property (cvterm) name. The data will be stored in property table."),
     );
 
     // Adds labels.
@@ -104,11 +104,11 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
   public function runErrorCheckDataLine($line) {
 
      // Gets the job paremters.
-    $program_id   = $this->getJob()->getParamByKey('program_id');
-    $fb_req_cols  = $this->getJob()->getParamByKey('fb_req_cols');
+    $program_id = $this->getJob()->getParamByKey('program_id');
+    $bims_cols  = $this->getJob()->getParamByKey('bims_cols');
 
     // Gets the accession.
-    $accession = $line[strtolower($fb_req_cols['accession'])];
+    $accession = $line[strtolower($bims_cols['accession'])];
 
     // Adds prefix.
     $dataset_name = $program_id . '.' . $line['dataset_name'];
@@ -149,9 +149,9 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
     }
 
     // Gets the job paremters.
-    $table_name   = $this->getJob()->getParamByKey('table_name');
-    $program_id   = $this->getJob()->getParamByKey('program_id');
-    $fb_req_cols  = $this->getJob()->getParamByKey('fb_req_cols');
+    $table_pc   = $this->getJob()->getParamByKey('phenotype_call');
+    $program_id = $this->getJob()->getParamByKey('program_id');
+    $bims_cols  = $this->getJob()->getParamByKey('bims_cols');
 
     // Gets the organism.
     $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
@@ -167,11 +167,11 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
     }
     $nd_geolocation_id = MCL_CHADO_LOCATION::getLocationIDBySite($site_name);
 
-    // Gets FB columns.
-    $accession        = $line[strtolower($fb_req_cols['accession'])];
-    $unique_id        = $line[strtolower($fb_req_cols['unique_id'])];
-    $primary_order    = $line[strtolower($fb_req_cols['primary_order'])];
-    $secondary_order  = $line[strtolower($fb_req_cols['secondary_order'])];
+    // Gets BIMS columns.
+    $accession        = $line[strtolower($bims_cols['accession'])];
+    $unique_id        = $line[strtolower($bims_cols['unique_id'])];
+    $primary_order    = $line[strtolower($bims_cols['primary_order'])];
+    $secondary_order  = $line[strtolower($bims_cols['secondary_order'])];
 
     // Gets the accession.
     $args = array(
@@ -240,18 +240,18 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
       $sample->addProp($this, 'SITE_CV', 'evaluation_date', $line['evaluation_date']);
       $sample->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
-      // Adds user-specific sample properties.
+      // Adds the user-specific properties.
       $this->addSpecialColumns('##', $sample, $line);
 
-      // Adds previous-entry.
+      // Adds the previous-entry.
       $sample->addPreviousEntry($this, $line['previous-entry']);
 
-      // Gets contact.
+      // Gets the contact.
       $contact = MCL_CHADO_CONTACT::byName($line['evaluator']);
       $contact_id = ($contact) ? $contact->getContactID() : NULL;
 
-      // Adds phenotyping data for each descriptor.
-      $descriptors = $this->getJob()->getParamByKey('descriptors');
+      // Adds the phenotyping data for each descriptor.
+      $descriptors = $this->getJob()->getParamByKey('#');
       foreach ($descriptors as $cvterm_id => $descriptor) {
         $name = strtolower($descriptor['name']);
 
@@ -275,9 +275,9 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
           $uniquename = $program_id . '.' . $cvterm_id . '_' . $value;
           $phenotype = MCL_CHADO_PHENOTYPE::addPhenotype($this, $uniquename, $cvterm_id, $value);
 
-          // Adds pictures.
+          // Adds photos.
           if ($descriptor['format'] == 'photo') {
-            $sample->addImage($this, $cvterm_id, $value, "[;]");
+            $sample->addImage($this, 'filename', $value, $cvterm_id, "[;]");
           }
 
           // Adds a data point.
@@ -290,7 +290,7 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
             'contact_id'        => $contact_id,
             'time'              => date("Y-m-d G:i:s"),
           );
-          $phenotype_call = new MCL_CUSTOM_PHENOTYPE_CALL($table_name);
+          $phenotype_call = new MCL_CUSTOM_PHENOTYPE_CALL($table_pc);
           if (!$phenotype_call->addData($this, $args)) {
             $this->updateMsg('E', "Error : Failed to add phenotype_call.");
           }
@@ -304,13 +304,35 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
-    // Checks Field Book required columns.
-    $this->_checkFBReqCols($data_lines[0]);
+    // Checks the table.
+    $table_pc = $this->getJob()->getParamByKey('phenotype_call');
+    if (!db_table_exists($table_pc)) {
+      $this->updateMsg('E', "$table_pc does not exist.");
+      return;
+    }
 
-    // Saves the descriptor.
-    $descriptors = $this->_saveDescriptors($data_lines[0]);
+    // Checks the BIMS columns.
+    $this->_checkBIMSCols($data_lines[0]);
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'));
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
+    }
+
+    // Saves the descriptors.
+    if (! $this->saveSpecialColumns('#', $cv->getCvID(), $data_lines[0])) {
+      return;
+    }
 
     // Checks the evaluation data for each descriptor.
+    $descriptors = $this->getJob()->getParamByKey('#');
     foreach ($data_lines as $data_line) {
       foreach ($descriptors as $cvterm_id => $descriptor) {
 
@@ -333,154 +355,19 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
   }
 
   /**
-   * Checks if Field Book required columns exist.
+   * Checks the BIMS columns exist.
    *
    * @param array $line
    */
-  private function _checkFBReqCols($line) {
-
-    // Gets Field Book required columns.
-    $fb_req_cols = $this->getJob()->getParamByKey('fb_req_cols');
-    foreach ($fb_req_cols as $req_col => $label) {
+  private function _checkBIMSCols($line) {
+    $bims_cols = $this->getJob()->getParamByKey('bims_cols');
+    foreach ($bims_cols as $bims_col => $label) {
       if (!array_key_exists(strtolower($label), $line)) {
-        $this->updateMsg('E', "The required column ($label) is missing");
+        $this->updateMsg('E', "The required BIMS column ($label) is missing");
       }
     }
   }
 
-  /**
-   * Saves trait descriptors for cvterm_id. Save them in job.param.
-   *
-   * @param array $line
-   *
-   * @return array
-   */
-  private function _saveDescriptors($line) {
-
-    // Gets the site CV name.
-    $site_cv_name = MCL_VAR::getValueByName('SITE_CV');
-
-    // Gets the cv for the descriptors.
-    $cv_id = '';
-    $cv_name = $this->getJob()->getParamByKey('cv');
-    if ($cv_name) {
-      $cv = MCL_CHADO_CV::getCV($cv_name);
-      if (!$cv) {
-        $this->updateMsg('E', "cv does not exist for prefix '#'.");
-        return;
-      }
-      $cv_id = $cv->getCvID();
-    }
-    if (!$cv_id) {
-      $cv = $this->getCvByPrefix('#');
-      if (!$cv) {
-        $this->updateMsg('E', "cv does not exist for prefix '#'.");
-        return;
-      }
-      $cv_id = $cv->getCvID();
-    }
-
-    // Goes through headers stored in the line array.
-    $descriptors = array();
-    foreach ($line as $column => $value) {
-      if (preg_match("/^#[A-Za-z0-9\_]/", $column)) {
-        $cvterm_name = str_replace('#', '', $column);
-
-        // Gets the Field Book descriptor.
-        $descriptor = MCL_CHADO_CVTERM::getFBDescriptor($site_cv_name, $cv_id, $cvterm_name);
-        if ($descriptor) {
-          $descriptors[$descriptor['cvterm_id']] = $descriptor;
-        }
-        else {
-          $this->updateMsg('E', "$cvterm_name not found in cvterm");
-        }
-      }
-    }
-    $this->getJob()->setParamByKey('descriptors', $descriptors);
-    $this->getJob()->update();
-    return $descriptors;
-  }
-
-  /**
-   * Helper function to update the headers.
-   *
-   * @param BIMS_PROGRAM $bims_program
-   */
-  private function _updateHeaders(BIMS_PROGRAM $bims_program) {
-
-    // Updates the columns if defined.
-    $fb_req_cols = $bims_program->getFBReqCols('fb_req_cols');
-    $headers = $this->getHeaders();
-    $new_headers = array();
-    foreach ($headers as $name => $info) {
-      if ($name == 'accession' && $fb_req_cols['accession']) {
-        $new_headers[$fb_req_cols['accession']] = $info;
-      }
-      else if ($name == 'unique_id' && $fb_req_cols['unique_id']) {
-        $new_headers[$fb_req_cols['unique_id']] = $info;
-      }
-      else if ($name == 'primary_order' && $fb_req_cols['primary_order']) {
-        $new_headers[$fb_req_cols['primary_order']] = $info;
-      }
-      else if ($name == 'secondary_order' && $fb_req_cols['secondary_order']) {
-        $new_headers[$fb_req_cols['secondary_order']] = $info;
-      }
-      else {
-        $new_headers[$name] = $info;
-      }
-    }
-    $this->setHeaders($new_headers);
-  }
-
-  /**
-   * @see MCL_TEMPLATE::getHeaderTable()
-   */
-  public function getHeaderTable() {
-
-    // Gets BIMS_USER and BIMS_PROGRAM.
-    $bims_user    = getBIMS_USER();
-    $bims_program = $bims_user->getProgram();
-
-    // Updates the headers.
-    $this->_updateHeaders($bims_program);
-
-    // Sets red star.
-    $star = '<b><span style="color:red;">*</span></b>';
-
-    // Gets the regular expression for special columns.
-    $regex = $this->getRegExSpCol();
-
-    // Populates the rows with the headers.
-    $rows = array();
-    foreach ($this->headers as $heading => $prop) {
-
-      // Shows a label if exists.
-      if (array_key_exists('label', $prop)) {
-        $heading = $prop['label'];
-      }
-      $heading = ($prop['req']) ? "$star $heading" : $heading;
-
-      // If the column is special colmn, make it italic.
-      if (preg_match($regex, $name)) {
-        $heading = "<em>$heading</em>";
-      }
-      $row = array($heading, $prop['desc']);
-      $rows []= $row;
-    }
-
-    // Creates a table.
-    $table_vars = array(
-      'header'      => array('Column', 'Description'),
-      'rows'        => $rows,
-      'empty'       => 'No header found',
-      'attributes'  => array(),
-    );
-    $table = theme('table', $table_vars);
-
-    // Adds the footer.
-    $footer = "<div style='left-margin:5px;'>$star&nbsp;Required field</div>";
-    return $table.$footer;
-  }
 
   /**
    * @see MCL_TEMPLATE::getTemplateInfo()
@@ -492,7 +379,8 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
     $bims_program = $bims_user->getProgram();
 
     // Updates the headers.
-    $this->_updateHeaders($bims_program);
+    $bims_cols = $bims_program->getBIMSCols();
+    $this->updateHeaders($bims_cols);
 
     // Adds info. for header definition.
     $def_sheet = array();

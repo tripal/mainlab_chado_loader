@@ -76,6 +76,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       'contact'                   => array('req' => FALSE, 'width' => 10, 'desc' => "Contact person for the marker (Please provide the contact info of these researchers in 'Contact' sheet)."),
       'reference'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Reference where the marker is originally described (pub_id), Multiple references, separated by comma, can be added."),
       '~identifier'               => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (~) : An identifier must be either primer or probe followed by numerical number and name or seq. (e.g.) primer1_seq and primer1_name."),
+      '##property_name'           => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
 
     // Adds labels.
@@ -230,7 +231,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       $type = (strtolower($line['marker_type']) == 'snp') ? 'SNP' : 'allele';
       $marker->addProp($this, 'sequence', $type, $allele);
 
-      // Adds properties.
+      // Adds the properties.
       $marker->addProp($this, 'SITE_CV', 'marker_type', $line['marker_type']);
       $marker->addProp($this, 'SITE_CV', 'repeat_motif', $line['repeat_motif']);
       $marker->addProp($this, 'SITE_CV', 'restriction_enzyme', $line['restriction_enzyme']);
@@ -246,6 +247,9 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       $marker->addProp($this, 'SITE_CV', 'indel_seq', $line['indel_seq']);
       $marker->addProp($this, 'SITE_CV', 'legend', $line['legend']);
       $marker->addProp($this, 'SITE_CV', 'comments', $line['comments']);
+
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $marker, $line);
 
       // Adds aliases.
       $marker->addAlias($this, $this->cvterms['SITE_CV']['alias'], $line['alias'], "[;,]");
@@ -318,6 +322,18 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::preProcess()
    */
   public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
+    }
 
     // Checks for marker_name and marker_locus columns.
     $dup_markers      = array();

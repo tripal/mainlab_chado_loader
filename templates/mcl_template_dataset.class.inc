@@ -50,6 +50,7 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
       'reference'             => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id for any reference if the dataset is from publication."),
       'permission'            => array('req' => FALSE, 'width' => 10, 'desc' => "Permission of the dataset. '0' or empty indicates public. Other positive integer indicates private."),
       'description'           => array('req' => FALSE, 'width' => 90, 'desc' => "General description of the dataset (purpose, target, how many crosses, etc)."),
+      '##property_name'       => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
 
     // Adds labels.
@@ -100,16 +101,17 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
     $dataset = MCL_CHADO_DATASET::addDataset($this, $line['dataset_name']);
     if ($dataset) {
 
-      // Adds properties.
+      // Adds the properties.
       $dataset->addProp($this, 'SITE_CV', 'project_type', $line['type']);
       $dataset->addProp($this, 'SITE_CV', 'sub_type', $line['sub_type']);
       $dataset->addProp($this, 'SITE_CV', 'description', $line['description']);
       $dataset->addProp($this, 'SITE_CV', 'crop', $line['crop']);
       $dataset->addProp($this, 'SITE_CV', 'comments', $line['comments']);
       $dataset->addProp($this, 'SITE_CV', 'permission', $line['permission']);
-
-      // Adds trait_descriptor_set.
       $dataset->addProp($this, 'SITE_CV', 'trait_descriptor_set', $line['trait_descriptor_set']);
+
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $dataset, $line);
 
       // Adds PI.
       $dataset->addContact($this, $line['pi'], "[;]");
@@ -119,6 +121,24 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
 
       // Adds references.
       $dataset->addReference($this, $line['reference'], "[;,]");
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

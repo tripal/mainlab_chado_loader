@@ -1,9 +1,9 @@
 <?php
 /**
- * The declaration of MCL_TEMPLATE_CVTERM class.
+ * The declaration of MCL_TEMPLATE_PROPERTY class.
  *
  */
-class MCL_TEMPLATE_CVTERM extends MCL_TEMPLATE {
+class MCL_TEMPLATE_PROPERTY extends MCL_TEMPLATE {
 
   /**
    *  Class data members.
@@ -39,12 +39,12 @@ class MCL_TEMPLATE_CVTERM extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $headers = array(
-      'db_name'     => array('req' => TRUE,   'width' => 10, 'desc' => "Name of the db."),
-      'cv_name'     => array('req' => TRUE,   'width' => 10, 'desc' => "Name of the control vocabulary."),
-      'cvterm_name' => array('req' => TRUE,   'width' => 10, 'desc' => "Name of the cvterm."),
-      'alias'       => array('req' => FALSE,  'width' => 15, 'desc' => "Alias of the cvterm."),
-      'accession'   => array('req' => TRUE,   'width' => 10, 'desc' => "Accession of the cvterm."),
-      'definition'  => array('req' => FALSE,  'width' => 15, 'desc' => "Definition of the cvterm."),
+      'db_name'     => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the db."),
+      'cv_name'     => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the control vocabulary."),
+      'name'        => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the property."),
+      'alias'       => array('req' => FALSE, 'width' => 15, 'desc' => "Alias of the property."),
+      'accession'   => array('req' => FALSE, 'width' => 10, 'desc' => "Accession of the cvterm."),
+      'definition'  => array('req' => FALSE, 'width' => 15, 'desc' => "Definition of the cvterm."),
     );
     return $headers;
   }
@@ -68,6 +68,9 @@ class MCL_TEMPLATE_CVTERM extends MCL_TEMPLATE {
 
     // Checks cv.
     MCL_CHADO_CV::checkCV($this, $line['cv_name']);
+
+    // Checks property name.
+    $this->checkAlpahNumeric($line['name']);
   }
 
   /**
@@ -76,7 +79,7 @@ class MCL_TEMPLATE_CVTERM extends MCL_TEMPLATE {
   public function uploadDataLine($line) {
 
     // Adds a cvterm.
-    $cvterm = MCL_CHADO_CVTERM::addCvterm($this, $line['db_name'], $line['cv_name'], $line['cvterm_name'], $line['definition'], $line['accession']);
+    $cvterm = MCL_CHADO_CVTERM::addCvterm($this, $line['db_name'], $line['cv_name'], $line['name'], $line['definition'], $line['accession']);
     if ($cvterm) {
 
       // Adds aliases.

@@ -951,9 +951,9 @@ function drush_mcl_upload_test_data($username) {
   // Test data file is stored in DATA_FILES.
   $module_path = drupal_get_path('module', 'mcl');
   $filename = 'TEST_MCL_DATA.xlsx';
-  $test_data =  "$module_path/DATA_FILES/$filename";
+  $test_data =  "$module_path/TEST_FILES/$filename";
   if (!file_exists($test_data)) {
-    print "\n\nTest data file not found in /DATA_FILES/$filename";
+    print "\n\nTest data file not found in /TEST_FILES/$filename";
     exit;
   }
 
@@ -975,7 +975,7 @@ function drush_mcl_upload_test_data($username) {
   }
 
   // Upload the test file.
-  $param_json = '{"cv":"mcl_test_cv_bp"}';
+  $param_json = '{"cv":"mcl_test_cv"}';
   drush_mcl_upload_data($username, $test_data, $param_json);
 }
 
@@ -1873,86 +1873,29 @@ function _mcl_fix_phenotype_value() {
  */
 function drush_mcl_debug() {
   mcl_print("DEBUG", 1, 3);
-  $project_id = 590;
 
-  // Test data file is stored in DATA_FILES.
-  $module_path = drupal_get_path('module', 'mcl');
-  $filename = 'sc_genotype_2016.txt';
-  $filepath =  "$module_path/DATA_FILES/$filename";
-  if (!file_exists($filepath)) {
-    print "\n\nTest data file not found in /DATA_FILES/$filename";
-    exit;
-  }
-  if (!($fdr = fopen($filepath, 'r'))) {
-    mcl_print("Error : Cannot open file ($filepath)", 1, 3);
-    exit;
-  }
-  $header_flag  = TRUE;
-  $error_flag   = FALSE;
-  $markers      = array();
-  $stocks       = array();
-  $genotypes    = array();
-  $lines        = array();
-  while ($cur_line = fgets($fdr)) {
-    $cur_line = trim($cur_line);
-    if (!$cur_line) {
-      continue;
-    }
-    $tmp = explode("\t", $cur_line);
-    if ($header_flag) {
-      $header_flag = FALSE;
-      for ($i = 1; $i < sizeof($tmp); $i++) {
-        $markers[$i] = $tmp[$i];
-      }
-    }
-    else {
-      $lines []= $cur_line;
-      $uniquename = $tmp[0];
-      $stock = MCL_CHADO_STOCK::byKey(array('uniquename' => $uniquename));
-      if ($stock) {
-        $stocks[$uniquename] = $stock->getStockID();
-      }
-      else {
-        print "$uniquename does not exist in stock\n";
-        $error_flag = TRUE;
-      }
+  $mcl_job= MCL_JOB::byID(182);
+  print $mcl_job->getClassName() ."\n";
+  print $mcl_job->getName() ."\n";
+  print $mcl_job->getCompleteDate() ."\n";
 
-      for ($i = 1; $i < sizeof($tmp); $i++) {
-        if (trim($tmp[$i])) {
-          $genotype_str = str_replace('|', '', $tmp[$i]);
-          if (!array_key_exists($genotype_str, $genotypes)) {
-            $genotype = MCL_CHADO_GENOTYPE::byKey(array('uniquename' => $genotype_str));
-            if (!$genotype) {
-              $genotype = MCL_CHADO_GENOTYPE::addGenotype(NULL, $genotype_str, 990, $genotype_str);
-            }
-            $genotypes[$genotype_str] = $genotype->getGenotypeID();
-          }
-        }
-      }
-    }
-  }
-  fclose($fdr);
-  if (!$error_flag) {
-    foreach ($lines as $line) {
-      $tmp = explode("\t", $line);
-      $uniquename = trim($tmp[0]);
-      $stock_id = $stocks[$uniquename];
-      if (!$stock_id) {
-        print "Error: " . $uniquename . " cannot find stock_id\n";
-      }
+$mcl_job->setCompleteDate(NULL);
+print 'MD:'.$mcl_job->getCompleteDate() ."\n";
 
-      for ($i = 1; $i < sizeof($tmp); $i++) {
-        $feature_id = $markers[$i];
-        if ($tmp[$i]) {
-          $genotype_str = str_replace('|', '', $tmp[$i]);
-          $genotype_id = $genotypes[$genotype_str];
-          print "INSERT INTO chado.genotype_call (project_id, stock_id, feature_id, genotype_id) VALUES ($project_id, $stock_id, $feature_id, $genotype_id);\n";
-        }
-      }
-    }
-  }
-  else {
-    print "\nError\n\n";
-  }
+$mcl_job->update();
+
+
+  print 'AFT1:'.$mcl_job->getCompleteDate() ."\n";
+
+$conditions = array(
+  array('field' => 'job_id', 'value' => 182),
+);
+
+
+  $mcl_job= MCL_JOB::byID(182);
+  print 'AFT2:'.$mcl_job->getCompleteDate() ."\n";
+
   mcl_print("DONE", 1, 3);
 }
+
+

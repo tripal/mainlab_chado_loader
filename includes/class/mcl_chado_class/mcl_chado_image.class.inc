@@ -103,10 +103,11 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
    * @param string $eimage_data
    * @param string $eimage_type
    * @param string $image_uri
+   * @param integer $cvterm_id
    *
    * @return MCL_CHADO_IMAGE
    */
-  public static function addImage(MCL_TEMPLATE $mcl_tmpl = NULL, $eimage_data, $eimage_type, $image_uri) {
+  public static function addImage(MCL_TEMPLATE $mcl_tmpl = NULL, $eimage_data, $eimage_type, $image_uri, $cvterm_id = '') {
 
     // Sets the arguments.
     $args = array(
@@ -130,6 +131,14 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
       $image = new MCL_CHADO_IMAGE($args);
       if ($image->insert()) {
         self::updateMsg($mcl_tmpl, 'N', 'eimage', $args);
+
+        // If cvterm_id is not empty save it in eimageprop. The image is
+        // added as a trait.
+        if ($cvterm_id) {
+          if (!$image->addProp('SITE_CV', 'trait_descriptor', $cvterm_id)) {
+            $flag = FALSE;
+          }
+        }
       }
       else {
         self::addMsg($mcl_tmpl, 'E', 'eimage', $args);

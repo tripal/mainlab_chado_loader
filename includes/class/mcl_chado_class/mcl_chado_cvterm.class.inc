@@ -139,12 +139,18 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    *   melting/non-melting/slow softening
    *
    * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $format
    * @param string $categories
    *
    * @return boolean
    */
-  public static function checkCategories(MCL_TEMPLATE $mcl_tmpl = NULL, $categories) {
-    if ($categories) {}
+  public static function checkCategories(MCL_TEMPLATE $mcl_tmpl = NULL, $format, $categories) {
+    if ($format == 'categorical') {
+      if (!$categories) {
+        self::updateMsg($mcl_tmpl, 'E', "'categories' cannot be empty.");
+        return FALSE;
+      }
+    }
     return TRUE;
   }
 
@@ -330,10 +336,11 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    * @param string $cvterm_name
    * @param string $definition
    * @param string $accession
+   * @param string $type
    *
    * @return MCL_CHADO_CVTERM
    */
-  public static function addCvterm(MCL_TEMPLATE $mcl_tmpl = NULL, $db_name, $cv_name, $cvterm_name, $definition = '', $accession = '') {
+  public static function addCvterm(MCL_TEMPLATE $mcl_tmpl = NULL, $db_name, $cv_name, $cvterm_name, $definition = '', $accession = '', $type = '') {
 
     // Updates DB and CV names.
     if (!$db_name) {
@@ -414,6 +421,14 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
         );
         $cvterm = new MCL_CHADO_CVTERM($args);
         if ($cvterm->insert()) {
+
+          // Adds the type if provided.
+          if ($type) {
+            if (!$cvterm->addProp('SITE_CV', 'type', $type)) {
+              self::updateMsg($mcl_tmpl, 'E', "Failed to add a type of this cvterm");
+              return NULL;
+            }
+          }
           self::addMsg($mcl_tmpl, 'N', 'cvterm', $args);
         }
         else {

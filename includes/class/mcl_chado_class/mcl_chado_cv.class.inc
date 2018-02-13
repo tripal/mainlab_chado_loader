@@ -115,13 +115,15 @@ class MCL_CHADO_CV extends CHADO_CV {
   }
 
   /**
-   * Returns the cv by name.
+   * Returns the cv by name. Search cv with provided name. If not found
+   * and $default is provided, search the default.
    *
    * @param string $name
+   * @param string $default
    *
    * @return MCL_CHADO_CV
    */
-  public static function getCV($name) {
+  public static function getCV($name, $default = '') {
 
     // Updates the name if name is 'SITE_CV' or 'SITE_TRAIT_ONTOLOGY'.
     if ($name == 'SITE_CV') {
@@ -130,7 +132,11 @@ class MCL_CHADO_CV extends CHADO_CV {
     else if ($name == 'SITE_TRAIT_ONTOLOGY') {
       $name = MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY');
     }
-    return MCL_CHADO_CV::byName($name);
+    $cv = MCL_CHADO_CV::byName($name);
+    if (!$cv && $default) {
+      return self::getCV($default);
+    }
+    return $cv;
   }
 
   /**

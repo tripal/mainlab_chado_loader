@@ -427,8 +427,8 @@ function mcl_populate_mcl_templates() {
     'DESCRIPTOR',
     'SITE',
     'STOCK',
-    'CROSS',
     'PROGENY',
+    'CROSS',
     'MARKER',
     'MTL',
     'QTL',
@@ -437,6 +437,8 @@ function mcl_populate_mcl_templates() {
     'FIELD_BOOK',
     'PHENOTYPE',
     'GENOTYPE',
+    'IMAGE_PHENOTYPE',
+    'IMAGE_GENOTYPE',
   );
 
   // Adds template types.

@@ -73,11 +73,11 @@ class MCL_TEMPLATE_DESCRIPTOR_BIMS extends MCL_TEMPLATE {
    */
   public function runErrorCheckDataLine($line) {
 
-    // Checks categories.
-    MCL_CHADO_CVTERM::checkCategories($this, $line['categories']);
-
     // Checks format.
     MCL_CHADO_CVTERM::checkCvterm($this, 'BIMS_FIELD_BOOK_FORMAT', $line['format']);
+
+    // Checks categories.
+    MCL_CHADO_CVTERM::checkCategories($this, $line['format'], $line['categories']);
 
     // Checks trait_name.
     MCL_CHADO_CVTERM::checkCvterm($this, MCL_VAR::getValueByName('SITE_TRAIT_ONTOLOGY'), $line['trait_name']);

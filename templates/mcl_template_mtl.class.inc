@@ -54,6 +54,7 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
       'contact'               => array('req' => FALSE, 'width' => 10, 'desc' => "Contact person for the MTL. It should match 'contact_name' in Contact sheet."),
       'image'                 => array('req' => FALSE, 'width' => 10, 'desc' => "Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
       'reference'             => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id for the reference that describes MTL. Multiple references, separated by comma, can be added."),
+      '##property_name'       => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
 
     // Adds labels.
@@ -117,11 +118,14 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
     $mtl = MCL_CHADO_FEATURE::addFeature($this, $line['mtl_name'], $line['trait_name'], $this->cvterms['sequence']['heritable_phenotypic_marker'], $organism->getOrganismID());
     if ($mtl) {
 
-      // Adds properties.
+      // Adds the properties.
       $mtl->addProp($this, 'SITE_CV', 'alias', $line['alias']);
       $mtl->addProp($this, 'SITE_CV', 'screening_method', $line['screening_method']);
       $mtl->addProp($this, 'SITE_CV', 'description', $line['description']);
       $mtl->addProp($this, 'SITE_CV', 'published_symbol', $line['published_symbol']);
+
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $mtl, $line);
 
       // Adds colocalized_markers.
       $mtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]", TRUE);
@@ -147,6 +151,24 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
 
       // Adds references.
       $mtl->addReference($this, $line['reference'], "[,;]");
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

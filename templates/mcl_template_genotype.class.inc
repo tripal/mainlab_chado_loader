@@ -131,7 +131,6 @@ class MCL_TEMPLATE_GENOTYPE extends MCL_TEMPLATE {
 
     // Gets the genotype.
     $genotype_columns = $this->getJob()->getParamByKey('genotype_columns');
- print_r($genotype_columns);
     $tmp = array();
     foreach ($genotype_columns as $column) {
       if ($line[$column]) {

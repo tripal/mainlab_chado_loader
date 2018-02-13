@@ -64,6 +64,7 @@ class MCL_TEMPLATE_SITE_COTTON extends MCL_TEMPLATE {
       'agronomic_control'       => array('req' => FALSE, 'width' => 10, 'desc' => ""),
       'pick_date'               => array('req' => FALSE, 'width' => 10, 'desc' => ""),
       'evaluation_date'         => array('req' => FALSE, 'width' => 10, 'desc' => ""),
+      '##property_name'         => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
     return $headers;
   }
@@ -130,7 +131,7 @@ class MCL_TEMPLATE_SITE_COTTON extends MCL_TEMPLATE {
     $location = MCL_CHADO_LOCATION::addLocation($this, $line['site_name'], $loc_info);
     if ($location) {
 
-      // Adds properties.
+      // Adds the properties.
       $location->addProp($this, 'SITE_CV', 'type', $line['type']);
       $location->addProp($this, 'SITE_CV', 'site_long_name', $line['site_long_name']);
       $location->addProp($this, 'SITE_CV', 'country', $line['country']);
@@ -152,6 +153,27 @@ class MCL_TEMPLATE_SITE_COTTON extends MCL_TEMPLATE {
       $location->addProp($this, 'SITE_CV', 'agronomic_control', $line['agronomic_control']);
       $location->addProp($this, 'SITE_CV', 'pick_date', $line['pick_date']);
       $location->addProp($this, 'SITE_CV', 'evaluation_date', $line['evaluation_date']);
+
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $location, $line);
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

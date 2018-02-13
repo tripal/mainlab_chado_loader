@@ -51,6 +51,7 @@ class MCL_TEMPLATE_MTL_COTTON extends MCL_TEMPLATE {
       'contact'           => array('req' => FALSE, 'width' => 10, 'desc' => "Contact person for the MTL. It should match 'contact_name' in Contact sheet."),
       'image'             => array('req' => FALSE, 'width' => 10, 'desc' => "Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
       'reference'         => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id for the reference that describes MTL. Multiple references, separated by comma, can be added."),
+      '##property_name'   => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
 
     // Adds labels.
@@ -104,34 +105,55 @@ class MCL_TEMPLATE_MTL_COTTON extends MCL_TEMPLATE {
     // Gets the organism.
     $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
 
-    // Adds a MTL.
+    // Adds the MTL.
     $mtl = MCL_CHADO_FEATURE::addFeature($this, $line['mtl_name'], $line['trait_name'], $this->cvterms['sequence']['heritable_phenotypic_marker'], $organism->getOrganismID());
     if ($mtl) {
 
-      // Adds properties.
+      // Adds the properties.
       $mtl->addProp($this, 'SITE_CV', 'alias', $line['alias']);
       $mtl->addProp($this, 'SITE_CV', 'screening_method', $line['screening_method']);
       $mtl->addProp($this, 'SITE_CV', 'description', $line['description']);
       $mtl->addProp($this, 'SITE_CV', 'published_symbol', $line['published_symbol']);
 
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $mtl, $line);
+
       // Adds dbxref.
       $db = MCL_CHADO_DB::getDB('DB:genbank');
       $mtl->addDBXref($this, $db->getDbID(), $line['gb_id'], "[,;]");
 
-      // Gets trait.
+      // Gets the trait.
       $trait = MCL_CHADO_TRAIT::getTrait($line['trait_name'], 'SITE_TRAIT_ONTOLOGY');
 
-      /// Adds a trait.
+      /// Adds the trait.
       $mtl->addTrait($this, $trait);
 
-      // Adds contacts.
+      // Adds the contacts.
       $mtl->addContact($this, $line['contact'], "[;]");
 
-      // Adds images.
+      // Adds the images.
       $mtl->addImageID($this, $line['image'], "[,;]");
 
-      // Adds references.
+      // Adds the references.
       $mtl->addReference($this, $line['reference'], "[,;]");
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

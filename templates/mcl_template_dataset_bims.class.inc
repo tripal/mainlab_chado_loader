@@ -39,9 +39,10 @@ class MCL_TEMPLATE_DATASET_BIMS extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $headers = array(
-      'dataset_name'  => array('req' => TRUE,  'width' => 20, 'desc' => "Names of the datasets."),
-      'comments'      => array('req' => FALSE, 'width' => 15, 'desc' => "Any comments for the dataset."),
-      'description'   => array('req' => FALSE, 'width' => 90, 'desc' => "General description of the dataset (purpose, target, how many crosses, etc)."),
+      'dataset_name'    => array('req' => TRUE,  'width' => 20, 'desc' => "Names of the datasets."),
+      'comments'        => array('req' => FALSE, 'width' => 15, 'desc' => "Any comments for the dataset."),
+      'description'     => array('req' => FALSE, 'width' => 90, 'desc' => "General description of the dataset (purpose, target, how many crosses, etc)."),
+      '##property_name' => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
     return $headers;
   }
@@ -82,14 +83,35 @@ class MCL_TEMPLATE_DATASET_BIMS extends MCL_TEMPLATE {
     $dataset = MCL_CHADO_DATASET::addDataset($this, $dataset_name);
     if ($dataset) {
 
-      // Adds properties.
+      // Adds the properties.
       $dataset->addProp($this, 'SITE_CV', 'project_type', 'breeding');
       $dataset->addProp($this, 'SITE_CV', 'crop', $crop);
       $dataset->addProp($this, 'SITE_CV', 'description', $line['description']);
       $dataset->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $dataset, $line);
+
       // Adds PI.
       $dataset->addContact($this, $pi, "[;]");
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'));
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

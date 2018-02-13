@@ -70,14 +70,14 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE extends MCL_TEMPLATE {
   public function runErrorCheckDataLine($line) {
 
     // Gets the job paremters.
-    $program_id   = $this->getJob()->getParamByKey('program_id');
-    $cv_name      = $this->getJob()->getParamByKey('cv');
-    $trial_name   = $this->getJob()->getParamByKey('trial_name');
-    $site_name    = $this->getJob()->getParamByKey('site_name');
-    $fb_req_cols  = $this->getJob()->getParamByKey('fb_req_cols');
+    $program_id = $this->getJob()->getParamByKey('program_id');
+    $cv_name    = $this->getJob()->getParamByKey('cv');
+    $trial_name = $this->getJob()->getParamByKey('trial_name');
+    $site_name  = $this->getJob()->getParamByKey('site_name');
+    $bims_cols  = $this->getJob()->getParamByKey('bims_cols');
 
     // Gets the accession.
-    $accession = $line[strtolower($fb_req_cols['accession'])];
+    $accession = $line[strtolower($bims_cols['accession'])];
 
     // Adds prefix.
     $accession  = $program_id . '.' . $accession;
@@ -107,16 +107,16 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE extends MCL_TEMPLATE {
   public function uploadDataLine($line) {
 
     // Gets the job paremters.
-    $table_name   = $this->getJob()->getParamByKey('table_name');
+    $table_pc     = $this->getJob()->getParamByKey('phenotype_call');
     $program_id   = $this->getJob()->getParamByKey('program_id');
     $trial_name   = $this->getJob()->getParamByKey('trial_name');
     $site_name    = $this->getJob()->getParamByKey('site_name');
     $sample_props = $this->getJob()->getParamByKey('sample_props');
-    $fb_req_cols  = $this->getJob()->getParamByKey('fb_req_cols');
+    $bims_cols    = $this->getJob()->getParamByKey('bims_cols');
     $cv_name      = $this->getJob()->getParamByKey('cv');
 
     // Gets the accession.
-    $accession = $line[strtolower($fb_req_cols['accession'])];
+    $accession = $line[strtolower($bims_cols['accession'])];
 
     // Adds prefix.
     $trial_name = $program_id . '.' . $trial_name;
@@ -142,10 +142,10 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE extends MCL_TEMPLATE {
     $accession = MCL_CHADO_STOCK::byKey(array('uniquename' => $accession));
     if ($accession) {
 
-      // Gets FB required columns.
-      $unique_id        = $line[$fb_req_cols['unique_id']];
-      $primary_order    = $line[$fb_req_cols['primary_order']];
-      $secondary_order  = $line[$fb_req_cols['secondary_order']];
+      // Getsr BIMS columns.
+      $unique_id        = $line[$bims_cols['unique_id']];
+      $primary_order    = $line[$bims_cols['primary_order']];
+      $secondary_order  = $line[$bims_cols['secondary_order']];
 
       // Creates sample ID.
       $sample_id = sprintf("%d.%d.%d.%d.%s.%s.%s", $program_id, $dataset->getProjectID(), $nd_geolocation_id, $accession->getStockID(), $unique_id, $primary_order, $secondary_order);
@@ -176,8 +176,8 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE extends MCL_TEMPLATE {
         $sample->addProp($this, 'SITE_CV', 'nd_geolocation_id', $nd_geolocation_id);
         foreach ($sample_props as $prop) {
 
-          // Adds a cvterm.
-          $cvterm = MCL_CHADO_CVTERM::addCvterm($this, $db->getName(), $cv_name, $prop);
+          // Adds a property.
+          $cvterm = MCL_CHADO_CVTERM::addCvterm($this, $db->getName(), $cv_name, $prop, '', 'sample');
           if ($cvterm) {
             $sample->addProp($this, $cv_name, $prop, $line[$prop]);
           }
@@ -201,12 +201,17 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE extends MCL_TEMPLATE {
       if ($value || $value == '0') {
 
         // Gets the descriptor.
-        $descriptor = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
-        $cvterm_id  = $descriptor->getCvtermID();
+        $cvterm_id = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name)->getCvtermID();
+        $descriptor = MCL_CHADO_TRAIT::byID($cvterm_id);
 
         // Adds a phenotype.
         $uniquename = $program_id . '.' . $cvterm_id . '_' . $value;
         $phenotype = MCL_CHADO_PHENOTYPE::addPhenotype($this, $uniquename, $cvterm_id, $value);
+
+        // Adds photos.
+        if ($descriptor->getFormat() == 'photo') {
+          $sample->addImage($this, 'filename', $value, $cvterm_id, "[;]");
+        }
 
         // Adds a data point.
         $args = array(
@@ -218,7 +223,7 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE extends MCL_TEMPLATE {
           'contact_id'        => $contact_id,
           'time'              => date("Y-m-d G:i:s"),
         );
-        $phenotype_call = new MCL_CUSTOM_PHENOTYPE_CALL($table_name);
+        $phenotype_call = new MCL_CUSTOM_PHENOTYPE_CALL($table_pc);
         if (!$phenotype_call->addData($this, $args)) {
           $this->updateMsg('E', "Error : failed to add phenotype_call.");
         }
@@ -232,18 +237,18 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE extends MCL_TEMPLATE {
   public function preProcess($data_lines) {
 
     // Gets the job paremters.
-    $table_name   = $this->getJob()->getParamByKey('table_name');
-    $program_id   = $this->getJob()->getParamByKey('program_id');
-    $cv_name      = $this->getJob()->getParamByKey('cv');
+    $table_pc   = $this->getJob()->getParamByKey('phenotype_call');
+    $program_id = $this->getJob()->getParamByKey('program_id');
+    $cv_name    = $this->getJob()->getParamByKey('cv');
 
     // Checks if the custom table exists.
-    $phenotype_call = new MCL_CUSTOM_PHENOTYPE_CALL($table_name);
+    $phenotype_call = new MCL_CUSTOM_PHENOTYPE_CALL($table_pc);
     if (!$phenotype_call->exists()) {
       $this->updateMsg('E', "The custom table does not exist.");
     }
 
-    // Checks Field Book required columns.
-    $this->_checkFBReqCols($data_lines[0]);
+    // Checks the BIMS columns.
+    $this->_checkBIMSCols($data_lines[0]);
 
     // Gets the site CV name.
     $site_cv_name = MCL_VAR::getValueByName('SITE_CV');
@@ -294,15 +299,13 @@ class MCL_TEMPLATE_FB_FIELD_DATABASE extends MCL_TEMPLATE {
   }
 
   /**
-   * Checks if Field Book required columns exist.
+   * Checks the BIMS columns exist.
    *
    * @param array $line
    */
-  private function _checkFBReqCols($line) {
-
-    // Gets Field Book required columns.
-    $fb_req_cols = $this->getJob()->getParamByKey('fb_req_cols');
-    foreach ($fb_req_cols as $req_col => $label) {
+  private function _checkBIMSCols($line) {
+    $bims_cols = $this->getJob()->getParamByKey('bims_cols');
+    foreach ($bims_cols as $bims_col => $label) {
       if (!array_key_exists(strtolower($label), $line)) {
         $this->updateMsg('E', "The required column ($label) is missing");
       }

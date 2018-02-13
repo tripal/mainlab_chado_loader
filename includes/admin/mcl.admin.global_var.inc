@@ -192,7 +192,7 @@ function mcl_admin_global_var_edit_form($form, &$form_state, $var_id) {
     '#type'         => 'fieldset',
     '#collapsed'    => FALSE,
     '#collapsible'  => TRUE,
-    '#title'        => 'Edit MCL global varible',
+    '#title'        => 'Edit MCL global variable',
   );
 
   // Gets MCL_VAR.

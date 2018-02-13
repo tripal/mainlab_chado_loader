@@ -501,6 +501,10 @@ function mcl_job_view_form_submit($form, &$form_state) {
   }
   $mcl_job->setPropByKey('transaction', $trans);
 
+  // Resets the prograss and the complete date.
+  $mcl_job->resetProgress();
+  $mcl_job->resetCompleteDate();
+
   // Gets 'email' option.
   $email_cb = $form_state['values']['job_rerun']['email_cb'];
   $mcl_job->setParamByKey('send_email', $email_cb);

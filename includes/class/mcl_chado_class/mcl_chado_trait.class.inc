@@ -75,6 +75,15 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
   }
 
   /**
+   * Returns the format of the trait.
+   *
+   * @return string
+   */
+  public function getFormat() {
+    return $this->getProp('SITE_CV', 'format');
+  }
+
+  /**
    * Returns the trait.
    *
    * @param string $cvterm_name

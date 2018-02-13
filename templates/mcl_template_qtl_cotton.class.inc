@@ -65,6 +65,7 @@ class MCL_TEMPLATE_QTL_COTTON extends MCL_TEMPLATE {
       'population_low_value'        => array('req' => FALSE, 'width' => 10, 'desc' => "Lowest phenotypic value."),
       'population_high_value'       => array('req' => FALSE, 'width' => 10, 'desc' => "Maximum phenotypic value."),
       'reference'                   => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id of the QTL paper."),
+      '##property_name'             => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
 
     // Adds labels.
@@ -143,7 +144,7 @@ class MCL_TEMPLATE_QTL_COTTON extends MCL_TEMPLATE {
     $qtl = MCL_CHADO_FEATURE::addFeature($this, $line['qtl_label'], $line['trait_name'], $this->cvterms['sequence']['qtl'], $organism->getOrganismID());
     if ($qtl) {
 
-      // Adds properties.
+      // Adds the properties.
       $qtl->addProp($this, 'SITE_CV', 'published_symbol', $line['published_symbol']);
       $qtl->addProp($this, 'SITE_CV', 'r2', $line['r2']);
       $qtl->addProp($this, 'SITE_CV', 'lod', $line['lod']);
@@ -161,35 +162,56 @@ class MCL_TEMPLATE_QTL_COTTON extends MCL_TEMPLATE {
       $qtl->addProp($this, 'SITE_CV', 'population_low_value', $line['population_low_value']);
       $qtl->addProp($this, 'SITE_CV', 'population_high_value', $line['population_high_value']);
 
-      // Gets trait.
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $qtl, $line);
+
+      // Gets the trait.
       $trait = MCL_CHADO_TRAIT::getTrait($line['trait_name'], 'SITE_TRAIT_ONTOLOGY');
 
-      /// Adds trait.
+      /// Adds the trait.
       $qtl->addTrait($this, $trait);
 
-      // Adds alias.
+      // Adds the alias.
       $qtl->addAlias($this, $this->cvterms['SITE_CV']['alias'], $line['alias'], "[,;]");
 
-      // Adds dataset.
+      // Adds the dataset.
       $qtl->addDataset($this, $line['dataset_name']);
 
-      // Adds site.
+      // Adds the site.
       $qtl->addSite($this, $line['site_name']);
 
-      // Adds stocks.
+      // Adds the stocks.
       $qtl->addStock($this, $line['source'], $line['genus'], $line['species'], $this->cvterms['SITE_CV']['source'], "[,;]");
 
-      // Adds references.
+      // Adds the references.
       $qtl->addReference($this, $line['reference'], "[,;]");
 
       // Adds colocalized markers.
       $qtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]", TRUE);
 
-      // Adds neighboring markers.
+      // Adds the neighboring markers.
       $qtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]", TRUE);
     }
     else {
       $this->updateMsg('E', "Error : cannot get/add " . $line['qtl_label']);
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

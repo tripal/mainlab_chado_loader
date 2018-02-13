@@ -43,8 +43,8 @@ class MCL_TEMPLATE_LIBRARY extends MCL_TEMPLATE {
       'pi'            => array('req' => FALSE,  'width' => 10, 'desc' => "PI of the project."),
       'description'   => array('req' => FALSE,  'width' => 10, 'desc' => "Description of the library."),
       'reference'     => array('req' => FALSE,  'width' => 10, 'desc' => "pub_id for any reference."),
+      '##property_name' => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
-
     // Adds labels.
     $headers['pi']['label'] = 'PI';
     return $headers;
@@ -85,14 +85,35 @@ class MCL_TEMPLATE_LIBRARY extends MCL_TEMPLATE {
     $library = MCL_CHADO_LIBRARY::addLibrary($this, $line['library_name'], $cvterm->getCvtermID());
     if ($library) {
 
-      // Adds properties.
+      // Adds the properties.
       $library->addProp($this, 'SITE_CV', 'description', $line['description']);
+
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $library, $line);
 
       // Adds PI.
       $library->addContact($this, $line['pi']);
 
       // Adds references.
       $library->addReference($this, $line['reference'], "[,;]");
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      return;
     }
   }
 }

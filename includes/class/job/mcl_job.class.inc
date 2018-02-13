@@ -463,6 +463,17 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
   }
 
   /**
+   * Resets the completion date.
+   */
+  public function resetCompleteDate() {
+    $this->setCompleteDate(NULL);
+    $conditions = array(
+      array('field' => 'job_id', 'value' => $this->job_id),
+    );
+    MCL_TABLE::setValueToNULL('mcl_job', array('complete_date'), $conditions);
+  }
+
+  /**
    * Resets the progress file.
    */
   public function resetProgress() {
