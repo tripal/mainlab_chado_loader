@@ -720,7 +720,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    *
    * @return boolean
    */
-  public function linkTrait(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_CVTERM $trait) {
+  public function linkTrait(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_CVTERM $trait = NULL) {
     if ($trait) {
 
       // Links a descriptor and a trait.
