@@ -82,7 +82,7 @@ class MCL_CHADO_LIBRARY extends CHADO_LIBRARY {
       'type_id'     => $type_id,
       'organism_id' => $organism_id,
     );
-    return MCL_CHADO_LIBRARY::bykey($keys);
+    return MCL_CHADO_LIBRARY::byKey($keys);
   }
 
   /**

@@ -47,7 +47,7 @@ class MCL_CHADO_SYNONYM extends CHADO_SYNONYM {
       'name'    => $name,
       'type_id' => $type_id,
     );
-    return MCL_CHADO_SYNONYM::bykey($args);
+    return MCL_CHADO_SYNONYM::byKey($args);
   }
 
   /**

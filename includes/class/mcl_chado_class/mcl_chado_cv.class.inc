@@ -35,7 +35,7 @@ class MCL_CHADO_CV extends CHADO_CV {
    * @return MCL_CHADO_CV
    */
   public static function byID($cv_id) {
-    return MCL_CHADO_CV::bykey(array('cv_id' => $cv_id));
+    return MCL_CHADO_CV::byKey(array('cv_id' => $cv_id));
   }
 
   /**
@@ -46,7 +46,7 @@ class MCL_CHADO_CV extends CHADO_CV {
    * @return MCL_CHADO_CV
    */
   public static function byName($name) {
-    return MCL_CHADO_CV::bykey(array('name' => $name));
+    return MCL_CHADO_CV::byKey(array('name' => $name));
   }
 
   /**

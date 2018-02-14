@@ -36,7 +36,7 @@ class MCL_DATA_VALID_TYPE extends PUBLIC_MCL_DATA_VALID_TYPE {
    * @return MCL_DATA_VALID_TYPE
    */
   public static function byID($data_valid_type_id) {
-    return MCL_DATA_VALID_TYPE::bykey(array('data_valid_type_id' => $data_valid_type_id));
+    return MCL_DATA_VALID_TYPE::byKey(array('data_valid_type_id' => $data_valid_type_id));
   }
 
   /**

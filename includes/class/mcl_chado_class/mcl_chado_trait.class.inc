@@ -34,7 +34,7 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
    * @return MCL_CHADO_TRAIT
    */
   public static function byID($cvterm_id) {
-    return MCL_CHADO_TRAIT::bykey(array('cvterm_id' => $cvterm_id));
+    return MCL_CHADO_TRAIT::byKey(array('cvterm_id' => $cvterm_id));
   }
 
   /**
@@ -99,7 +99,7 @@ class MCL_CHADO_TRAIT extends MCL_CHADO_CVTERM {
     }
     $cv = MCL_CHADO_CV::getCV($cv_name);
     if ($cv) {
-      return MCL_CHADO_TRAIT::bykey(array('cv_id' => $cv->getCvID(), 'name' => $cvterm_name));
+      return MCL_CHADO_TRAIT::byKey(array('cv_id' => $cv->getCvID(), 'name' => $cvterm_name));
     }
     return NULL;
   }

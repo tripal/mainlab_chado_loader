@@ -76,7 +76,7 @@ class MCL_CHADO_PUB extends CHADO_PUB {
    * @return MCL_CHADO_PUB
    */
   public static function getPub($pub_id) {
-    return MCL_CHADO_PUB::bykey(array('pub_id' => $pub_id));
+    return MCL_CHADO_PUB::byKey(array('pub_id' => $pub_id));
   }
 
   /**

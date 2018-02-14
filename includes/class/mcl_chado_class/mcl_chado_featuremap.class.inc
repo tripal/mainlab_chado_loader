@@ -90,7 +90,7 @@ class MCL_CHADO_FEATUREMAP extends CHADO_FEATUREMAP {
    * @return MCL_CHADO_FEATUREMAP
    */
   public static function getMap($name) {
-    return MCL_CHADO_FEATUREMAP::bykey(array('name' => $name));
+    return MCL_CHADO_FEATUREMAP::byKey(array('name' => $name));
   }
 
   /**

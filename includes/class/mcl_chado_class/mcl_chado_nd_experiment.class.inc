@@ -35,7 +35,7 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
    * @return MCL_CHADO_ND_EXPERIMENT
    */
   public static function byID($nd_experiment_id) {
-    return MCL_CHADO_ND_EXPERIMENT::bykey(array('nd_experiment_id' => $nd_experiment_id));
+    return MCL_CHADO_ND_EXPERIMENT::byKey(array('nd_experiment_id' => $nd_experiment_id));
   }
 
   /**

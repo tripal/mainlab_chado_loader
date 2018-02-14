@@ -35,7 +35,7 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * @return MCL_CHADO_STOCK
    */
   public static function byID($stock_id) {
-    return MCL_CHADO_STOCK::bykey(array('stock_id' => $stock_id));
+    return MCL_CHADO_STOCK::byKey(array('stock_id' => $stock_id));
   }
 
   /**
@@ -221,7 +221,7 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
       $organism = MCL_CHADO_ORGANISM::getOrganism($genus, $species);
       $args['organism_id'] = $organism->getOrganismID();
     }
-    return MCL_CHADO_STOCK::bykey($args);
+    return MCL_CHADO_STOCK::byKey($args);
   }
 
   /**

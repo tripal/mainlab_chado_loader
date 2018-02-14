@@ -35,7 +35,7 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
    * @return MCL_CHADO_CONTACT
    */
   public static function byID($contact_id) {
-    return MCL_CHADO_CONTACT::bykey(array('contact_id' => $contact_id));
+    return MCL_CHADO_CONTACT::byKey(array('contact_id' => $contact_id));
   }
 
   /**
@@ -46,7 +46,7 @@ class MCL_CHADO_CONTACT extends CHADO_CONTACT {
    * @return MCL_CHADO_CONTACT
    */
   public static function byName($name) {
-    return MCL_CHADO_CONTACT::bykey(array('name' => trim($name)));
+    return MCL_CHADO_CONTACT::byKey(array('name' => trim($name)));
   }
 
   /**

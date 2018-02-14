@@ -35,7 +35,7 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
    * @return MCL_CHADO_DATASET
    */
   public static function byID($project_id) {
-    return MCL_CHADO_DATASET::bykey(array('project_id' => $project_id));
+    return MCL_CHADO_DATASET::byKey(array('project_id' => $project_id));
   }
 
   /**
@@ -46,7 +46,7 @@ class MCL_CHADO_DATASET extends CHADO_PROJECT {
    * @return MCL_CHADO_DATASET
    */
   public static function byName($name) {
-    return MCL_CHADO_DATASET::bykey(array('name' => $name));
+    return MCL_CHADO_DATASET::byKey(array('name' => $name));
   }
 
   /**

@@ -270,7 +270,7 @@ class MCL_TABLE_CLASS_WRITER {
     $data_types               = $this->getDataTypes();
     $constructor              = $this->getConstructor();
     $destructor               = $this->getDestructor();
-    $func_bykey               = $this->getFuncByKey('drupal');
+    $func_byKey               = $this->getFuncByKey('drupal');
     $func_getfk               = $this->getFuncGetFK();
     $func_getRelTable         = $this->getFuncGetRelTable();
     $func_insert              = $this->getFuncInsert('drupal');
@@ -318,7 +318,7 @@ $destructor
   /**
    * Generate $class_name by key(s).
    */
-$func_bykey
+$func_byKey
 
   /**
    * Returns the foreign keys.

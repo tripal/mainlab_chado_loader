@@ -35,7 +35,7 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
    * @return MCL_CHADO_ORGANISM
    */
   public static function byID($organism_id) {
-    return MCL_CHADO_ORGANISM::bykey(array('organism_id' => $organism_id));
+    return MCL_CHADO_ORGANISM::byKey(array('organism_id' => $organism_id));
   }
 
   /**
@@ -130,7 +130,7 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
       'genus'   => $genus,
       'species' => $species,
     );
-    return MCL_CHADO_ORGANISM::bykey($args);
+    return MCL_CHADO_ORGANISM::byKey($args);
   }
 
   /**
@@ -141,7 +141,7 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
    * @return MCL_CHADO_ORGANISM
    */
   public static function getOrganismByID($organism_id) {
-    return MCL_CHADO_ORGANISM::bykey(array('organism_id' => $organism_id));
+    return MCL_CHADO_ORGANISM::byKey(array('organism_id' => $organism_id));
   }
 
   /**

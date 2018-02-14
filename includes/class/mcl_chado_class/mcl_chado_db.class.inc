@@ -35,7 +35,7 @@ class MCL_CHADO_DB extends CHADO_DB {
    * @return MCL_CHADO_DB
    */
   public static function byID($db_id) {
-    return MCL_CHADO_DB::bykey(array('db_id' => $db_id));
+    return MCL_CHADO_DB::byKey(array('db_id' => $db_id));
   }
 
   /**
@@ -46,7 +46,7 @@ class MCL_CHADO_DB extends CHADO_DB {
    * @return MCL_CHADO_DB
    */
   public static function byName($name) {
-    return MCL_CHADO_DB::bykey(array('name' => $name));
+    return MCL_CHADO_DB::byKey(array('name' => $name));
   }
 
   /**

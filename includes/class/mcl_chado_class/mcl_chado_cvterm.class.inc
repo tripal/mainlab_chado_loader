@@ -34,7 +34,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    * @return MCL_CHADO_CVTERM
    */
   public static function byID($cvterm_id) {
-    return MCL_CHADO_CVTERM::bykey(array('cvterm_id' => $cvterm_id));
+    return MCL_CHADO_CVTERM::byKey(array('cvterm_id' => $cvterm_id));
   }
 
   /**
@@ -165,7 +165,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   public static function getCvterm($cv_name, $cvterm_name) {
     $cv = MCL_CHADO_CV::getCV($cv_name);
     if ($cv) {
-      return MCL_CHADO_CVTERM::bykey(array('cv_id' => $cv->getCvID(), 'name' => $cvterm_name));
+      return MCL_CHADO_CVTERM::byKey(array('cv_id' => $cv->getCvID(), 'name' => $cvterm_name));
     }
     return NULL;
   }
@@ -181,7 +181,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   public static function getCvtermByCvID($cv_id, $cvterm_name) {
     $cv = MCL_CHADO_CV::byID($cv_id);
     if ($cv) {
-      return MCL_CHADO_CVTERM::bykey(array('cv_id' => $cv_id, 'name' => $cvterm_name));
+      return MCL_CHADO_CVTERM::byKey(array('cv_id' => $cv_id, 'name' => $cvterm_name));
     }
     return NULL;
   }

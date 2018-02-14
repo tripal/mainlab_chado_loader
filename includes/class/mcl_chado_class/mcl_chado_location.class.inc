@@ -40,7 +40,7 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    * @return MCL_CHADO_LOCATION
    */
   public static function byID($nd_geolocation_id) {
-    return MCL_CHADO_LOCATION::bykey(array('nd_geolocation_id' => $nd_geolocation_id));
+    return MCL_CHADO_LOCATION::byKey(array('nd_geolocation_id' => $nd_geolocation_id));
   }
 
   /**

@@ -555,7 +555,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     if ($organism_id) {
       $args['organism_id'] = $organism_id;
     }
-    return MCL_CHADO_FEATURE::bykey($args);
+    return MCL_CHADO_FEATURE::byKey($args);
   }
 
   /**
@@ -591,7 +591,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
     if ($organism_id) {
       $args['organism_id'] = $organism_id;
     }
-    $feature = MCL_CHADO_FEATURE::bykey($args);
+    $feature = MCL_CHADO_FEATURE::byKey($args);
     if ($feature) {
       return $feature;
     }
@@ -612,7 +612,7 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
         WHERE LOWER(S.name) = LOWER(:name)
       ";
       $feature_id = db_query($sql, array(':name' => $uniquename))->fetchField();
-      return MCL_CHADO_FEATURE::bykey(array('feature_id' => $feature_id));
+      return MCL_CHADO_FEATURE::byKey(array('feature_id' => $feature_id));
     }
     return NULL;
   }
