@@ -271,10 +271,6 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
             $value = MCL_CHADO_CVTERM::convertFBDate($value);
           }
 
-          // Adds a phenotype.
-          $uniquename = $program_id . '.' . $cvterm_id . '_' . $value;
-          $phenotype = MCL_CHADO_PHENOTYPE::addPhenotype($this, $uniquename, $cvterm_id, $value);
-
           // Adds photos.
           if ($descriptor['format'] == 'photo') {
             $sample->addImage($this, 'filename', $value, $cvterm_id, "[;]");
@@ -285,8 +281,8 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
             'project_id'        => $dataset->getProjectID(),
             'nd_geolocation_id' => $nd_geolocation_id,
             'stock_id'          => $sample->getStockID(),
-            'cvterm_id'         => $phenotype->getAttrID(),
-            'phenotype_id'      => $phenotype->getPhenotypeID(),
+            'cvterm_id'         => $cvterm_id,
+            'value'             => $value,
             'contact_id'        => $contact_id,
             'time'              => date("Y-m-d G:i:s"),
           );

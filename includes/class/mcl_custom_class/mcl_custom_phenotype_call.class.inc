@@ -81,11 +81,11 @@ class MCL_CUSTOM_PHENOTYPE_CALL extends MCL_CUSTOM_TABLE {
           'nd_geolocation_id' => $details['nd_geolocation_id'],
           'stock_id'          => $details['stock_id'],
           'cvterm_id'         => $details['cvterm_id'],
-          'phenotype_id'      => $details['phenotype_id'],
+          'value'             => $details['value'],
           'time'              => $details['time'],
         );
 
-        // Adds contact_id (optioanl).
+        // Adds contact_id (optional).
         if ($details['contact_id']) {
           $fields['contact_id'] = $details['contact_id'];
         }

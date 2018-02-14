@@ -424,7 +424,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
 
           // Adds the type if provided.
           if ($type) {
-            if (!$cvterm->addProp('SITE_CV', 'type', $type)) {
+            if (!$cvterm->addProp($mcl_tmpl, 'SITE_CV', 'type', $type)) {
               self::updateMsg($mcl_tmpl, 'E', "Failed to add a type of this cvterm");
               return NULL;
             }

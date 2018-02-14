@@ -198,12 +198,22 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
    * @see PUBLIC_MCL_JOB::delete()
    */
   public function delete() {
-    $job_dir = $this->getJobDir();
+
+    // Kills the running job.
+    $pid = $this->getPropByKey('pid');
+    if ($pid) {
+
+      // Kills if it is running.
+      if (file_exists("/proc/$pid" )) {
+        exec("kill -9 $pid", $output, $status);
+      }
+    }
 
     // Deletes files associated with this job.
     MCL_FILE::deleteByJob($this);
 
     // Deletes the job directory.
+    $job_dir = $this->getJobDir();
     if (file_exists($job_dir)) {
       mcl_remove_dir($job_dir);
     }
