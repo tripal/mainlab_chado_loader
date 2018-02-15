@@ -727,8 +727,8 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
       foreach ($eimages as $eimage_filename) {
         $eimage_filename = trim($eimage_filename);
 
-        // Add image.
-        $eimage = MCL_CHADO_IMAGE::addImage($eimage_filename, $type, $eimage_filename, $cvterm_id);
+        // Adds the image.
+        $eimage = MCL_CHADO_IMAGE::addImage($mcl_tmpl, $eimage_filename, $type, $eimage_filename, $cvterm_id);
         if ($eimage) {
 
           // Associated with stock.

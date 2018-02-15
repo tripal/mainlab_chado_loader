@@ -108,6 +108,7 @@ class CHADO_EIMAGE  extends CHADO_TABLE {
       'eimage_id' => array(
         array('table' => 'eimageprop', 'attr' => 'eimage_id'),
         array('table' => 'feature_image', 'attr' => 'eimage_id'),
+        array('table' => 'stock_image', 'attr' => 'eimage_id'),
       ),
     );
   }

@@ -94,7 +94,10 @@ class CHADO_LIBRARY_CONTACT  extends CHADO_TABLE {
    * Returns the foreign keys.
    */
   public static function getFK() {
-    return NULL;
+    return array(
+      array('contact_id' => array('fk_table' => 'contact', 'fk_attr' => 'contact_id')),
+      array('library_id' => array('fk_table' => 'library', 'fk_attr' => 'library_id')),
+    );
   }
 
   /**

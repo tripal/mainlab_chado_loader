@@ -135,7 +135,7 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
         // If cvterm_id is not empty save it in eimageprop. The image is
         // added as a trait.
         if ($cvterm_id) {
-          if (!$image->addProp('SITE_CV', 'trait_descriptor', $cvterm_id)) {
+          if (!$image->addProp($mcl_tmpl, 'SITE_CV', 'trait_descriptor', $cvterm_id)) {
             $flag = FALSE;
           }
         }

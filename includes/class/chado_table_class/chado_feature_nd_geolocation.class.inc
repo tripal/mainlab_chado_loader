@@ -22,8 +22,8 @@ class CHADO_FEATURE_ND_GEOLOCATION  extends CHADO_TABLE {
    */
   protected static $data_types = array(
     'feature_nd_geolocation_id' => 'serial',
-    'feature_id'                => 'integer',
-    'nd_geolocation_id'         => 'integer',
+    'feature_id'                => 'serial',
+    'nd_geolocation_id'         => 'serial',
   );
 
   /**
@@ -94,10 +94,7 @@ class CHADO_FEATURE_ND_GEOLOCATION  extends CHADO_TABLE {
    * Returns the foreign keys.
    */
   public static function getFK() {
-    return array(
-      array('feature_id' => array('fk_table' => 'feature', 'fk_attr' => 'feature_id')),
-      array('nd_geolocation_id' => array('fk_table' => 'nd_geolocation', 'fk_attr' => 'nd_geolocation_id')),
-    );
+    return NULL;
   }
 
   /**
@@ -124,8 +121,7 @@ class CHADO_FEATURE_ND_GEOLOCATION  extends CHADO_TABLE {
         // Populates all fields. The attribute with 'NOT NULL' would be skipped
         // if the value is empty.
         $fields = array();
-        $fields['feature_id']        = $this->feature_id;
-        $fields['nd_geolocation_id'] = $this->nd_geolocation_id;
+
 
 
         // Inserts the record.
@@ -153,8 +149,7 @@ class CHADO_FEATURE_ND_GEOLOCATION  extends CHADO_TABLE {
       // Populates all fields. The attribute with 'NOT NULL' would be skipped
       // if the value is empty.
       $fields = array();
-      $fields['feature_id']        = $this->feature_id;
-      $fields['nd_geolocation_id'] = $this->nd_geolocation_id;
+
 
 
       // Updates the record.
@@ -242,7 +237,7 @@ class CHADO_FEATURE_ND_GEOLOCATION  extends CHADO_TABLE {
   /**
    * Retrieves the feature_id.
    *
-   * @retrun integer
+   * @retrun serial
    */
   public function getFeatureID() {
     return $this->feature_id;
@@ -251,7 +246,7 @@ class CHADO_FEATURE_ND_GEOLOCATION  extends CHADO_TABLE {
   /**
    * Updates the feature_id.
    *
-   * @param integer $feature_id
+   * @param serial $feature_id
    */
   public function setFeatureID($feature_id) {
     $this->feature_id = $feature_id;
@@ -260,7 +255,7 @@ class CHADO_FEATURE_ND_GEOLOCATION  extends CHADO_TABLE {
   /**
    * Retrieves the nd_geolocation_id.
    *
-   * @retrun integer
+   * @retrun serial
    */
   public function getNdGeolocationID() {
     return $this->nd_geolocation_id;
@@ -269,7 +264,7 @@ class CHADO_FEATURE_ND_GEOLOCATION  extends CHADO_TABLE {
   /**
    * Updates the nd_geolocation_id.
    *
-   * @param integer $nd_geolocation_id
+   * @param serial $nd_geolocation_id
    */
   public function setNdGeolocationID($nd_geolocation_id) {
     $this->nd_geolocation_id = $nd_geolocation_id;

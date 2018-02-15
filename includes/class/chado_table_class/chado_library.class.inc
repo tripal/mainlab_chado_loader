@@ -121,6 +121,7 @@ class CHADO_LIBRARY  extends CHADO_TABLE {
   public static function getRelTable() {
     return array(
       'library_id' => array(
+        array('table' => 'library_contact', 'attr' => 'library_id'),
         array('table' => 'library_pub', 'attr' => 'library_id'),
         array('table' => 'library_synonym', 'attr' => 'library_id'),
         array('table' => 'libraryprop', 'attr' => 'library_id'),

@@ -112,7 +112,6 @@ class CHADO_ND_GEOLOCATION  extends CHADO_TABLE {
   public static function getRelTable() {
     return array(
       'nd_geolocation_id' => array(
-        array('table' => 'feature_nd_geolocation', 'attr' => 'nd_geolocation_id'),
         array('table' => 'nd_experiment', 'attr' => 'nd_geolocation_id'),
         array('table' => 'nd_geolocationprop', 'attr' => 'nd_geolocation_id'),
       ),

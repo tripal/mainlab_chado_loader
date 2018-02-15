@@ -153,6 +153,7 @@ class CHADO_CVTERM  extends CHADO_TABLE {
         array('table' => 'phenotype', 'attr' => 'attr_id'),
         array('table' => 'phenotype', 'attr' => 'cvalue_id'),
         array('table' => 'phenotype', 'attr' => 'observable_id'),
+        array('table' => 'phenotype_call', 'attr' => 'cvterm_id'),
         array('table' => 'project_relationship', 'attr' => 'type_id'),
         array('table' => 'projectprop', 'attr' => 'type_id'),
         array('table' => 'stock', 'attr' => 'type_id'),

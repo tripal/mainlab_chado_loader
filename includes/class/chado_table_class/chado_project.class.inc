@@ -106,6 +106,7 @@ class CHADO_PROJECT  extends CHADO_TABLE {
         array('table' => 'feature_project', 'attr' => 'project_id'),
         array('table' => 'genotype_call', 'attr' => 'project_id'),
         array('table' => 'nd_experiment_project', 'attr' => 'project_id'),
+        array('table' => 'phenotype_call', 'attr' => 'project_id'),
         array('table' => 'project_contact', 'attr' => 'project_id'),
         array('table' => 'project_pub', 'attr' => 'project_id'),
         array('table' => 'project_relationship', 'attr' => 'object_project_id'),

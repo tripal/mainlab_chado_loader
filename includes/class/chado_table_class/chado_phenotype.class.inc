@@ -124,6 +124,7 @@ class CHADO_PHENOTYPE  extends CHADO_TABLE {
     return array(
       'phenotype_id' => array(
         array('table' => 'nd_experiment_phenotype', 'attr' => 'phenotype_id'),
+        array('table' => 'phenotype_call', 'attr' => 'phenotype_id'),
       ),
     );
   }

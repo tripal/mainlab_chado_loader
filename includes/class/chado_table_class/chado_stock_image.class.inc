@@ -4,28 +4,26 @@
  */
 
 /**
- * The declaration of CHADO_CONTACT class.
+ * The declaration of CHADO_STOCK_IMAGE class.
  *
  */
-class CHADO_CONTACT  extends CHADO_TABLE {
+class CHADO_STOCK_IMAGE  extends CHADO_TABLE {
 
   /**
-   *  Data members for CHADO_CONTACT.
+   *  Data members for CHADO_STOCK_IMAGE.
    */
-  protected $member_arr  = NULL;
-  protected $contact_id  = NULL;
-  protected $type_id     = NULL;
-  protected $name        = NULL;
-  protected $description = NULL;
+  protected $member_arr     = NULL;
+  protected $stock_image_id = NULL;
+  protected $stock_id       = NULL;
+  protected $eimage_id      = NULL;
 
   /**
    *  Data types for the data members.
    */
   protected static $data_types = array(
-    'contact_id'  => 'serial',
-    'type_id'     => 'integer',
-    'name'        => 'character_varying(255)',
-    'description' => 'character_varying(255)',
+    'stock_image_id' => 'serial',
+    'stock_id'       => 'integer',
+    'eimage_id'      => 'integer',
   );
 
   /**
@@ -35,11 +33,10 @@ class CHADO_CONTACT  extends CHADO_TABLE {
    */
   public function __construct($details = array()) {
     // Initializes data members.
-    $this->member_arr  = $details;
-    $this->contact_id  = array_key_exists('contact_id', $details)  ? $details['contact_id']  : '';
-    $this->type_id     = array_key_exists('type_id', $details)     ? $details['type_id']     : '';
-    $this->name        = array_key_exists('name', $details)        ? $details['name']        : '';
-    $this->description = array_key_exists('description', $details) ? $details['description'] : '';
+    $this->member_arr     = $details;
+    $this->stock_image_id = array_key_exists('stock_image_id', $details) ? $details['stock_image_id'] : '';
+    $this->stock_id       = array_key_exists('stock_id', $details)       ? $details['stock_id']       : '';
+    $this->eimage_id      = array_key_exists('eimage_id', $details)      ? $details['eimage_id']      : '';
   }
 
   /**
@@ -49,7 +46,7 @@ class CHADO_CONTACT  extends CHADO_TABLE {
   }
 
   /**
-   * Generate CHADO_CONTACT by key(s).
+   * Generate CHADO_STOCK_IMAGE by key(s).
    */
   public static function byKey($keys) {
 
@@ -85,7 +82,7 @@ class CHADO_CONTACT  extends CHADO_TABLE {
     }
 
     // Gets the table properties.
-    $sql = "SELECT * FROM chado.contact WHERE " . implode(" AND " , $where_arr);
+    $sql = "SELECT * FROM chado.stock_image WHERE " . implode(" AND " , $where_arr);
     $details = db_query($sql, $args)->fetch(PDO::FETCH_ASSOC);
     if ($details) {
       return new self($details);
@@ -98,7 +95,8 @@ class CHADO_CONTACT  extends CHADO_TABLE {
    */
   public static function getFK() {
     return array(
-      array('type_id' => array('fk_table' => 'cvterm', 'fk_attr' => 'cvterm_id')),
+      array('eimage_id' => array('fk_table' => 'eimage', 'fk_attr' => 'eimage_id')),
+      array('stock_id' => array('fk_table' => 'stock', 'fk_attr' => 'stock_id')),
     );
   }
 
@@ -106,17 +104,7 @@ class CHADO_CONTACT  extends CHADO_TABLE {
    * Returns the related tables.
    */
   public static function getRelTable() {
-    return array(
-      'contact_id' => array(
-        array('table' => 'contactprop', 'attr' => 'contact_id'),
-        array('table' => 'feature_contact', 'attr' => 'contact_id'),
-        array('table' => 'featuremap_contact', 'attr' => 'contact_id'),
-        array('table' => 'library_contact', 'attr' => 'contact_id'),
-        array('table' => 'nd_experiment_contact', 'attr' => 'contact_id'),
-        array('table' => 'phenotype_call', 'attr' => 'contact_id'),
-        array('table' => 'project_contact', 'attr' => 'contact_id'),
-      ),
-    );
+    return NULL;
   }
 
   /**
@@ -136,12 +124,12 @@ class CHADO_CONTACT  extends CHADO_TABLE {
         // Populates all fields. The attribute with 'NOT NULL' would be skipped
         // if the value is empty.
         $fields = array();
-        $fields['name']        = $this->name;
-        $fields['description'] = $this->description;
-        if (is_numeric($this->type_id)) { $fields['type_id'] = $this->type_id; }
+        $fields['stock_id']  = $this->stock_id;
+        $fields['eimage_id'] = $this->eimage_id;
+
 
         // Inserts the record.
-        $this->contact_id = db_insert('chado.contact')
+        $this->stock_image_id = db_insert('chado.stock_image')
           ->fields($fields)
           ->execute();
       }
@@ -165,14 +153,14 @@ class CHADO_CONTACT  extends CHADO_TABLE {
       // Populates all fields. The attribute with 'NOT NULL' would be skipped
       // if the value is empty.
       $fields = array();
-      $fields['name']        = $this->name;
-      $fields['description'] = $this->description;
-      if (is_numeric($this->type_id)) { $fields['type_id'] = $this->type_id; }
+      $fields['stock_id']  = $this->stock_id;
+      $fields['eimage_id'] = $this->eimage_id;
+
 
       // Updates the record.
-      db_update('chado.contact')
+      db_update('chado.stock_image')
         ->fields($fields)
-        ->condition('contact_id', $this->contact_id, '=')
+        ->condition('stock_image_id', $this->stock_image_id, '=')
         ->execute();
     }
     catch (Exception $e) {
@@ -191,8 +179,8 @@ class CHADO_CONTACT  extends CHADO_TABLE {
     $transaction = db_transaction();
     try {
 
-      db_delete('chado.contact')
-        ->condition('contact_id', $this->contact_id, '=')
+      db_delete('chado.stock_image')
+        ->condition('stock_image_id', $this->stock_image_id, '=')
         ->execute();
     }
     catch (Exception $e) {
@@ -234,74 +222,56 @@ class CHADO_CONTACT  extends CHADO_TABLE {
   }
 
   /**
-   * Retrieves the contact_id.
+   * Retrieves the stock_image_id.
    *
    * @retrun serial
    */
-  public function getContactID() {
-    return $this->contact_id;
+  public function getStockImageID() {
+    return $this->stock_image_id;
   }
 
   /**
-   * Updates the contact_id.
+   * Updates the stock_image_id.
    *
-   * @param serial $contact_id
+   * @param serial $stock_image_id
    */
-  public function setContactID($contact_id) {
-    $this->contact_id = $contact_id;
+  public function setStockImageID($stock_image_id) {
+    $this->stock_image_id = $stock_image_id;
   }
 
   /**
-   * Retrieves the type_id.
+   * Retrieves the stock_id.
    *
    * @retrun integer
    */
-  public function getTypeID() {
-    return $this->type_id;
+  public function getStockID() {
+    return $this->stock_id;
   }
 
   /**
-   * Updates the type_id.
+   * Updates the stock_id.
    *
-   * @param integer $type_id
+   * @param integer $stock_id
    */
-  public function setTypeID($type_id) {
-    $this->type_id = $type_id;
+  public function setStockID($stock_id) {
+    $this->stock_id = $stock_id;
   }
 
   /**
-   * Retrieves the name.
+   * Retrieves the eimage_id.
    *
-   * @retrun character_varying(255)
+   * @retrun integer
    */
-  public function getName() {
-    return $this->name;
+  public function getEimageID() {
+    return $this->eimage_id;
   }
 
   /**
-   * Updates the name.
+   * Updates the eimage_id.
    *
-   * @param character_varying(255) $name
+   * @param integer $eimage_id
    */
-  public function setName($name) {
-    $this->name = $name;
-  }
-
-  /**
-   * Retrieves the description.
-   *
-   * @retrun character_varying(255)
-   */
-  public function getDescription() {
-    return $this->description;
-  }
-
-  /**
-   * Updates the description.
-   *
-   * @param character_varying(255) $description
-   */
-  public function setDescription($description) {
-    $this->description = $description;
+  public function setEimageID($eimage_id) {
+    $this->eimage_id = $eimage_id;
   }
 }

@@ -9657,12 +9657,12 @@ COMMENT ON COLUMN phenotype.assay_id IS 'Evidence type.';
 
 CREATE TABLE phenotype_call (
     phenotype_call_id integer NOT NULL,
-    project_id integer NOT NULL,
     stock_id integer NOT NULL,
     cvterm_id integer NOT NULL,
+    project_id integer NOT NULL,
     phenotype_id integer NOT NULL,
-    nd_geolocation_id integer NOT NULL,
-    "time" timestamp without time zone
+    contact_id integer,
+    "time" timestamp without time zone NOT NULL
 );
 
 
@@ -15139,14 +15139,6 @@ ALTER TABLE ONLY genotype
 
 
 --
--- Name: genotype_call_project_id_feature_id_stock_id_key; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
---
-
-ALTER TABLE ONLY genotype_call
-    ADD CONSTRAINT genotype_call_project_id_feature_id_stock_id_key UNIQUE (project_id, feature_id, stock_id);
-
-
---
 -- Name: genotype_pkey; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
 --
 
@@ -15699,19 +15691,19 @@ ALTER TABLE ONLY phenotype
 
 
 --
--- Name: phenotype_call_a_pkey; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
+-- Name: phenotype_call_pkey; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY phenotype_call
-    ADD CONSTRAINT phenotype_call_a_pkey PRIMARY KEY (phenotype_call_id);
+    ADD CONSTRAINT phenotype_call_pkey PRIMARY KEY (phenotype_call_id);
 
 
 --
--- Name: phenotype_call_project_id_stock_id_cvterm_id_nd_geolocation_key; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
+-- Name: phenotype_call_stock_id_cvterm_id_project_id_key; Type: CONSTRAINT; Schema: chado; Owner: -; Tablespace: 
 --
 
 ALTER TABLE ONLY phenotype_call
-    ADD CONSTRAINT phenotype_call_project_id_stock_id_cvterm_id_nd_geolocation_key UNIQUE (project_id, stock_id, cvterm_id, nd_geolocation_id);
+    ADD CONSTRAINT phenotype_call_stock_id_cvterm_id_project_id_key UNIQUE (stock_id, cvterm_id, project_id);
 
 
 --
@@ -22100,19 +22092,19 @@ ALTER TABLE ONLY phenotype
 
 
 --
+-- Name: phenotype_call_contact_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
+--
+
+ALTER TABLE ONLY phenotype_call
+    ADD CONSTRAINT phenotype_call_contact_id_fkey FOREIGN KEY (contact_id) REFERENCES contact(contact_id) ON DELETE CASCADE;
+
+
+--
 -- Name: phenotype_call_cvterm_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
 --
 
 ALTER TABLE ONLY phenotype_call
     ADD CONSTRAINT phenotype_call_cvterm_id_fkey FOREIGN KEY (cvterm_id) REFERENCES cvterm(cvterm_id) ON DELETE CASCADE;
-
-
---
--- Name: phenotype_call_nd_geolocation_id_fkey; Type: FK CONSTRAINT; Schema: chado; Owner: -
---
-
-ALTER TABLE ONLY phenotype_call
-    ADD CONSTRAINT phenotype_call_nd_geolocation_id_fkey FOREIGN KEY (nd_geolocation_id) REFERENCES nd_geolocation(nd_geolocation_id) ON DELETE CASCADE;
 
 
 --

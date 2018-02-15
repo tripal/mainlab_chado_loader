@@ -57,6 +57,7 @@ organism_pub
 organism_relationship
 organismprop
 phenotype
+phenotype_call
 project
 project_contact
 project_pub
@@ -65,6 +66,7 @@ projectprop
 pub
 stock
 stock_dbxref
+stock_image
 stock_pub
 stock_relationship
 stockprop

@@ -106,10 +106,7 @@ class CHADO_ANALYSISFEATURE  extends CHADO_TABLE {
    * Returns the foreign keys.
    */
   public static function getFK() {
-    return array(
-      array('analysis_id' => array('fk_table' => 'analysis', 'fk_attr' => 'analysis_id')),
-      array('feature_id' => array('fk_table' => 'feature', 'fk_attr' => 'feature_id')),
-    );
+    return NULL;
   }
 
   /**
