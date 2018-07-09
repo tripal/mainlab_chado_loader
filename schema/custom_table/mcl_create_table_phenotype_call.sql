@@ -37,7 +37,7 @@ ALTER TABLE ONLY phenotype_call ADD CONSTRAINT phenotype_call_a_pkey PRIMARY KEY
 --
 -- Add UNIQUE
 --
-ALTER TABLE ONLY phenotype_call ADD CONSTRAINT phenotype_call_project_id_stock_id_cvterm_id_nd_geolocation_key UNIQUE (project_id, stock_id, cvterm_id, nd_geolocation_id);
+ALTER TABLE ONLY phenotype_call ADD CONSTRAINT phenotype_call_project_id_stock_id_cvterm_id_nd_geolocation_id_key UNIQUE (project_id, stock_id, cvterm_id, nd_geolocation_id);
 --
 -- Add FOREIGN KEY
 --

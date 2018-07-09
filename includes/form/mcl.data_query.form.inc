@@ -34,12 +34,26 @@ function mcl_data_query_form($form, &$form_state, $type = NULL) {
     '#collapsible'  => FALSE,
     '#title'        => 'Data Query : ' . $type,
   );
-  $form['data_query']['uniquename'] = array(
-    '#type'       => 'textfield',
-    '#title'      => 'uniquename',
-    '#attributes' => array('style' => 'width:400px;'),
-  );
-  if ($type == 'feature') {
+  if ($type == 'cvterm') {
+    $form['data_query']['cvterm_names'] = array(
+      '#type'       => 'textarea',
+      '#title'      => 'cvterm names',
+      '#rows'       => 3,
+      '#attributes' => array('style' => 'width:400px;'),
+    );
+    $form['data_query']['cvterm_ids'] = array(
+      '#type'       => 'textarea',
+      '#title'      => 'cvterm IDs',
+      '#rows'       => 3,
+      '#attributes' => array('style' => 'width:400px;'),
+    );
+  }
+  else if ($type == 'feature') {
+    $form['data_query']['uniquename'] = array(
+      '#type'       => 'textfield',
+      '#title'      => 'uniquename',
+      '#attributes' => array('style' => 'width:400px;'),
+    );
     $form['data_query']['feature_id'] = array(
       '#type'       => 'textfield',
       '#title'      => 'feature_id',
@@ -47,6 +61,11 @@ function mcl_data_query_form($form, &$form_state, $type = NULL) {
     );
   }
   else if ($type == 'stock') {
+    $form['data_query']['uniquename'] = array(
+      '#type'       => 'textfield',
+      '#title'      => 'uniquename',
+      '#attributes' => array('style' => 'width:400px;'),
+    );
     $form['data_query']['stock_id'] = array(
       '#type'       => 'textfield',
       '#title'      => 'stock_id',
@@ -71,8 +90,15 @@ function mcl_data_query_form($form, &$form_state, $type = NULL) {
   if (array_key_exists('values', $form_state)) {
     $query_type = $form_state['values']['query_type'];
 
-    // Gets the results.
-    if ($query_type == 'feature') {
+    // Cvterm results.
+    if ($query_type == 'cvterm') {
+      $cvterm_names = trim($form_state['values']['data_query']['cvterm_names']);
+      $cvterm_ids   = trim($form_state['values']['data_query']['cvterm_ids']);
+      _mcl_get_result_cvterm($form, $cvterm_names, $cvterm_ids);
+    }
+
+    // Feature results.
+    else if ($query_type == 'feature') {
 
       // Gets cvterm ID of 'genetic_marker'.
       $cvterm = MCL_CHADO_CVTERM::getCvterm('sequence', 'genetic_marker');
@@ -87,6 +113,8 @@ function mcl_data_query_form($form, &$form_state, $type = NULL) {
       }
       _mcl_get_result_feature($form, $max_rows, $uniquename, $type_id);
     }
+
+    // Stock results.
     else if ($query_type == 'stock') {
 
       // Gets uniquename.
@@ -120,6 +148,79 @@ function mcl_data_query_form_ajax_callback($form, &$form_state) {
  * Returns the results.
  *
  * @param arary $form
+ * @param string $cvterm_names
+ * @param string $cvterm_ids
+ */
+function _mcl_get_result_cvterm(&$form, $cvterm_names, $cvterm_ids) {
+
+  // Gets cvterms by name.
+  $cvterms = array();
+  if ($cvterm_names) {
+    $tmp = preg_split("/\n/", $cvterm_names, NULL, PREG_SPLIT_NO_EMPTY);
+    foreach ($tmp as $cvterm_name) {
+      $sql = "
+        SELECT C.cvterm_id, C.name AS cvterm_name, CV.cv_id, CV.name AS cv_name
+        FROM chado.cvterm C
+          INNER JOIN chado.cv CV on CV.cv_id = C.cv_id
+        WHERE LOWER(C.name) = LOWER(:name)
+      ";
+      $results = db_query($sql, array(':name' => $cvterm_name));
+      while ($obj = $results->fetchObject()) {
+        $key = $obj->cvterm_name. $obj->cvterm_id;
+        $cvterms[] = array($obj->cvterm_id, $obj->cvterm_name, $obj->cv_id, $obj->cv_name);
+      }
+    }
+  }
+
+  // Gets cvterms by ID.
+  if ($cvterm_ids) {
+    $tmp = preg_split("/\n/", $cvterm_ids, NULL, PREG_SPLIT_NO_EMPTY);
+    foreach ($tmp as $cvterm_id) {
+      $sql = "
+        SELECT C.cvterm_id, C.name AS cvterm_name, CV.cv_id, CV.name AS cv_name
+        FROM chado.cvterm C
+          INNER JOIN chado.cv CV on CV.cv_id = C.cv_id
+        WHERE C.cvterm_id = :cvterm_id
+      ";
+      $obj = db_query($sql, array(':cvterm_id' => $cvterm_id))->fetchObject();
+      if ($obj) {
+        $key = $obj->cvterm_name. $obj->cvterm_id;
+        $cvterms[] = array($obj->cvterm_id, $obj->cvterm_name, $obj->cv_id, $obj->cv_name);
+      }
+    }
+  }
+
+  // Sorts the cvterms.
+  ksort($cvterms);
+
+  // Lists cvterms.
+  $rows = array();
+  foreach ((array)$cvterms as $key => $row) {
+    $rows []= $row;
+  }
+
+  // Creates the cvterm table.
+  $form['data_query']['results']['cvterm'] = array(
+    '#type'         => 'fieldset',
+    '#collapsed'    => FALSE,
+    '#collapsible'  => FALSE,
+    '#title'        => 'cvterms',
+  );
+  $table_vars = array(
+    'header'      => array('cvterm ID', 'cvterm name', 'cv ID', 'cv name'),
+    'rows'        => $rows,
+    'empty'       => 'No matched cvterm found',
+    'attributes'  => array(),
+  );
+  $form['data_query']['results']['cvterm']['table'] = array(
+    '#markup' => theme('table', $table_vars),
+  );
+}
+
+/**
+ * Returns the results.
+ *
+ * @param arary $form
  * @param string $uniquename
  * @param integer $type_id
  */
@@ -138,7 +239,7 @@ function _mcl_get_result_feature(&$form, $max_rows, $uniquename, $type_id) {
     SELECT F.feature_id, F.uniquename, O.genus, O.species
     FROM chado.feature F
       INNER JOIN chado.organism O on O.organism_id = F.organism_id
-    WHERE F.type_id = :type_id AND F.uniquename = :uniquename
+    WHERE F.type_id = :type_id AND LOWER(F.uniquename) = LOWER(:uniquename)
   ";
   $features = array();
   $args = array(
@@ -184,20 +285,23 @@ function _mcl_get_result_feature(&$form, $max_rows, $uniquename, $type_id) {
       // Checks feature_id for the related tables.
       $rel_tables = MCL_CHADO_FEATURE::getRelTable();
       $no_rel_table = TRUE;
+      $count = 1;
       foreach ($rel_tables['feature_id'] as $table_info) {
         $fk_table   = $table_info['table'];
         $fk_attr    = $table_info['attr'];
+        $fieldset = $fk_table . $count++;
 
         // Checks if feature_id exists in the related table.
         $sql = "SELECT COUNT($fk_attr) FROM chado.$fk_table WHERE $fk_attr = :feature_id";
         $num = db_query($sql, array(':feature_id' => $feature_id))->fetchField();
         if ($num) {
           $no_rel_table = FALSE;
-          $form['data_query']['results']['feature'][$feature_id][$fk_table] = array(
+          $form['data_query']['results']['feature'][$feature_id][$fieldset] = array(
             '#type'         => 'fieldset',
             '#collapsed'    => TRUE,
             '#collapsible'  => TRUE,
             '#title'        => "$fk_table ($num)",
+            '#description'  => "<div style='margin:10px;'><b>Foreign Key : $fk_attr</b></div>",
           );
 
           // Default message.
@@ -223,7 +327,7 @@ function _mcl_get_result_feature(&$form, $max_rows, $uniquename, $type_id) {
             }
             $markup = $tables;
           }
-          $form['data_query']['results']['feature'][$feature_id][$fk_table]['tables'] = array(
+          $form['data_query']['results']['feature'][$feature_id][$fieldset]['tables'] = array(
             '#markup' => $markup,
           );
         }
@@ -258,7 +362,7 @@ function _mcl_get_result_stock(&$form, $max_rows, $uniquename) {
     SELECT S.stock_id, S.uniquename, O.genus, O.species
     FROM chado.stock S
       INNER JOIN chado.organism O on O.organism_id = S.organism_id
-    WHERE S.uniquename = :uniquename
+    WHERE LOWER(S.uniquename) = LOWER(:uniquename)
   ";
   $stocks = array();
   $results = db_query($sql, array(':uniquename' => $uniquename));
@@ -278,7 +382,6 @@ function _mcl_get_result_stock(&$form, $max_rows, $uniquename) {
 
     // Sets the search_path to chado, public for create_point function.
     $sql = "SET SEARCH_PATH TO chado, public;";
-    db_query($sql);
 
     // Searches for related tables for each stock.
     foreach ($stocks as $stock) {
@@ -297,22 +400,25 @@ function _mcl_get_result_stock(&$form, $max_rows, $uniquename) {
       // Checks stock for the related tables.
       $rel_tables = MCL_CHADO_STOCK::getRelTable();
       $no_rel_table = TRUE;
+      $count = 1;
       foreach ($rel_tables['stock_id'] as $table_info) {
         $fk_table = $table_info['table'];
         $fk_attr  = $table_info['attr'];
+        $fieldset = $fk_table . $count++;
 
         // Checks if stock_id exists in the related table.
         $sql = "SELECT COUNT($fk_attr) FROM chado.$fk_table WHERE $fk_attr = :stock_id";
         $num = db_query($sql, array(':stock_id' => $stock_id))->fetchField();
 
-        // Create fieldset.
+        // Creates fieldset.
         if ($num) {
           $no_rel_table = FALSE;
-          $form['data_query']['results']['stock'][$stock_id][$fk_table] = array(
+          $form['data_query']['results']['stock'][$stock_id][$fieldset] = array(
             '#type'         => 'fieldset',
             '#collapsed'    => TRUE,
             '#collapsible'  => TRUE,
             '#title'        => "$fk_table ($num)",
+            '#description'  => "<div style='margin:10px;'><b>Foreign Key : $fk_attr</b></div>",
           );
 
           // Default message.
@@ -337,7 +443,7 @@ function _mcl_get_result_stock(&$form, $max_rows, $uniquename) {
             }
             $markup = $tables;
           }
-          $form['data_query']['results']['stock'][$stock_id][$fk_table]['tables'] = array(
+          $form['data_query']['results']['stock'][$stock_id][$fieldset]['tables'] = array(
             '#markup' => $markup,
           );
         }
@@ -366,8 +472,18 @@ function mcl_data_query_form_validate($form, &$form_state) {
   if ($trigger_elem == 'search_btn') {
     $type = $form_state['values']['query_type'];
 
+    // Cvterm.
+    if ($type == 'cvterm') {
+      $cvterm_names = trim($form_state['values']['data_query']['cvterm_names']);
+      $cvterm_ids   = trim($form_state['values']['data_query']['cvterm_ids']);
+      if (!$cvterm_names && !$cvterm_ids) {
+        form_set_error('data_query][cvterm_names', t("Please type cvterm names or IDs"));
+        return;
+      }
+    }
+
     // Feature.
-    if ($type == 'feature') {
+    else if ($type == 'feature') {
       $uniquename = trim($form_state['values']['data_query']['uniquename']);
       $feature_id = trim($form_state['values']['data_query']['feature_id']);
       if (($uniquename && $feature_id) || (!$uniquename && !$feature_id)) {

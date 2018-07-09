@@ -4,28 +4,26 @@
  */
 
 /**
- * The declaration of CHADO_EIMAGE class.
+ * The declaration of CHADO_ORGANISM_IMAGE class.
  *
  */
-class CHADO_EIMAGE  extends CHADO_TABLE {
+class CHADO_ORGANISM_IMAGE  extends CHADO_TABLE {
 
   /**
-   *  Data members for CHADO_EIMAGE.
+   *  Data members for CHADO_ORGANISM_IMAGE.
    */
-  protected $member_arr  = NULL;
-  protected $eimage_id   = NULL;
-  protected $eimage_data = NULL;
-  protected $eimage_type = NULL;
-  protected $image_uri   = NULL;
+  protected $member_arr        = NULL;
+  protected $organism_image_id = NULL;
+  protected $organism_id       = NULL;
+  protected $eimage_id         = NULL;
 
   /**
    *  Data types for the data members.
    */
   protected static $data_types = array(
-    'eimage_id'   => 'serial',
-    'eimage_data' => 'text',
-    'eimage_type' => 'character_varying(255)',
-    'image_uri'   => 'character_varying(255)',
+    'organism_image_id' => 'serial',
+    'organism_id'       => 'integer',
+    'eimage_id'         => 'integer',
   );
 
   /**
@@ -35,11 +33,10 @@ class CHADO_EIMAGE  extends CHADO_TABLE {
    */
   public function __construct($details = array()) {
     // Initializes data members.
-    $this->member_arr  = $details;
-    $this->eimage_id   = array_key_exists('eimage_id', $details)   ? $details['eimage_id']   : '';
-    $this->eimage_data = array_key_exists('eimage_data', $details) ? $details['eimage_data'] : '';
-    $this->eimage_type = array_key_exists('eimage_type', $details) ? $details['eimage_type'] : '';
-    $this->image_uri   = array_key_exists('image_uri', $details)   ? $details['image_uri']   : '';
+    $this->member_arr        = $details;
+    $this->organism_image_id = array_key_exists('organism_image_id', $details) ? $details['organism_image_id'] : '';
+    $this->organism_id       = array_key_exists('organism_id', $details)       ? $details['organism_id']       : '';
+    $this->eimage_id         = array_key_exists('eimage_id', $details)         ? $details['eimage_id']         : '';
   }
 
   /**
@@ -49,7 +46,7 @@ class CHADO_EIMAGE  extends CHADO_TABLE {
   }
 
   /**
-   * Generate CHADO_EIMAGE by key(s).
+   * Generate CHADO_ORGANISM_IMAGE by key(s).
    */
   public static function byKey($keys) {
 
@@ -85,7 +82,7 @@ class CHADO_EIMAGE  extends CHADO_TABLE {
     }
 
     // Gets the table properties.
-    $sql = "SELECT * FROM chado.eimage WHERE " . implode(" AND " , $where_arr);
+    $sql = "SELECT * FROM chado.organism_image WHERE " . implode(" AND " , $where_arr);
     $details = db_query($sql, $args)->fetch(PDO::FETCH_ASSOC);
     if ($details) {
       return new self($details);
@@ -97,22 +94,17 @@ class CHADO_EIMAGE  extends CHADO_TABLE {
    * Returns the foreign keys.
    */
   public static function getFK() {
-    return NULL;
+    return array(
+      array('eimage_id' => array('fk_table' => 'eimage', 'fk_attr' => 'eimage_id')),
+      array('organism_id' => array('fk_table' => 'organism', 'fk_attr' => 'organism_id')),
+    );
   }
 
   /**
    * Returns the related tables.
    */
   public static function getRelTable() {
-    return array(
-      'eimage_id' => array(
-        array('table' => 'cvterm_image', 'attr' => 'eimage_id'),
-        array('table' => 'eimageprop', 'attr' => 'eimage_id'),
-        array('table' => 'feature_image', 'attr' => 'eimage_id'),
-        array('table' => 'organism_image', 'attr' => 'eimage_id'),
-        array('table' => 'stock_image', 'attr' => 'eimage_id'),
-      ),
-    );
+    return NULL;
   }
 
   /**
@@ -132,13 +124,12 @@ class CHADO_EIMAGE  extends CHADO_TABLE {
         // Populates all fields. The attribute with 'NOT NULL' would be skipped
         // if the value is empty.
         $fields = array();
-        $fields['eimage_data'] = $this->eimage_data;
-        $fields['eimage_type'] = $this->eimage_type;
-        $fields['image_uri']   = $this->image_uri;
+        $fields['organism_id'] = $this->organism_id;
+        $fields['eimage_id']   = $this->eimage_id;
 
 
         // Inserts the record.
-        $this->eimage_id = db_insert('chado.eimage')
+        $this->organism_image_id = db_insert('chado.organism_image')
           ->fields($fields)
           ->execute();
       }
@@ -162,15 +153,14 @@ class CHADO_EIMAGE  extends CHADO_TABLE {
       // Populates all fields. The attribute with 'NOT NULL' would be skipped
       // if the value is empty.
       $fields = array();
-      $fields['eimage_data'] = $this->eimage_data;
-      $fields['eimage_type'] = $this->eimage_type;
-      $fields['image_uri']   = $this->image_uri;
+      $fields['organism_id'] = $this->organism_id;
+      $fields['eimage_id']   = $this->eimage_id;
 
 
       // Updates the record.
-      db_update('chado.eimage')
+      db_update('chado.organism_image')
         ->fields($fields)
-        ->condition('eimage_id', $this->eimage_id, '=')
+        ->condition('organism_image_id', $this->organism_image_id, '=')
         ->execute();
     }
     catch (Exception $e) {
@@ -189,8 +179,8 @@ class CHADO_EIMAGE  extends CHADO_TABLE {
     $transaction = db_transaction();
     try {
 
-      db_delete('chado.eimage')
-        ->condition('eimage_id', $this->eimage_id, '=')
+      db_delete('chado.organism_image')
+        ->condition('organism_image_id', $this->organism_image_id, '=')
         ->execute();
     }
     catch (Exception $e) {
@@ -232,9 +222,45 @@ class CHADO_EIMAGE  extends CHADO_TABLE {
   }
 
   /**
-   * Retrieves the eimage_id.
+   * Retrieves the organism_image_id.
    *
    * @retrun serial
+   */
+  public function getOrganismImageID() {
+    return $this->organism_image_id;
+  }
+
+  /**
+   * Updates the organism_image_id.
+   *
+   * @param serial $organism_image_id
+   */
+  public function setOrganismImageID($organism_image_id) {
+    $this->organism_image_id = $organism_image_id;
+  }
+
+  /**
+   * Retrieves the organism_id.
+   *
+   * @retrun integer
+   */
+  public function getOrganismID() {
+    return $this->organism_id;
+  }
+
+  /**
+   * Updates the organism_id.
+   *
+   * @param integer $organism_id
+   */
+  public function setOrganismID($organism_id) {
+    $this->organism_id = $organism_id;
+  }
+
+  /**
+   * Retrieves the eimage_id.
+   *
+   * @retrun integer
    */
   public function getEimageID() {
     return $this->eimage_id;
@@ -243,63 +269,9 @@ class CHADO_EIMAGE  extends CHADO_TABLE {
   /**
    * Updates the eimage_id.
    *
-   * @param serial $eimage_id
+   * @param integer $eimage_id
    */
   public function setEimageID($eimage_id) {
     $this->eimage_id = $eimage_id;
-  }
-
-  /**
-   * Retrieves the eimage_data.
-   *
-   * @retrun text
-   */
-  public function getEimageData() {
-    return $this->eimage_data;
-  }
-
-  /**
-   * Updates the eimage_data.
-   *
-   * @param text $eimage_data
-   */
-  public function setEimageData($eimage_data) {
-    $this->eimage_data = $eimage_data;
-  }
-
-  /**
-   * Retrieves the eimage_type.
-   *
-   * @retrun character_varying(255)
-   */
-  public function getEimageType() {
-    return $this->eimage_type;
-  }
-
-  /**
-   * Updates the eimage_type.
-   *
-   * @param character_varying(255) $eimage_type
-   */
-  public function setEimageType($eimage_type) {
-    $this->eimage_type = $eimage_type;
-  }
-
-  /**
-   * Retrieves the image_uri.
-   *
-   * @retrun character_varying(255)
-   */
-  public function getImageUri() {
-    return $this->image_uri;
-  }
-
-  /**
-   * Updates the image_uri.
-   *
-   * @param character_varying(255) $image_uri
-   */
-  public function setImageUri($image_uri) {
-    $this->image_uri = $image_uri;
   }
 }

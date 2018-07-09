@@ -165,11 +165,10 @@ class MCL_USER extends PUBLIC_MCL_USER {
    * Returns the path of the provided type in the user space.
    *
    * @param string $type
-   * @param boolean $create
    *
    * @return string
    */
-  public function getPath($type, $create = FALSE) {
+  public function getPath($type) {
 
     // Gets the user directory.
     $dir = $this->getUserDir();
@@ -187,7 +186,7 @@ class MCL_USER extends PUBLIC_MCL_USER {
     }
 
     // Creates the path if not exists.
-    if ($create && !file_exists($dir)) {
+    if (!file_exists($dir)) {
       mcl_create_dir($dir);
     }
     return $dir;

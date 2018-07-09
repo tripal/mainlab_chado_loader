@@ -52,7 +52,7 @@ class MCL_CHADO_IMAGE extends CHADO_EIMAGE {
       $eimage_ids = preg_split(self::getSepRegex($separator), $image_id_list, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($eimage_ids as $eimage_id) {
         $eimage_id = trim($eimage_id);
-        if (!is_int($eimage_id)) {
+        if (!preg_match("/^\d+$/", $eimage_id)) {
           self::updateMsg($mcl_tmpl, 'E', "$eimage_id is not an integer. It must be eimage_id");
           $flag = FALSE;
           continue;

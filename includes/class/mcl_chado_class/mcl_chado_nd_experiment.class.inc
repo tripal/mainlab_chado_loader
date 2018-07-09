@@ -54,17 +54,21 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
    * @param string $cross_number
    * @param integer $ne_type_id
    * @param integer $nep_type_id
+   * @param string key
+   *   key of $GLOBALS variable for cross.
    *
    * @return boolean
    */
-  public static function checkCrossNumber(MCL_TEMPLATE $mcl_tmpl = NULL, $project_id, $cross_number, $ne_type_id, $nep_type_id) {
+  public static function checkCrossNumber(MCL_TEMPLATE $mcl_tmpl = NULL, $project_id, $cross_number, $ne_type_id, $nep_type_id, $key = NULL) {
     if ($project_id && $cross_number) {
 
       // Gets the cross.
       $cross = MCL_CHADO_ND_EXPERIMENT::byCrossNumber($project_id, $cross_number, $ne_type_id, $nep_type_id);
       if (!$cross) {
-        self::updateMsg($mcl_tmpl, 'E', "cross ($project_id, $cross_number) not found in nd_experiment");
-        return FALSE;
+        if ($key || !array_key_exists($cross_number, $GLOBALS[$key])) {
+          self::updateMsg($mcl_tmpl, 'E', "cross ($project_id, $cross_number) not found in nd_experiment");
+          return FALSE;
+        }
       }
     }
     return TRUE;
@@ -135,6 +139,28 @@ class MCL_CHADO_ND_EXPERIMENT extends CHADO_ND_EXPERIMENT {
       if ($nd_experiment_id) {
         return MCL_CHADO_ND_EXPERIMENT::byKey(array('nd_experiment_id' => $nd_experiment_id));
       }
+    }
+    return NULL;
+  }
+
+  /**
+   * Returns MCL_CHADO_ND_EXPERIMENT by duplication key.
+   *
+   * @param string $cvterm_id
+   * @param string $dup_value
+   *
+   * @return MCL_CHADO_ND_EXPERIMENT
+   */
+  public static function byDupKey($cvterm_id, $dup_value) {
+
+    // Gets nd_experimentprop by duplication key value.
+    $keys = array(
+      'type_id' => $cvterm_id,
+      'value'   => $dup_value,
+    );
+    $nd_experimentprop = CHADO_ND_EXPERIMENTPROP::byKey($keys);
+    if ($nd_experimentprop) {
+      return MCL_CHADO_ND_EXPERIMENT::byID($nd_experimentprop->getNdExperimentID());
     }
     return NULL;
   }

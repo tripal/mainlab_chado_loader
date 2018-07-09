@@ -45,7 +45,7 @@ class MCL_TEMPLATE_SITE extends MCL_TEMPLATE {
       'longitude'       => array('req' => FALSE, 'width' => 10, 'desc' => "The decimal longitude coordinate of the georeference, using positive and negative sign to indicate E and W, respectively."),
       'altitude'        => array('req' => FALSE, 'width' => 10, 'desc' => "The altitude (elevation) of the location in meters. If the altitude is only known as a range, this is the average, and altitude_dev will hold half of the width of the range."),
       'geodetic_datum'  => array('req' => FALSE, 'width' => 10, 'desc' => "The geodetic system on which the geo-reference coordinates are based. For geo-references measured between 1984 and 2010, this will typically be WGS84."),
-      'type'            => array('req' => FALSE, 'width' => 10, 'desc' => "'orchard', 'nursery' or any other types of location."),
+      'type'            => array('req' => TRUE,  'width' => 10, 'desc' => "'orchard', 'nursery' or any other types of location."),
       'country'         => array('req' => FALSE, 'width' => 10, 'desc' => "Country where the site belongs to."),
       'state'           => array('req' => FALSE, 'width' => 10, 'desc' => "State where the site belongs to."),
       'region'          => array('req' => FALSE, 'width' => 10, 'desc' => "Region where the site belongs to."),
@@ -125,8 +125,11 @@ class MCL_TEMPLATE_SITE extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
+    // Lists the job paremters.
+    $cv_name = $this->getJob()->getParamByKey('cv');
+
     // Gets the cv.
-    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    $cv = MCL_CHADO_CV::getCV($cv_name, 'SITE_CV');
     if (!$cv) {
       $this->updateMsg('E', "cv does not exist.");
       return;
@@ -134,7 +137,7 @@ class MCL_TEMPLATE_SITE extends MCL_TEMPLATE {
 
     // Saves the user-specific properties.
     if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
-      return;
+      $this->updateMsg('E', "Failed to save the special columns");
     }
   }
 }

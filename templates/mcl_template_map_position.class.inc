@@ -95,7 +95,10 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
       'qtl'     => $this->cvterms['sequence']['qtl'],
       'mtl'     => $this->cvterms['sequence']['heritable_phenotypic_marker'],
     );
-    MCL_CHADO_FEATURE::checkMarkerMtlQtl($this, $line['marker_qtl_mtl'], $type_ids);
+    $type = MCL_CHADO_FEATURE::checkMarkerMtlQtl($this, $line['marker_qtl_mtl'], $type_ids);
+
+    // Checks all positions.
+    $this->_checkMapPositon($line, $type);
   }
 
   /**
@@ -133,12 +136,8 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     $locus = NULL;
     if ($feature->getTypeID() == $this->cvterms['sequence']['genetic_marker']) {
       $locus_name = ($line['locus_name']) ? $line['locus_name'] : $marker_qtl_mtl;
-      $locus = MCL_CHADO_FEATURE::addFeature($this, $locus_name, $locus_name, $this->cvterms['sequence']['marker_locus'], $organism_id);
-      if ($locus) {
-
-        // Adds a relationship.
-        $locus->addRelatedFeature($this, $feature, $this->cvterms['relationship']['instance_of']);
-      }
+      $locus_arr = $feature->addLocus($this, $locus_name, $this->cvterms, '', TRUE);
+      $locus = array_shift($locus_arr);
     }
 
     // Gets the map.
@@ -158,7 +157,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     $linkage_group->addProp($this, 'SITE_CV', 'chr_name', $line['chr_name']);
     $linkage_group->addProp($this, 'SITE_CV', 'chr_number', $line['chr_number']);
 
-    // Adds a chromosome arm
+    // Adds a chromosome arm.
     $chromosome_arm_name = $line['chromosome_arm'];
     if ($chromosome_arm_name) {
       $chromosome_arm = MCL_CHADO_FEATURE::addFeature($this, $chromosome_arm_name, $chromosome_arm_name, $this->cvterms['sequence']['chromosome_arm'], $organism_id);
@@ -226,24 +225,111 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
   /**
    * @see MCL_TEMPLATE::postProcess()
    */
-  public function postProcess() {
-/*
-    // Adds all missing parents now.
-    $marker_locus = $this->getTmpByKey('marker_locus');
-    foreach ((array)$marker_locus as $ml_feature_id => $rel_features) {
-      $marker_locus = MCL_CHADO_FEATURE::byKey(array('feature_id' => $ml_feature_id));
-      foreach ((array)$rel_features as $type => $features) {
-        $relation = preg_match("/^colocalized/", $type) ? 'adjacent_to' : 'located_in';
+  public function postProcess() {}
 
-        // Adds the feature.
-        if (preg_match("/_qtl$/", $type)) {
-          $marker_locus->addRelatedFeatures($this, $line[$type], $this->cvterms['sequence']['qtl'], FALSE, $this->cvterms['relationship'][$relation], "[,;]", FALSE);
+
+  /**
+   * Checks the map positions for Genetic marker, QTL and MTL.
+   *
+   * @param array $line
+   * @param string $type
+   *
+   * @retrun boolean
+   */
+  private function _checkMapPositon($line, $type) {
+
+    $uniquename = $line['marker_qtl_mtl'];
+    if (!$type) {
+      return TRUE;
+    }
+
+    // Checks the value of positions. The values must be numeric.
+    if ($line['start'] || $line['start'] == '0') {
+      if (!is_numeric($line['start'])) {
+        $this->updateMsg('E', "start position '" . $line['start'] . "' is not number");
+      }
+    }
+    if ($line['stop'] || $line['stop'] == '0') {
+      if (!is_numeric($line['stop'])) {
+        $this->updateMsg('E', "stop position '" . $line['stop'] . "' is not number");
+      }
+    }
+    if ($line['qtl_peak'] || $line['qtl_peak'] == '0') {
+      if (!is_numeric($line['qtl_peak'])) {
+        $this->updateMsg('E', "qtl_peak position '" . $line['qtl_peak']  . "' is not number");
+      }
+    }
+
+    // Checks if start positon is bigger than stop.
+    if (($line['start'] || $line['start'] == '0') && ($line['stop'] || $line['stop'] == '0')) {
+      if ($line['start'] > $line['stop']) {
+        $this->updateMsg('E', 'The start position is bigger than the stop');
+      }
+    }
+
+    /**
+      QTL : QTL must have both or one of 'qtl_peak' and 'start and stop' positions.
+      Throws an error if it finds any of the followings
+        - only start or stop exists
+        - both start and stop exist but they holds the same value (It should be 'qtl_peak').
+        - start > stop if both exist.
+        - qtl_peak out of the range (start - stop) if start, stop and qtl_peak exist.
+    */
+    if ($type == 'qtl') {
+
+      // Both or one of 'qtl_peak' and 'start and stop' positions must exist.
+      if ($line['start'] == '' && $line['stop'] == '' && $line['qtl_peak'] == '') {
+        $this->updateMsg('E', "QTL must have both or one of 'qtl_peack' and 'start and stop' positions");
+      }
+
+      // Only start exists.
+      else if ((!$line['stop'] && $line['stop'] != '0') && ($line['start'] || $line['start'] == '0')) {
+        $this->updateMsg('E', 'Only start position exists. Please add stop position');
+      }
+
+      // Only stop exists.
+      else if ((!$line['start'] && $line['start'] != '0') && ($line['stop'] || $line['stop'] == '0')) {
+        $this->updateMsg('E', 'Only stop position exists. Please add start position');
+      }
+
+      // Both start and stop positions exist.
+      else if ($line['start'] == '' && $line['stop'] == '') {}
+      else {
+
+        // If the position of both has the same value, need to move to 'qtl_peak'.
+        if ($line['start'] == $line['stop']) {
+          $this->updateMsg('E', 'The positions of start and stop are the same. Please use qtl_peak instead');
         }
-        else if (preg_match("/_mtl$/", $type)) {
-          $marker_locus->addRelatedFeatures($this, $line[$type], $this->cvterms['sequence']['heritable_phenotypic_marker'], FALSE, $this->cvterms['relationship'][$relation], "[,;]", FALSE);
+
+        // Check if qtl_peak is in the range.
+        if ($line['qtl_peak']) {
+          if ($line['start'] > $line['qtl_peak'] || $line['stop'] < $line['qtl_peak']) {
+            $this->updateMsg('E', "qtl_peak '" . $line['qtl_peak'] . "' must be between start and stop");
+          }
         }
       }
     }
-*/
+
+    /**
+      'Genetic marker' and 'MTL' can have 'start andstop' positions or 'start' only.
+      Throws an error if it finds any of the followings
+      - qtl_peak value exists
+      - only stop exists
+      - start > stop if both exist.
+     */
+    else if ($type == 'marker' || $type == 'mtl') {
+
+      // qtl_peak value exists.
+      if ($line['qtl_peak'] || $line['qtl_peak'] == '0') {
+        $this->updateMsg('E', 'Marker/MTL cannot have qtl_peak');
+      }
+
+      // Only stop position exists.
+      if ((!$line['start'] && $line['start'] != '0') && ($line['stop'] || $line['stop'] == '0')) {
+        $this->updateMsg('E', 'Only stop position exists. Please add start position');
+      }
+    }
+    return TRUE;
   }
+
 }

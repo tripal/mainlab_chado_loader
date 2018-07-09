@@ -48,6 +48,9 @@ class MCL_CLASS_LOADER {
    */
   public function loadClass($class_name) {
 
+    // Sets the default class path.
+    $class_path = $this->class_path;
+
     // Template classes.
     if (preg_match("/^MCL_TEMPLATE/", $class_name, $matches)) {
       $path =  '/';
@@ -94,12 +97,17 @@ class MCL_CLASS_LOADER {
     else if (preg_match("/^MCL_([A-Z\_]+)/", $class_name, $matches)) {
       // Does nothing. The file is in the root of class directory.
     }
+    // External (module) class.
+    else if (preg_match("/^BIMS_CAHDO_/", $class_name, $matches)) {
+      $class_path = drupal_get_path('module', 'bims') . "/includes/class";
+      $path .= 'bims_chado_class/';
+    }
     else {
       return FALSE;
     }
 
     // Includes the class file.
-    $class_filepath = $this->class_path . $path . strtolower($class_name) . '.class.inc';
+    $class_filepath = $class_path . $path . strtolower($class_name) . '.class.inc';
     if (file_exists($class_filepath)) {
       require_once($class_filepath);
       return TRUE;

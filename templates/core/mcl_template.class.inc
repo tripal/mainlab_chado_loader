@@ -364,6 +364,23 @@ DESC;
   }
 
   /**
+   * Returns if the job has the given template.
+   *
+   * @param string $template
+   *
+   * @return boolean
+   */
+  public function hasTemplate($template) {
+    $csv_files = $this->job->getPropByKey('csv_files');
+    foreach ($csv_files as $file_id => $filename) {
+      if (preg_match("/$template/i", $filename)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
    * Checks if a template for this template exists. Also checks if
    * a class file for this template exists.
    *
@@ -384,6 +401,28 @@ DESC;
     return FALSE;
   }
 
+  /**
+   * Returns the valid columns.
+   *
+   * @param MCL_TEMPLATE $template_base
+   *
+   * @return array
+   */
+  public static function getValidColumns($template_base) {
+    $template_obj = self::getByTemplate($template_base->getTemplate());
+    $template_obj->setJob($template_base->getJob());
+    return array_map('strtolower', $template_obj->validColumns());
+  }
+
+  /**
+   * Returns the valid columns.
+   *
+   * @return array
+   */
+  public function validColumns() {
+    // To be overridden by Child class.
+    return array();
+  }
 
   /**
    * Gets the rank of the template. The rank is based on the type of template.
@@ -688,7 +727,7 @@ DESC;
    * @param string $table
    * @param array $args
    */
-  public function addMsg($key, $table, $args) {
+  public function addMsg($key, $table, $args = array()) {
     $msg = '';
     if ($key == 'N') {
       $msg = "Added to $table : " . $this->arrStr($args);
@@ -715,7 +754,7 @@ DESC;
    *   2. duplicated headers.
    *   3. The number of columns in data section.
    *   4. Missing required fields.
-   *   5. Missing value on the requried fields.
+   *   5. Missing value on the required fields.
    *
    *   @return boolean
    */
@@ -775,16 +814,12 @@ DESC;
             continue;
           }
 
+          // Gets the valid column specified in the descendant template.
+          $valid_columns = self::getValidColumns($this);
+
           // Checks if column has valid name and saves the position of the column.
           // Ignore the column name starting with '#', '@', '~' or '$'.
           // Don't skip if it is a valid column specified in the job parameter.
-          $valid_columns = $this->job->getParamByKey('valid_columns');
-          if (empty($valid_columns)) {
-            $valid_columns = array();
-          }
-          else {
-            $valid_columns = array_map('strtolower', $valid_columns);
-          }
           $column_name = strtolower($column_name_orig);
           if (!array_key_exists($column_name, $this->headers) && !preg_match($regex, $column_name) && !in_array($column_name, $valid_columns)) {
             $this->updateMsg('W', "Invalid header : '$column_name_orig' is not valid header name, so this column would be ignored.");
@@ -794,7 +829,9 @@ DESC;
             // Checks header name for duplication.
             if (array_key_exists($column_name, $header_dup_arr)) {
               $dup_column = $header_dup_arr[$column_name];
-              $this->updateMsg('E', "Duplicated header : Found duplicated header '$column_name_orig' at column $dup_column and $i. Please removed either one.");
+              $char_dup_column  = PHPExcel_Cell::stringFromColumnIndex($dup_column);
+              $char_i           = PHPExcel_Cell::stringFromColumnIndex($i);
+              $this->updateMsg('E', "Duplicated header : Found duplicated header '$column_name_orig' at column $char_dup_column and $char_i. Please removed either one.");
             }
             else {
               $this->headers[$column_name]['col'] = $i;
@@ -903,14 +940,8 @@ DESC;
       return FALSE;
     }
 
-    // Gets the valid column specified in the job parameter.
-    $valid_columns = $this->job->getParamByKey('valid_columns');
-    if (empty($valid_columns)) {
-      $valid_columns = array();
-    }
-    else {
-      $valid_columns = array_map('strtolower', $valid_columns);
-    }
+    // Gets the valid columns specified in the descendant template.
+    $valid_columns = self::getValidColumns($this);
 
     // Gets the regular expression for special columns.
     $regex = $this->getRegExSpCol();
@@ -923,7 +954,13 @@ DESC;
       $this->updateMsg('E', "Error : Fail to open the input file : $infile.");
       return FALSE;
     }
+
+    // Gets the number of lines in the file.
+    $total_lines = count(file($infile)) - 1;
+
+    // Performs the error ckecking.
     $data_lines = array();
+    $header_checked = FALSE;
     while(!feof($fh)) {
       $line_no++;
       $line = trim(fgets($fh));
@@ -992,9 +1029,25 @@ DESC;
             $line_arr[$column] = trim($columns[$prop['col']]);
           }
         }
+
+        // Checks the headers (only once).
+        if (!$header_checked) {
+          if (!$this->checkHeaders($line_arr)) {
+            break;
+          }
+          $header_checked = TRUE;
+        }
+
+        // Check the line.
         $this->setLineNo($line_no);
         $this->runErrorCheckDataLine($line_arr);
         $data_lines []= $line_arr;
+      }
+
+      // Updates the progress of the job.
+      if ($line_no % 3 == 0) {
+        $progress = sprintf("%s : %d / %d = %.03f %% [Error Checking Data]", $this->template, $line_no, $total_lines, $line_no / $total_lines * 100.0);
+        $this->job->setProgress($progress);
       }
     }
     fclose($fh);
@@ -1005,6 +1058,18 @@ DESC;
     // Runs the pre-process.
     $this->preProcess($data_lines);
     return $this->isPassed();
+  }
+
+  /**
+   * Checks the headers.
+   *
+   * @param array $line
+   *
+   * @return boolean
+   */
+  public function checkHeaders($line) {
+    // Defined in child class.
+    return TRUE;
   }
 
   /**
@@ -1106,7 +1171,7 @@ DESC;
 
       // Updates the progress of the job.
       if ($line_no % 3 == 0) {
-        $progress = sprintf("%s : %d / %d = %.03f %%", $this->template, $line_no, $total_lines, $line_no / $total_lines * 100.0);
+        $progress = sprintf("%s : %d / %d = %.03f %% [Uploading Data]", $this->template, $line_no, $total_lines, $line_no / $total_lines * 100.0);
         $this->job->setProgress($progress);
       }
     }
@@ -1127,7 +1192,7 @@ DESC;
   }
 
   /**
-   * The function to be called before data error checking. It returns
+   * The function to be called before uploading data. It returns
    * FLASE if it need to stop the job.
    *
    * @param array $data_lines
@@ -1215,7 +1280,7 @@ DESC;
 
     // Goes through headers stored in the line array.
     $properties = array();
-    foreach ($line as $column => $value) {
+    foreach ((array)$line as $column => $value) {
       $regex = '/^' . $prefix . '[A-Za-z0-9\_]/';
       if (preg_match($regex, $column)) {
         $cvterm_name = str_replace($prefix, '', $column);
@@ -1223,7 +1288,7 @@ DESC;
         // Gets the cvterm.
         $cvterm = MCL_CHADO_CVTERM::getCvtermByCvID($cv_id, $cvterm_name);
         if ($cvterm) {
-          $properties[$cvterm->getCvtermID()] = $cvterm;
+          $properties[$cvterm->getCvtermID()] = strtolower($cvterm->getName());
         }
         else {
           $this->updateMsg('E', "$cvterm_name (property) not found in cvterm");
@@ -1235,7 +1300,7 @@ DESC;
       $this->getJob()->setParamByKey($prefix, $properties);
       $this->getJob()->update();
     }
-    return $flag;
+   return $flag;
   }
 
   /**
@@ -1255,7 +1320,7 @@ DESC;
 
     // Goes through headers stored in the line array.
     $descriptors = array();
-    foreach ($line as $column => $value) {
+    foreach ((array)$line as $column => $value) {
       if (preg_match("/^#[A-Za-z0-9\_]/", $column)) {
         $cvterm_name = str_replace('#', '', $column);
 
@@ -1282,18 +1347,22 @@ DESC;
    * @param string $prefix
    * @param CHADO_TABLE $table_obj
    * @param array $line
+   *
+   * @return array
    */
   public function addSpecialColumns($prefix, $table_obj, $line) {
 
     // Gets the special columns.
+    $prop = array();
     $columns = $this->getJob()->getParamByKey($prefix);
-    foreach ((array)$columns as $cvterm_id => $cvterm) {
-      $cvterm_name = strtolower($cvterm->getName());
+    foreach ((array)$columns as $cvterm_id => $cvterm_name) {
       $value = $line[$prefix . $cvterm_name];
       if ($value != '') {
         $table_obj->addPropByID($this, $cvterm_id, $value);
+        $prop[$cvterm_id] = $value;
       }
     }
+    return $prop;
   }
 
   /**

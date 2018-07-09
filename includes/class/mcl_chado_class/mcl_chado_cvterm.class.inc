@@ -87,6 +87,29 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
   }
 
   /**
+   * Checks the format of the code. The codes should have pairs of value and
+   * label separated by simi-colon. A pair should be separated by a colon.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $codes
+   *
+   * @return boolean
+   */
+  public static function checkCodes(MCL_TEMPLATE $mcl_tmpl = NULL, $codes) {
+    if ($codes) {
+      $pairs = preg_split("/;/", $codes, NULL, PREG_SPLIT_NO_EMPTY);
+      foreach ($pairs as $pair) {
+        $tmp = preg_split("/:/", $pair);
+        if (sizeof($tmp) != 2 || (trim($tmp[0]) == '' || trim($tmp[1]) == '')) {
+          self::updateMsg($mcl_tmpl, 'E', "Please check the format of the codes ($codes)");
+          return FALSE;
+        }
+      }
+    }
+    return TRUE;
+  }
+
+  /**
    * Checks the format of the values for quantitative_code and code.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
@@ -288,14 +311,22 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    *
    * @return array
    */
-  public function getCvtermsByCvID($cv_id) {
+  public static function getCvtermsByCvID($cv_id, $flag = MCL_CLASS) {
 
     // Gets the cvterms.
-    $sql = "SELECT C.cvterm_id FROM {chado.cvterm} C WHERE C.cv_id = :cv_id";
+    $sql = "SELECT C.* FROM {chado.cvterm} C WHERE C.cv_id = :cv_id";
     $result = db_query($sql, array(':cv_id' => $cv_id));
     $cvterms = array();
-    while ($cvterm_id = $result->fetchField()) {
-      $cvterms []= MCL_CHADO_CVTERM::byID($cvterm_id);
+    while ($obj = $result->fetchObject()) {
+      if ($flag == MCL_CLASS) {
+        $cvterms []= MCL_CHADO_CVTERM::byID($obj->cvterm_id);
+      }
+      else if ($flag == MCL_OPTION) {
+        $cvterms [$obj->cvterm_id] = $obj->name;
+      }
+      else if ($flag == MCL_OBJECT) {
+        $cvterms []= $obj;
+      }
     }
     return $cvterms;
   }
@@ -336,11 +367,10 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
    * @param string $cvterm_name
    * @param string $definition
    * @param string $accession
-   * @param string $type
    *
    * @return MCL_CHADO_CVTERM
    */
-  public static function addCvterm(MCL_TEMPLATE $mcl_tmpl = NULL, $db_name, $cv_name, $cvterm_name, $definition = '', $accession = '', $type = '') {
+  public static function addCvterm(MCL_TEMPLATE $mcl_tmpl = NULL, $db_name, $cv_name, $cvterm_name, $definition = '', $accession = '') {
 
     // Updates DB and CV names.
     if (!$db_name) {
@@ -420,18 +450,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
           'definition'  => $definition,
         );
         $cvterm = new MCL_CHADO_CVTERM($args);
-        if ($cvterm->insert()) {
-
-          // Adds the type if provided.
-          if ($type) {
-            if (!$cvterm->addProp($mcl_tmpl, 'SITE_CV', 'type', $type)) {
-              self::updateMsg($mcl_tmpl, 'E', "Failed to add a type of this cvterm");
-              return NULL;
-            }
-          }
-          self::addMsg($mcl_tmpl, 'N', 'cvterm', $args);
-        }
-        else {
+        if (!$cvterm->insert()) {
           self::addMsg($mcl_tmpl, 'E', 'cvterm', $args);
           return NULL;
         }
@@ -509,6 +528,37 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
     }
     return TRUE;
   }
+
+  /**
+   * Returns codes.
+   *
+   * @param boolean $array
+   *
+   * @return various
+   */
+  public function getCodes($array = FALSE) {
+    $codes = $this->getProp('SITE_CV', 'codes');
+    if ($codes) {
+      if ($array) {
+        $arr = array();
+        $pairs = preg_split("/;/", $codes, NULL, PREG_SPLIT_NO_EMPTY);
+        foreach ($pairs as $pair) {
+          $tmp = preg_split("/:/", $pair);
+          if (sizeof($tmp) == 2) {
+            $key = trim($tmp[0]);
+            $val = trim($tmp[1]);
+            if ($key != '' && $val != '') {
+              $arr[strtolower($key)] = array('key' => $key, 'val' => $val);
+            }
+          }
+        }
+        return $arr;
+      }
+      return $code;
+    }
+    return ($array) ? array() : '';
+  }
+
 
   /**
    * Return aliases.
@@ -789,7 +839,7 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
       }
     }
     else if ($format == 'boolean') {
-      if (!preg_match("/^(true|false)$/", $value)) {
+      if (!preg_match("/^(true|false|1|0)$/i", $value)) {
         self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) must be 'true' or 'false' in lowercase at row $row_no");
         return FALSE;
       }
@@ -803,15 +853,34 @@ class MCL_CHADO_CVTERM extends CHADO_CVTERM {
         return TRUE;
       }
       else {
-        self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) is not valid date format. it must be 1/1/2017 at row $row_no");
+        self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) is not valid date format. it must be m/d/yyyy. (e.g.) 1/1/2017 at row $row_no");
         return FALSE;
       }
     }
     else if ($format == 'categorical') {
       $regex = str_replace('/', '|', $categories);
+
+      // Escapes the special characters.
+      $search = array('+', '-', '*', '$', '.', '?');
+      $replace = array_map(function($a) { return '\\'. $a;}, $search);
+      $regex = str_replace($search, $replace, $regex);
       if (!preg_match("/^($regex)$/i", $value)) {
         self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($value) must be one of '$categories' at row $row_no");
         return FALSE;
+      }
+    }
+    else if ($format == 'multicat') {
+      $regex = str_replace('/', '|', $categories);
+
+      // Separates the value and check each value.
+      $values = explode(':', $value);
+      foreach ($values as $val) {
+        $search = array('+', '-', '*', '$', '.', '?');
+        $replace = array_map(function($a) { return '\\'. $a;}, $search);
+        if (!preg_match("/^($regex)$/i", $val)) {
+          self::updateMsg($mcl_tmpl, 'E', "$name ($format) : the value ($val) must be one of '$categories' at row $row_no");
+          return FALSE;
+        }
       }
     }
     return TRUE;

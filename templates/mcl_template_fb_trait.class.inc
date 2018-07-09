@@ -82,15 +82,14 @@ class MCL_TEMPLATE_FB_TRAIT extends MCL_TEMPLATE {
    */
   public function uploadDataLine($line) {
 
+    // Lists the job paremters.
+    $cv_arr = $this->getJob()->getParamByKey('cv_arr');
+
     // Gets db.
     $db = MCL_CHADO_DB::getDB(MCL_VAR::getValueByName('SITE_DB'));
 
-    // Gets cv.
-    $cv_id = $this->getJob()->getParamByKey('cv_id');
-    $cv = MCL_CHADO_CV::byID($cv_id);
-
     // Adds a descriptor.
-    $descriptor = MCL_CHADO_CVTERM::addCvterm($this, $db->getName(), $cv->getName(), $line['trait'], $line['details']);
+    $descriptor = MCL_CHADO_CVTERM::addCvterm($this, $db->getName(), $cv_arr['descriptor']['name'], $line['trait'], $line['details']);
     if ($descriptor) {
 
       // Adds properties.
@@ -110,9 +109,5 @@ class MCL_TEMPLATE_FB_TRAIT extends MCL_TEMPLATE {
 
     // Checks db.
     MCL_CHADO_DB::checkDB($this, MCL_VAR::getValueByName('SITE_DB'));
-
-    // Checks cv name.
-    $cv_id = $this->getJob()->getParamByKey('cv_id');
-    MCL_CHADO_CV::checkCVByID($this, $cv_id, TRUE);
   }
 }

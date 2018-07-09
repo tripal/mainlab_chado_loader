@@ -129,8 +129,11 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
+    // Lists the job paremters.
+    $cv_name = $this->getJob()->getParamByKey('cv');
+
     // Gets the cv.
-    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    $cv = MCL_CHADO_CV::getCV($cv_name, 'SITE_CV');
     if (!$cv) {
       $this->updateMsg('E', "cv does not exist.");
       return;
@@ -138,7 +141,7 @@ class MCL_TEMPLATE_DATASET extends MCL_TEMPLATE {
 
     // Saves the user-specific properties.
     if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
-      return;
+      $this->updateMsg('E', "Failed to save the special columns");
     }
   }
 }

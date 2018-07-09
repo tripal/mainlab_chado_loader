@@ -126,10 +126,10 @@ class MCL_TEMPLATE_QTL_COTTON extends MCL_TEMPLATE {
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
 
     // Checks colocalized_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
+    $this->_checkRelatedMarker($line['colocalized_marker'], '[;,]');
 
     // Checks neighboring_markers.
-    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
+    $this->_checkRelatedMarker($line['neighboring_marker'], '[;,]');
   }
 
   /**
@@ -186,14 +186,70 @@ class MCL_TEMPLATE_QTL_COTTON extends MCL_TEMPLATE {
       // Adds the references.
       $qtl->addReference($this, $line['reference'], "[,;]");
 
-      // Adds colocalized markers.
-      $qtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]", TRUE);
+      // Adds the colocalized markers.
+      $this->_addRelatedMarker($qtl, $line['colocalized_marker'], $this->cvterms['relationship']['located_in'], "[,;]");
 
-      // Adds the neighboring markers.
-      $qtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]", TRUE);
+      // Adds neighboring markers.
+      $this->_addRelatedMarker($qtl, $line['neighboring_marker'], $this->cvterms['relationship']['adjacent_to'], "[,;]");
     }
     else {
       $this->updateMsg('E', "Error : cannot get/add " . $line['qtl_label']);
+    }
+  }
+
+
+  /**
+   * Checks the related marker.
+   *
+   * @param string $uniquename
+   * @param string $separator
+   */
+  private function _checkRelatedMarker($uniquename, $separator = '') {
+    $uniquenames = preg_split(CHADO_TABLE::getSepRegex($separator), $uniquename, NULL, PREG_SPLIT_NO_EMPTY);
+    foreach ($uniquenames as $uniquename) {
+      $marker = $this->_getRelatedMarker($uniquename);
+      if (!$marker) {
+        $this->updateMsg('E', "$uniquename is not a 'genetic marker' nor 'marker locus'", TRUE);
+      }
+    }
+  }
+
+  /**
+   * Returns the related marker.
+   *
+   * @param string $uniquename
+   * @param string $separator
+   *
+   * @return MCL_CHADO_FEATURE
+   */
+  private function _getRelatedMarker($uniquename) {
+    $marker = NULL;
+    if ($uniquename) {
+      $marker = MCL_CHADO_FEATURE::getFeature($uniquename, '', '', $this->cvterms['sequence']['marker_locus']);
+      if (!$marker) {
+        $marker = MCL_CHADO_FEATURE::getFeature($uniquename, '', '', $this->cvterms['sequence']['genetic_marker']);
+      }
+    }
+    return $marker;
+  }
+
+  /**
+   * Adds the related markers.
+   *
+   * @param MCL_CHADO_FEATURE $qtl
+   * @param string $uniquename
+   * @param integer $type_id_rel
+   * @param string $separator
+   *
+   * @return MCL_CHADO_FEATURE
+   */
+  private function _addRelatedMarker(MCL_CHADO_FEATURE $qtl, $uniquename, $type_id_rel, $separator = '') {
+    $uniquenames = preg_split(CHADO_TABLE::getSepRegex($separator), $uniquename, NULL, PREG_SPLIT_NO_EMPTY);
+    foreach ($uniquenames as $uniquename) {
+      $marker = $this->_getRelatedMarker($uniquename);
+      if ($marker) {
+        $qtl->addRelatedFeatures($this, $uniquename, $marker->getTypeID(), FALSE, $type_id_rel, '', TRUE);
+      }
     }
   }
 
@@ -202,8 +258,11 @@ class MCL_TEMPLATE_QTL_COTTON extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
+    // Lists the job paremters.
+    $cv_name = $this->getJob()->getParamByKey('cv');
+
     // Gets the cv.
-    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    $cv = MCL_CHADO_CV::getCV($cv_name, 'SITE_CV');
     if (!$cv) {
       $this->updateMsg('E', "cv does not exist.");
       return;
@@ -211,7 +270,7 @@ class MCL_TEMPLATE_QTL_COTTON extends MCL_TEMPLATE {
 
     // Saves the user-specific properties.
     if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
-      return;
+      $this->updateMsg('E', "Failed to save the special columns");
     }
   }
 }

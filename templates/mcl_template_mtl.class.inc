@@ -72,6 +72,7 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['screening_method']             = -1;
     $cvterms['SITE_CV']['description']                  = -1;
     $cvterms['SITE_CV']['published_symbol']             = -1;
+    $cvterms['sequence']['genetic_marker']              = -1;
     $cvterms['sequence']['marker_locus']                = -1;
     $cvterms['sequence']['heritable_phenotypic_marker'] = -1;
     $cvterms['relationship']['located_in']              = -1;
@@ -94,10 +95,10 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
     MCL_CHADO_TRAIT::checkTrait($this, $line['trait_name'], $line['trait_descriptor_set']);
 
     // Checks colocalized_markers.
-//    MCL_CHADO_FEATURE::checkFeature($this, $line['colocalized_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
+    $this->_checkRelatedMarker($line['colocalized_marker'], '[;,]');
 
     // Checks neighboring_markers.
-//    MCL_CHADO_FEATURE::checkFeature($this, $line['neighboring_marker'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus'], '[;,]');
+    $this->_checkRelatedMarker($line['neighboring_marker'], '[;,]');
 
     // Checks images.
     MCL_CHADO_IMAGE::checkImageID($this, $line['image'], '[;,]');
@@ -154,13 +155,71 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
     }
   }
 
+
+  /**
+   * Checks the related marker.
+   *
+   * @param string $uniquename
+   * @param string $separator
+   */
+  private function _checkRelatedMarker($uniquename, $separator = '') {
+    $uniquenames = preg_split(CHADO_TABLE::getSepRegex($separator), $uniquename, NULL, PREG_SPLIT_NO_EMPTY);
+    foreach ($uniquenames as $uniquename) {
+      $marker = $this->_getRelatedMarker($uniquename);
+      if (!$marker) {
+        $this->updateMsg('E', "$uniquename is not a 'genetic marker' nor 'marker locus'", TRUE);
+      }
+    }
+  }
+
+  /**
+   * Returns the related marker.
+   *
+   * @param string $uniquename
+   * @param string $separator
+   *
+   * @return MCL_CHADO_FEATURE
+   */
+  private function _getRelatedMarker($uniquename) {
+    $marker = NULL;
+    if ($uniquename) {
+      $marker = MCL_CHADO_FEATURE::getFeature($uniquename, '', '', $this->cvterms['sequence']['marker_locus']);
+      if (!$marker) {
+        $marker = MCL_CHADO_FEATURE::getFeature($uniquename, '', '', $this->cvterms['sequence']['genetic_marker']);
+      }
+    }
+    return $marker;
+  }
+
+  /**
+   * Adds the related markers.
+   *
+   * @param MCL_CHADO_FEATURE $qtl
+   * @param string $uniquename
+   * @param string $separator
+   *
+   * @return MCL_CHADO_FEATURE
+   */
+  private function _addRelatedMarker(MCL_CHADO_FEATURE $qtl, $uniquename, $separator = '') {
+    $uniquenames = preg_split(CHADO_TABLE::getSepRegex($separator), $uniquename, NULL, PREG_SPLIT_NO_EMPTY);
+    foreach ($uniquenames as $uniquename) {
+      $marker = $this->_getRelatedMarker($uniquename);
+      if ($marker) {
+        $qtl->addRelatedFeatures($this, $uniquename, $marker->getTypeID(), FALSE, $this->cvterms['relationship']['adjacent_to'], '', TRUE);
+      }
+    }
+  }
+
   /**
    * @see MCL_TEMPLATE::preProcess()
    */
   public function preProcess($data_lines) {
 
+    // Lists the job paremters.
+    $cv_name = $this->getJob()->getParamByKey('cv');
+
     // Gets the cv.
-    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    $cv = MCL_CHADO_CV::getCV($cv_name, 'SITE_CV');
     if (!$cv) {
       $this->updateMsg('E', "cv does not exist.");
       return;

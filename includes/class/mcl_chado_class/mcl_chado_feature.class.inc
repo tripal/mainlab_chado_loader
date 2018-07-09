@@ -288,33 +288,39 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
    *   3. The allele has a valid IUPAC code.
    *
    * @param MCL_TEMPLATE MCL_TEMPLATE
-   * @param string $residues
    *
    * @return boolean
    */
   public static function checkResidues(MCL_TEMPLATE $mcl_tmpl = NULL, $residues) {
 
-    // Checks if the residues has allele.
-    if (preg_match("/\[/", $residues)) {
-      $count = preg_match_all('/\[/', $residues, $matches);
-      if ($count == 1) {
-        $count = preg_match_all("/\]/", $residues, $matches);
-        if ($count == 1) {
+    // Counts how many brackets in the residues.
+    $count_L = preg_match_all('/\[/', $residues);
+    $count_R = preg_match_all("/\]/", $residues);
 
-          // Checks if the allele has the corresponding IUPAC code.
-          if (preg_match("/\[(.+)\]/", $residues, $matches)) {
-            $allele = $matches[1];
-            if (self::getIUPAC($allele)) {
-              return TRUE;
-            }
-            else {
-              self::updateMsg($mcl_tmpl, 'E', "The allele [$allele] does not have valid IUPAC code");
-              return FALSE;
-            }
-          }
+    // Checks for the corresponding IUPAC code if the residue has only one allele.
+    if ($count_L == 1 && $count_R == 1) {
+
+      // Checks if the allele has the corresponding IUPAC code.
+      if (preg_match("/\[(.+)\]/", $residues, $matches)) {
+        $allele = $matches[1];
+        if (self::getIUPAC($allele)) {
+          return TRUE;
+        }
+        else {
+
+          // Ignores IUPAC code so that an allele like [-/T] can be stored.
+          return TRUE;
+          self::updateMsg($mcl_tmpl, 'E', "The allele [$allele] in the residue does not have valid IUPAC code");
+          return FALSE;
         }
       }
-      self::updateMsg($mcl_tmpl, 'E', "The allele has invalid format");
+      else {
+        self::updateMsg($mcl_tmpl, 'E', "There is a mis-matching brackets in the residue");
+        return FALSE;
+      }
+    }
+    else if ($count_L != $count_R) {
+      self::updateMsg($mcl_tmpl, 'E', "There are mis-matching brackets in the residue");
       return FALSE;
     }
     return TRUE;
@@ -335,21 +341,38 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
   public static function parseResidues($residues) {
     $seq_info = array();
 
+    // Counts how many brackets in the residues.
+    $count_L = preg_match_all('/\[/', $residues);
+    $count_R = preg_match_all("/\]/", $residues);
+
     // Checks if the residues has allele.
-    if (preg_match('/^(.*)\[(.*)\](.*)$/', $residues, $matches)) {
+    if ($count_L == 1 && $count_R == 1) {
+      if (preg_match('/^(.*)\[(.*)\](.*)$/', $residues, $matches)) {
 
-      // Parses out the sequence information.
-      $five_prime   = trim($matches[1]);
-      $allele       = trim($matches[2]);
-      $three_prime  = trim($matches[3]);
-      $iupac_code   = self::getIUPAC($allele);
+        // Parses out the sequence information.
+        $five_prime   = trim($matches[1]);
+        $allele       = trim($matches[2]);
+        $three_prime  = trim($matches[3]);
+        $iupac_code   = self::getIUPAC($allele);
 
-      // Sets the info.
-      $seq_info['allele']       = str_replace(' ', '', $allele);
-      $seq_info['iupac_code']   = $iupac_code;
-      $seq_info['five_prime']   = $five_prime;
-      $seq_info['three_prime']  = $three_prime;
-      $seq_info['residues']     = $five_prime . $iupac_code . $three_prime;
+        // Sets the info.
+        $seq_info['allele']       = str_replace(' ', '', $allele);
+        $seq_info['iupac_code']   = $iupac_code;
+        $seq_info['five_prime']   = $five_prime;
+        $seq_info['three_prime']  = $three_prime;
+
+        // If the allele has the corrensponding IUPAC code, replace with it.
+        // Otherwise, just saves the residue.
+        if ($iupac_code) {
+          $seq_info['residues'] = $five_prime . $iupac_code . $three_prime;
+        }
+        else {
+          $seq_info['residues'] = $residues;
+        }
+      }
+      else {
+        $seq_info['residues'] = $residues;
+      }
     }
     else {
       $seq_info['residues'] = $residues;
@@ -497,14 +520,16 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
   }
 
   /**
-   * Returns the feature by uniquename, genus, species and type_id.
+   * Checks the feature.
    *
    * @param string $uniquename
    * @param array $type_ids
    *
-   * @return MCL_CHADO_FEATURE
+   * @return string
+   *   The type of the feature.
    */
   public static function checkMarkerMtlQtl(MCL_TEMPLATE $mcl_tmpl = NULL, $uniquename, $type_ids) {
+    $type = '';
 
     // Checks the uniquename for MTL.
     $mtl = self::getFeature($uniquename, '', '', $type_ids['mtl']);
@@ -519,8 +544,18 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
         if (!$marker) {
           $mcl_tmpl->updateMsg('E', "Error - $uniquename is not 'Genetic marker', 'QTL' or 'MTL'");
         }
+        else {
+          return 'marker';
+        }
+      }
+      else {
+        return 'qtl';
       }
     }
+    else {
+      return 'mtl';
+    }
+    return '';
   }
 
   /**
@@ -1000,8 +1035,8 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
    * Adds alias to synoym and feature_synoym.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $alias
    * @param integer $type_id
+   * @param string $alias
    * @param string $separator
    *
    * @return boolean
@@ -1076,6 +1111,36 @@ class MCL_CHADO_FEATURE extends CHADO_FEATURE {
       }
     }
     return $flag;
+  }
+
+  /**
+   * Adds marker locus.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $marker_locus
+   * @param array $cvterms
+   * @param string $separator
+   */
+  public function addLocus(MCL_TEMPLATE $mcl_tmpl = NULL, $marker_locus, $cvterms, $separator = '') {
+    $locus_arr = array();
+    if ($marker_locus) {
+
+      // Adds marker loci.
+      $marker_loci = preg_split($this->getSepRegex($separator), $marker_locus, NULL, PREG_SPLIT_NO_EMPTY);
+      foreach ($marker_loci as $locus_name) {
+        $locus_name = trim($locus_name);
+
+        // Adds a marker locus.
+        $locus = MCL_CHADO_FEATURE::addFeature($mcl_tmpl, $locus_name, $locus_name, $cvterms['sequence']['marker_locus'], $this->getOrganismID());
+
+        // Adds a relationship.
+        if ($locus) {
+          $locus_arr []= $locus;
+          $this->addRelatedFeature($mcl_tmpl, $locus, $cvterms['relationship']['instance_of'], TRUE);
+        }
+      }
+    }
+    return $locus_arr;
   }
 
   /**

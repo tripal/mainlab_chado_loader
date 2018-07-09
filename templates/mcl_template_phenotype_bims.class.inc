@@ -99,42 +99,67 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
   }
 
   /**
+   * @see MCL_TEMPLATE::checkHeaders()
+   */
+  public function checkHeaders($line) {
+
+    // Gets the job paremters.
+    $program_id = $this->getJob()->getParamByKey('program_id');
+
+    // Gets FB required columns.
+    $bims_program = BIMS_PROGRAM::byID($program_id);
+    $fb_req_cols  = $bims_program->getBIMSCols();
+    $no_error = TRUE;
+    foreach ($fb_req_cols as $col => $label) {
+      if (!array_key_exists(strtolower($label), $line)) {
+        $this->updateMsg('E', "The required column ($label) is missing");
+        $no_error = FALSE;
+      }
+    }
+    return $no_error;
+  }
+
+  /**
    * @see MCL_TEMPLATE::runErrorCheckDataLine()
    */
   public function runErrorCheckDataLine($line) {
 
-     // Gets the job paremters.
+    // Gets the job paremters.
     $program_id = $this->getJob()->getParamByKey('program_id');
-    $bims_cols  = $this->getJob()->getParamByKey('bims_cols');
 
-    // Gets the accession.
+    // Gets the prefix.
+    $prefix = BIMS_PROGRAM::getPrefixByID($program_id);
+
+    // Gets BIMS_CHADO tables.
+    $bc_accession  = new BIMS_CHADO_ACCESSION($program_id);
+    $bc_project    = new BIMS_CHADO_PROJECT($program_id);
+    $bc_site       = new BIMS_CHADO_SITE($program_id);
+
+    // Gets FB required columns.
+    $bims_program = BIMS_PROGRAM::byID($program_id);
+    $bims_cols    = $bims_program->getBIMSCols();
+
+    // Checks accession.
     $accession = $line[strtolower($bims_cols['accession'])];
-
-    // Adds prefix.
-    $dataset_name = $program_id . '.' . $line['dataset_name'];
-    $accession    = $program_id . '.' . $accession;
-    $clone_id     = $program_id . '.' . $line['clone_id'];
+    $bc_accession->checkAccession($this, $prefix . $accession, $line['genus'], $line['species']);
 
     // Checks dataset.
-    MCL_CHADO_DATASET::checkDataset($this, $dataset_name);
+    $bc_project->checkProject($this, $prefix . $line['dataset_name']);
 
     // Checks organism.
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
-    // Checks accession.
-    MCL_CHADO_STOCK::checkStock($this, $accession, $line['genus'], $line['species']);
-
     // Checks rootstock.
     if ($line['rootstock']) {
-      MCL_CHADO_STOCK::checkStock($this, $program_id . '.' . $line['rootstock'], $line['genus'], $line['species']);
+      $bc_accession->checkAccession($this, $prefix . $line['rootstock']);
     }
 
     // Checks evaluator for contact.
-    MCL_CHADO_CONTACT::checkContact($this, $line['evaluator'], '[;]');
+    MCL_CHADO_CONTACT::checkContact($this, $line['evaluator']);
 
     // Checks site.
     if ($line['site_name']) {
-      MCL_CHADO_LOCATION::checkSite($this, $program_id . '.' . $line['site_name']);
+      $bc_site->checkSite($this, $prefix . $line['site_name']);
     }
   }
 
@@ -149,106 +174,131 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
     }
 
     // Gets the job paremters.
-    $table_pc   = $this->getJob()->getParamByKey('phenotype_call');
     $program_id = $this->getJob()->getParamByKey('program_id');
-    $bims_cols  = $this->getJob()->getParamByKey('bims_cols');
 
-    // Gets the organism.
-    $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
+    // Gets the prefix.
+    $prefix = BIMS_PROGRAM::getPrefixByID($program_id);
 
-    // Gets the dataset.
-    $dataset_name = $program_id . '.' . $line['dataset_name'];
-    $dataset = MCL_CHADO_DATASET::byName($dataset_name);
+    // Gets BIMS_CHADO tables.
+    $bc_pc        = new BIMS_CHADO_PHENOTYPE_CALL($program_id);
+    $bc_accession = new BIMS_CHADO_ACCESSION($program_id);
+    $bc_sample    = new BIMS_CHADO_ACCESSION($program_id);
+    $bc_project   = new BIMS_CHADO_PROJECT($program_id);
+    $bc_site      = new BIMS_CHADO_SITE($program_id);
+    $bc_image     = new BIMS_CHADO_IMAGE($program_id);
 
-    // Gets nd_geolocation_id.
-    $site_name = $line['site_name'];
-    if ($site_name) {
-      $site_name = $program_id . '.' . $site_name;
-    }
-    $nd_geolocation_id = MCL_CHADO_LOCATION::getLocationIDBySite($site_name);
-
-    // Gets BIMS columns.
+    // Gets FB required columns.
+    $bims_program     = BIMS_PROGRAM::byID($program_id);
+    $bims_cols        = $bims_program->getBIMSCols();
     $accession        = $line[strtolower($bims_cols['accession'])];
     $unique_id        = $line[strtolower($bims_cols['unique_id'])];
     $primary_order    = $line[strtolower($bims_cols['primary_order'])];
     $secondary_order  = $line[strtolower($bims_cols['secondary_order'])];
 
+    // Gets the organism.
+    $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
+    $organism_id = $organism->getOrganismID();
+
+    // Gets the dataset.
+    $dataset = $bc_project->byTKey('project', array('name' => $prefix . $line['dataset_name']));
+
+    // Gets nd_geolocation_id.
+    $site_name = ($line['site_name']) ? $prefix . $line['site_name'] : '';
+    $nd_geolocation_id = $bc_site->getLocationIDBySite($site_name);
+
     // Gets the accession.
     $args = array(
-      'uniquename'  => $program_id . '.' . $accession,
-      'organism_id' => $organism->getOrganismID(),
+      'uniquename'  => $prefix . $accession,
+      'organism_id' => $organism_id,
     );
-    $accession = MCL_CHADO_STOCK::byKey($args);
+    $accession = $bc_accession->byTKey('accession', $args);
     if ($accession) {
 
+      // Gets the contact ID.
+      $contact_name = $line['evaluator'] ? $line['evaluator'] : 'bims.anonymous';
+      $contact      = MCL_CHADO_CONTACT::byName($contact_name);
+      $contact_id   = $contact->getContactID();
+
       // Adds sample.
-      $sample_id = sprintf("%d.%d.%d.%d.%s.%s.%s", $program_id, $dataset->getProjectID(), $nd_geolocation_id, $accession->getStockID(), $unique_id, $primary_order, $secondary_order);
-      $sample = MCL_CHADO_STOCK::addStock($this, $sample_id, $sample_id, $organism->getOrganismID(), $this->cvterms['SITE_CV']['sample']);
-      if (!$sample) {
+      $sample_id = sprintf("%d.%d.%d.%d.%s.%s.%s", $dataset->project_id, $nd_geolocation_id, $contact_id, $accession->stock_id, $unique_id, $primary_order, $secondary_order);
+      $details = array(
+        'uniquename'  => $prefix . $sample_id,
+        'name'        => $sample_id,
+        'organism_id' => $organism_id,
+        'type_id'     => $this->cvterms['SITE_CV']['sample'],
+      );
+      $stock_id_sample = $bc_accession->addAccession($this, $details);
+      if (!$stock_id_sample) {
         return FALSE;
       }
+      $bc_sample->setStockID($stock_id_sample);
 
       // Adds clone.
-      $clone_id = $line['clone_id'];
-      $clone = NULL;
-      if ($clone_id) {
-        $clone_id = $program_id . '.' . $clone_id;
-        $clone = MCL_CHADO_STOCK::addStock($this, $clone_id, '', $organism->getOrganismID(), $this->cvterms['SITE_CV']['clone']);
+      $bc_clone = NULL;
+      if ($line['clone_id']) {
+        $details = array(
+          'uniquename'  => $prefix . $line['clone_id'],
+          'name'        => $line['clone_id'],
+          'organism_id' => $organism_id,
+          'type_id'     => $this->cvterms['SITE_CV']['clone'],
+        );
+        $stock_id_clone = $bc_accession->addAccession($this, $details);
+        if ($stock_id_clone) {
+          $bc_clone = new BIMS_CHADO_ACCESSION($program_id);
+          $bc_clone->setStockID($stock_id_clone);
+        }
       }
 
       // Adds relationships between accession, sample and clone.
-      if ($clone) {
-        $clone->addRelatedStock($this, $accession, $this->cvterms['SITE_CV']['clone_of']);
-        $sample->addRelatedStock($this, $clone, $this->cvterms['SITE_CV']['sample_of']);
+      if ($bc_clone) {
+        $bc_clone->addRelatedAccession($this, $accession, $this->cvterms['SITE_CV']['clone_of']);
+        $bc_sample->addRelatedAccession($this, $bc_clone->getObject('accession'), $this->cvterms['SITE_CV']['sample_of']);
       }
-      $sample->addRelatedStock($this, $accession, $this->cvterms['SITE_CV']['sample_of']);
+      $bc_sample->addRelatedAccession($this, $accession, $this->cvterms['SITE_CV']['sample_of']);
 
       // Gets rootstock_id.
-      $rootstock_id = '';
       if ($line['rootstock']) {
-        $rootstock_name = $program_id . '.' . $line['rootstock'];
-        $rootstock = MCL_CHADO_STOCK::getStock($rootstock_name, $line['genus'], $line['species']);
+        $keys = array(
+          'uniquename'  => $prefix . $line['rootstock'],
+          'organism_id' => $organism_id,
+        );
+        $rootstock = $bc_accession->byTKey('accession', $keys);
         if ($rootstock) {
-          $rootstock_id = $rootstock->getStockID();
-        }
 
-        // Adds rootstock.
-        $sample->addProp($this, 'SITE_CV', 'rootstock_id', $rootstock_id);
-        if ($clone) {
-          $clone->addProp($this, 'SITE_CV', 'rootstock_id', $rootstock_id);
+          // Adds rootstock_id to smaple and clone.
+          $bc_sample->addProp($this, 'SITE_CV', 'rootstock_id', $rootstock->stock_id);
+          if ($stock_id_clone) {
+            $bc_clone->addProp($this, 'SITE_CV', 'rootstock_id', $rootstock->stock_id);
+          }
         }
       }
 
       // Adds clone properties.
-      if ($clone) {
-        $clone->addProp($this, 'SITE_CV', 'nd_geolocation_id', $nd_geolocation_id);
-        $clone->addProp($this, 'SITE_CV', 'plant_date', $line['plant_date']);
+      if ($stock_id_clone) {
+        $bc_clone->addProp($this, 'SITE_CV', 'nd_geolocation_id', $nd_geolocation_id);
+        $bc_clone->addProp($this, 'SITE_CV', 'plant_date', $line['plant_date']);
       }
 
       // Adds sample properties.
-      $sample->addProp($this, 'BIMS_FIELD_BOOK', 'unique_id', $unique_id);
-      $sample->addProp($this, 'BIMS_FIELD_BOOK', 'primary_order', $primary_order);
-      $sample->addProp($this, 'BIMS_FIELD_BOOK', 'secondary_order', $secondary_order);
-      $sample->addProp($this, 'SITE_CV', 'nd_geolocation_id', $nd_geolocation_id);
-      $sample->addProp($this, 'SITE_CV', 'plant_date', $line['plant_date']);
-      $sample->addProp($this, 'SITE_CV', 'pick_date', $line['pick_date']);
-      $sample->addProp($this, 'SITE_CV', 'storage_time', $line['storage_time']);
-      $sample->addProp($this, 'SITE_CV', 'barcode', $line['barcode']);
-      $sample->addProp($this, 'SITE_CV', 'fiber_pkg', $line['fiber_pkg']);
-      $sample->addProp($this, 'SITE_CV', 'storage_regime', $line['storage_regime']);
-      $sample->addProp($this, 'SITE_CV', 'data_year', $line['data_year']);
-      $sample->addProp($this, 'SITE_CV', 'evaluation_date', $line['evaluation_date']);
-      $sample->addProp($this, 'SITE_CV', 'comments', $line['comments']);
+      $bc_sample->addProp($this, 'BIMS_FIELD_BOOK', 'unique_id', $unique_id);
+      $bc_sample->addProp($this, 'BIMS_FIELD_BOOK', 'primary_order', $primary_order);
+      $bc_sample->addProp($this, 'BIMS_FIELD_BOOK', 'secondary_order', $secondary_order);
+      $bc_sample->addProp($this, 'SITE_CV', 'nd_geolocation_id', $nd_geolocation_id);
+      $bc_sample->addProp($this, 'SITE_CV', 'plant_date', $line['plant_date']);
+      $bc_sample->addProp($this, 'SITE_CV', 'pick_date', $line['pick_date']);
+      $bc_sample->addProp($this, 'SITE_CV', 'storage_time', $line['storage_time']);
+      $bc_sample->addProp($this, 'SITE_CV', 'barcode', $line['barcode']);
+      $bc_sample->addProp($this, 'SITE_CV', 'fiber_pkg', $line['fiber_pkg']);
+      $bc_sample->addProp($this, 'SITE_CV', 'storage_regime', $line['storage_regime']);
+      $bc_sample->addProp($this, 'SITE_CV', 'data_year', $line['data_year']);
+      $bc_sample->addProp($this, 'SITE_CV', 'evaluation_date', $line['evaluation_date']);
+      $bc_sample->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
       // Adds the user-specific properties.
-      $this->addSpecialColumns('##', $sample, $line);
+      $this->addSpecialColumns('##', $bc_sample, $line);
 
       // Adds the previous-entry.
-      $sample->addPreviousEntry($this, $line['previous-entry']);
-
-      // Gets the contact.
-      $contact = MCL_CHADO_CONTACT::byName($line['evaluator']);
-      $contact_id = ($contact) ? $contact->getContactID() : NULL;
+      $bc_sample->addPreviousEntry($this, $line['previous-entry']);
 
       // Adds the phenotyping data for each descriptor.
       $descriptors = $this->getJob()->getParamByKey('#');
@@ -271,23 +321,28 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
             $value = MCL_CHADO_CVTERM::convertFBDate($value);
           }
 
+          // Updates the boolean to be uppercase 'TRUE' or 'FALSE'.
+          if ($descriptor['format'] == 'boolean') {
+            $value = strtoupper($value);
+          }
+
           // Adds photos.
           if ($descriptor['format'] == 'photo') {
-            $sample->addImage($this, 'filename', $value, $cvterm_id, "[;]");
+            $bc_image->addSampleImage($this, $bc_sample->getStockID(), $cvterm_id, $value, "[;]");
           }
 
           // Adds a data point.
           $args = array(
-            'project_id'        => $dataset->getProjectID(),
+            'project_id'        => $dataset->project_id,
             'nd_geolocation_id' => $nd_geolocation_id,
-            'stock_id'          => $sample->getStockID(),
+            'stock_id'          => $bc_sample->getStockID(),
             'cvterm_id'         => $cvterm_id,
             'value'             => $value,
             'contact_id'        => $contact_id,
             'time'              => date("Y-m-d G:i:s"),
           );
-          $phenotype_call = new MCL_CUSTOM_PHENOTYPE_CALL($table_pc);
-          if (!$phenotype_call->addData($this, $args)) {
+          $phenotype_call_id = $bc_pc->addData($this, $args);
+          if (!$phenotype_call_id) {
             $this->updateMsg('E', "Error : Failed to add phenotype_call.");
           }
         }
@@ -300,31 +355,17 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
-    // Checks the table.
-    $table_pc = $this->getJob()->getParamByKey('phenotype_call');
-    if (!db_table_exists($table_pc)) {
-      $this->updateMsg('E', "$table_pc does not exist.");
-      return;
-    }
-
-    // Checks the BIMS columns.
-    $this->_checkBIMSCols($data_lines[0]);
-
-    // Gets the cv.
-    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'));
-    if (!$cv) {
-      $this->updateMsg('E', "cv does not exist.");
-      return;
-    }
+    // Gets the job paremters.
+    $cv_arr = $this->getJob()->getParamByKey('cv_arr');
 
     // Saves the user-specific properties.
-    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
-      return;
+    if (!$this->saveSpecialColumns('##', $cv_arr['sample']['cv_id'], $data_lines[0])) {
+      $this->updateMsg('E', "Failed to save the user-specific property columns [##]");
     }
 
     // Saves the descriptors.
-    if (! $this->saveSpecialColumns('#', $cv->getCvID(), $data_lines[0])) {
-      return;
+    if (!$this->saveSpecialColumns('#', $cv_arr['descriptor']['cv_id'], $data_lines[0])) {
+      $this->updateMsg('E', "Failed to save the descriptor columns [#]");
     }
 
     // Checks the evaluation data for each descriptor.
@@ -349,21 +390,6 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
       }
     }
   }
-
-  /**
-   * Checks the BIMS columns exist.
-   *
-   * @param array $line
-   */
-  private function _checkBIMSCols($line) {
-    $bims_cols = $this->getJob()->getParamByKey('bims_cols');
-    foreach ($bims_cols as $bims_col => $label) {
-      if (!array_key_exists(strtolower($label), $line)) {
-        $this->updateMsg('E', "The required BIMS column ($label) is missing");
-      }
-    }
-  }
-
 
   /**
    * @see MCL_TEMPLATE::getTemplateInfo()
@@ -448,5 +474,18 @@ class MCL_TEMPLATE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
 
     // Adds both header definition and data sheets.
     return array($def_sheet, $data_sheet);
+  }
+
+  /**
+   * @see MCL_TEMPLATE::validColumns()
+   */
+  public function validColumns() {
+
+    // Gets BIMS_PROGRAM.
+    $program_id = $this->getJob()->getParamByKey('program_id');
+    $bims_program = BIMS_PROGRAM::byID($program_id);
+
+    // Returns FB required columns.
+    return array_values($bims_program->getBIMSCols());
   }
 }

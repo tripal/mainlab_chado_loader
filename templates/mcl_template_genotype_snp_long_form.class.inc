@@ -30,7 +30,7 @@ class MCL_TEMPLATE_GENOTYPE_SNP_LONG_FORM extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::defineDescription()
    */
   public function defineDescription() {
-    $desc = 'The description for genotype sheet';
+    $desc = 'The description for GENOTYPE_SNP_LONG_FORM sheet';
     return $desc;
   }
 
@@ -92,8 +92,7 @@ class MCL_TEMPLATE_GENOTYPE_SNP_LONG_FORM extends MCL_TEMPLATE {
     $marker = MCL_CHADO_FEATURE::getFeature($line['marker'], '', '', $this->cvterms['sequence']['genetic_marker']);
 
     // Adds a new genotype or gets the genotype if exists.
-    $uniquename = $line['genotype'];
-    $genotype = MCL_CHADO_GENOTYPE::addGenotype($uniquename, $this->cvterms['sequence']['SNP'], $line['genotype']);
+    $genotype = MCL_CHADO_GENOTYPE::addGenotypeSNP($this, $this->cvterms['sequence']['SNP'], $line['genotype']);
 
     // Adds a SNP genotype.
     $details = array(

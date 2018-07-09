@@ -116,6 +116,7 @@ class CHADO_ORGANISM  extends CHADO_TABLE {
         array('table' => 'featuremap_organism', 'attr' => 'organism_id'),
         array('table' => 'library', 'attr' => 'organism_id'),
         array('table' => 'organism_dbxref', 'attr' => 'organism_id'),
+        array('table' => 'organism_image', 'attr' => 'organism_id'),
         array('table' => 'organism_pub', 'attr' => 'organism_id'),
         array('table' => 'organism_relationship', 'attr' => 'object_organism_id'),
         array('table' => 'organism_relationship', 'attr' => 'subject_organism_id'),

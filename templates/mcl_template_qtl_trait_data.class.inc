@@ -39,7 +39,7 @@ class MCL_TEMPLATE_QTL_TRAIT_DATA extends MCL_TEMPLATE {
    */
   public function defineHeaders() {
     $dataset_name_desc = "
-name of the QTL trait study, the dataset_name should exist in 'dataset_name' column of the 'Dataset' sheet.
+      name of the QTL trait study, the dataset_name should exist in 'dataset_name' column of the 'Dataset' sheet.
   A-B-C-D system<br />
   A: common name of species (scientific name if not available and genus name if cross-species)<br />
   B: trait_name (usually an article report multiple QTL for a trait)<br />
@@ -65,8 +65,8 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
       'ci_90'                     => array('req' => FALSE, 'width' => 10, 'desc' => "Confidence Intervals"),
       'comments'                  => array('req' => FALSE, 'width' => 10, 'desc' => ""),
       'reference'                 => array('req' => FALSE, 'width' => 10, 'desc' => ""),
+      '##property_name'           => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
-
     // Adds labels.
     $headers['ci_90']['label'] = 'CI_90';
     return $headers;
@@ -95,6 +95,9 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
 
     // Checks dataset.
     MCL_CHADO_DATASET::checkDataset($this, $line['dataset_name']);
+
+    // Checks trait_descriptor_set.
+    MCL_CHADO_CV::checkCV($this, $line['trait_descriptor_set']);
 
     // Checks trait.
     MCL_CHADO_TRAIT::checkTrait($this, $line['descriptor'], $line['trait_descriptor_set']);
@@ -139,28 +142,57 @@ name of the QTL trait study, the dataset_name should exist in 'dataset_name' col
 
     // Adds a nd_experiment.
     $value = $line['dataset_name'] . '_' . $line['site_name'] . '_' . $line['stock_name'] . '_' . $trait->getCvtermID();
-    $nd_experiment = MCL_CHADO_ND_EXPERIMENT::addNdExperiment($this, $this->cvterms['SITE_CV']['statistical'], $nd_geolocation_id, $this->cvterms['SITE_CV']['statistical'], $value);
+    $nd_experiment = MCL_CHADO_ND_EXPERIMENT::byDupKey($trait->getCvtermID(), $value);
+    if (!$nd_experiment) {
 
-    // Adds properties.
-    $nd_experiment->addProp($this, 'SITE_CV', 'min_value', $line['min_value']);
-    $nd_experiment->addProp($this, 'SITE_CV', 'max_value', $line['max_value']);
-    $nd_experiment->addProp($this, 'SITE_CV', 'standard_deviation', $line['standard_deviation']);
-    $nd_experiment->addProp($this, 'SITE_CV', 'coefficient_of_variation', $line['coefficient_of_variation']);
-    $nd_experiment->addProp($this, 'SITE_CV', 'skewness', $line['skewness']);
-    $nd_experiment->addProp($this, 'SITE_CV', 'h2', $line['h2']);
-    $nd_experiment->addProp($this, 'SITE_CV', 'cl_90', $line['cl_90']);
-    $nd_experiment->addProp($this, 'SITE_CV', 'comments', $line['comments']);
+      // Add a new nd_experiment.
+      $nd_experiment = MCL_CHADO_ND_EXPERIMENT::addNdExperiment($this, $this->cvterms['SITE_CV']['statistical'], $nd_geolocation_id, $this->cvterms['SITE_CV']['statistical'], $value);
 
-    // Adds a phenotype.
-    $nd_experiment->addPhenotype($this, $phenotype);
+      // Adds properties.
+      $nd_experiment->addProp($this, 'SITE_CV', 'min_value', $line['min_value']);
+      $nd_experiment->addProp($this, 'SITE_CV', 'max_value', $line['max_value']);
+      $nd_experiment->addProp($this, 'SITE_CV', 'standard_deviation', $line['standard_deviation']);
+      $nd_experiment->addProp($this, 'SITE_CV', 'coefficient_of_variation', $line['coefficient_of_variation']);
+      $nd_experiment->addProp($this, 'SITE_CV', 'skewness', $line['skewness']);
+      $nd_experiment->addProp($this, 'SITE_CV', 'h2', $line['h2']);
+      $nd_experiment->addProp($this, 'SITE_CV', 'cl_90', $line['cl_90']);
+      $nd_experiment->addProp($this, 'SITE_CV', 'comments', $line['comments']);
 
-    // Adds a stock.
-    $nd_experiment->addStock($this, $stock, $stock->getTypeID());
+      // Adds a phenotype.
+      $nd_experiment->addPhenotype($this, $phenotype);
 
-    // Adds a dataset.
-    $nd_experiment->addDataset($this, $line['dataset_name']);
+      // Adds a stock.
+      $nd_experiment->addStock($this, $stock, $stock->getTypeID());
 
-    // Adds references.
-    $nd_experiment->addReference($this, $line['reference'], "[,;]");
+      // Adds a dataset.
+      $nd_experiment->addDataset($this, $line['dataset_name']);
+
+      // Adds references.
+      $nd_experiment->addReference($this, $line['reference'], "[,;]");
+
+      // Adds the user-specific properties.
+      $this->addSpecialColumns('##', $nd_experiment, $line);
+    }
+  }
+
+  /**
+   * @see MCL_TEMPLATE::preProcess()
+   */
+  public function preProcess($data_lines) {
+
+    // Lists the job paremters.
+    $cv_name = $this->getJob()->getParamByKey('cv');
+
+    // Gets the cv.
+    $cv = MCL_CHADO_CV::getCV($cv_name, 'SITE_CV');
+    if (!$cv) {
+      $this->updateMsg('E', "cv does not exist.");
+      return;
+    }
+
+    // Saves the user-specific properties.
+    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
+      $this->updateMsg('E', "Failed to save the special columns");
+    }
   }
 }

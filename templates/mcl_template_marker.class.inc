@@ -145,7 +145,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
 
     // Checks residues.
-    MCL_CHADO_FEATURE::checkResidues($this, $line['marker_sequence'], $line['genus'], $line['species']);
+    MCL_CHADO_FEATURE::checkResidues($this, $line['marker_sequence']);
 
     // Checks SNP_chip_name.
     MCL_CHADO_LIBRARY::checkLibrary($this, $line['snp_chip_name'], $this->cvterms['SITE_CV']['SNP_chip']);
@@ -179,7 +179,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     if ($marker) {
 
       // Parses the residues.
-      $seq_info = MCL_CHADO_FEATURE::parseResidues($line['marker_sequence']);
+      $seq_info = MCL_CHADO_FEATURE::parseResidues($line['marker_sequence'], FALSE);
 
       // Gets residues.
       $residues = $seq_info['residues'];
@@ -254,21 +254,8 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
       // Adds aliases.
       $marker->addAlias($this, $this->cvterms['SITE_CV']['alias'], $line['alias'], "[;,]");
 
-      // Adds marker loci.
-      if ($line['marker_locus']) {
-        $loci = preg_split("/[;,]/", $line['marker_locus'], NULL, PREG_SPLIT_NO_EMPTY);
-        foreach ($loci as $locus_name) {
-
-          // Adds a marker locus.
-          $locus_name = trim($locus_name);
-          $locus = MCL_CHADO_FEATURE::addFeature($this, $locus_name, $locus_name, $this->cvterms['sequence']['marker_locus'], $organism->getOrganismID());
-
-          // Adds a relationship.
-          if ($locus) {
-            $marker->addRelatedFeature($this, $locus, $this->cvterms['relationship']['instance_of'], TRUE);
-          }
-        }
-      }
+      // Adds marker locus.
+      $marker->addLocus($this, $line['marker_locus'], $this->cvterms, "[;,]");
 
       // Adds gb_id (accession).
       $db = MCL_CHADO_DB::getDB('DB:genbank');
@@ -323,8 +310,11 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
+    // Lists the job paremters.
+    $cv_name = $this->getJob()->getParamByKey('cv');
+
     // Gets the cv.
-    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    $cv = MCL_CHADO_CV::getCV($cv_name, 'SITE_CV');
     if (!$cv) {
       $this->updateMsg('E', "cv does not exist.");
       return;
@@ -332,35 +322,48 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
 
     // Saves the user-specific properties.
     if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
-      return;
+      $this->updateMsg('E', "Failed to save the special columns");
     }
 
     // Checks for marker_name and marker_locus columns.
-    $dup_markers      = array();
-    $dup_marker_locus = array();
+    $dup_uniquenames = array();
     foreach ($data_lines as $data_line) {
       $line_no      = $data_line['line_no'] + 1;
       $marker_name  = $data_line['marker_name'];
       $marker_locus = $data_line['marker_locus'];
 
+      // Keeps the features of this line.
+      $tmp = array();
+      $err_flag = FALSE;
+
       // Checks for duplicated markers.
-      if (array_key_exists($marker_name, $dup_markers)) {
+      $tmp []= $marker_name;
+      if (array_key_exists($marker_name, $dup_uniquenames)) {
         $msg = "Error : You have the duplicated marker name or the same marker " .
             "name ($marker_name) with different organism at line $line_no";
         $this->updateMsg('E', $msg, TRUE, -2);
-      }
-      else {
-        $dup_markers[$marker_name]++;
+        $err_flag = TRUE;
       }
 
       // Checks marker locus name for uniqueness.
-      if (array_key_exists($marker_locus, $dup_marker_locus)) {
-        $msg = "Error : You have the duplicated marker locus name or the same marker " .
-            "locus name ($marker_locus) with different organism at line $line_no";
-        $this->updateMsg('E', $msg, TRUE, -2);
+      if ($marker_locus) {
+        $loci = preg_split("/[;,]/", $marker_locus, NULL, PREG_SPLIT_NO_EMPTY);
+        foreach ($loci as $locus_name) {
+          $tmp []= $locus_name;
+          if (array_key_exists($locus_name, $dup_uniquenames)) {
+            $msg = "Error : You have the duplicated locus name or the same " .
+                "locus name ($locus_name) with different organism at line $line_no";
+            $this->updateMsg('E', $msg, TRUE, -2);
+            $err_flag = TRUE;
+          }
+        }
       }
-      else {
-        $dup_markers[$marker_locus]++;
+
+      // Adds the all features of this line.
+      if (!$err_flag) {
+        foreach ($tmp as $uniquename) {
+          $dup_uniquenames[$uniquename]++;
+        }
       }
     }
   }

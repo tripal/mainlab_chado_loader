@@ -62,6 +62,10 @@ function mcl_form($form, &$form_state) {
       'data' => 'Data Queries',
       'children' => array(
         array(
+          'data' => l('Cvterm', '/mcl/data_query/cvterm'),
+          'style' => array('list-style-type:disc;'),
+        ),
+        array(
           'data' => l('Feature', '/mcl/data_query/feature'),
           'style' => array('list-style-type:disc;'),
         ),

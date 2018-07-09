@@ -30,7 +30,7 @@ class MCL_TEMPLATE_GENOTYPE_B extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::defineDescription()
    */
   public function defineDescription() {
-    $desc = 'The description for genotype sheet';
+    $desc = 'The description for GENOTYPE_B sheet';
     return $desc;
   }
 

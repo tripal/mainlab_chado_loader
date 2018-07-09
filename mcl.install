@@ -71,7 +71,7 @@ function mcl_add_table_mcl_var(&$schema) {
     ),
     'primary key' => array('var_id'),
     'unique keys' => array(
-      'ukey_mcl_var_name' => array('name')
+      'ukey_mcl_var_001' => array('name')
     ),
   );
 }
@@ -140,7 +140,7 @@ function mcl_add_table_mcl_template(&$schema) {
     ),
     'primary key' => array('template_id'),
     'unique keys' => array(
-      'ukey_mcl_template_template' => array('template')
+      'ukey_mcl_template_001' => array('template')
     ),
   );
 }
@@ -170,7 +170,7 @@ function mcl_add_table_mcl_template_type(&$schema) {
     ),
     'primary key' => array('template_type_id'),
     'unique keys' => array(
-      'ukey_mcl_template_type_type' => array('type')
+      'ukey_mcl_template_type_001' => array('type')
     ),
   );
 }
@@ -198,7 +198,7 @@ function mcl_add_table_mcl_data_valid_type(&$schema) {
     ),
     'primary key' => array('data_valid_type_id'),
     'unique keys' => array(
-      'ukey_mcl_data_valid_type_type' => array('type')
+      'ukey_mcl_data_valid_type_001' => array('type')
     ),
   );
 }
@@ -231,7 +231,7 @@ function mcl_add_table_mcl_data_valid(&$schema) {
     ),
     'primary key' => array('data_valid_id'),
     'unique keys' => array(
-      'ukey_mcl_data_valid_data_valid_type_id_name' => array('data_valid_type_id', 'name')
+      'ukey_mcl_data_valid_001' => array('data_valid_type_id', 'name')
     ),
   );
 }
@@ -423,7 +423,6 @@ function mcl_populate_mcl_templates() {
     'CONTACT',
     'LIBRARY',
     'DATASET',
-    'IMAGE',
     'DESCRIPTOR',
     'SITE',
     'STOCK',
@@ -437,6 +436,7 @@ function mcl_populate_mcl_templates() {
     'FIELD_BOOK',
     'PHENOTYPE',
     'GENOTYPE',
+    'IMAGE',
     'IMAGE_PHENOTYPE',
     'IMAGE_GENOTYPE',
   );

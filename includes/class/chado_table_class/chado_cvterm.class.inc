@@ -127,6 +127,7 @@ class CHADO_CVTERM  extends CHADO_TABLE {
         array('table' => 'cvterm_relationship', 'attr' => 'object_id'),
         array('table' => 'cvterm_relationship', 'attr' => 'subject_id'),
         array('table' => 'cvterm_relationship', 'attr' => 'type_id'),
+        array('table' => 'cvterm_image', 'attr' => 'cvterm_id'),
         array('table' => 'cvtermprop', 'attr' => 'cvterm_id'),
         array('table' => 'cvtermprop', 'attr' => 'type_id'),
         array('table' => 'cvtermsynonym', 'attr' => 'cvterm_id'),

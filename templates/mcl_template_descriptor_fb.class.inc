@@ -110,7 +110,7 @@ class MCL_TEMPLATE_DESCRIPTOR_FB extends MCL_TEMPLATE {
     if ($descriptor) {
 
       // Adds properties.
-      $descriptor->addProp($this, 'SITE_CV', 'format', $line['format']);
+      $descriptor->addProp($this, 'SITE_CV', 'format', strtolower($line['format']));
       $descriptor->addProp($this, 'BIMS_FIELD_BOOK_FORMAT_PROP', 'categories', $line['categories']);
       $descriptor->addProp($this, 'BIMS_FIELD_BOOK_FORMAT_PROP', 'minimum', $line['minimum']);
       $descriptor->addProp($this, 'BIMS_FIELD_BOOK_FORMAT_PROP', 'maximum', $line['maximum']);

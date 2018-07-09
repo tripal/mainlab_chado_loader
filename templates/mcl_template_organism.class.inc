@@ -55,9 +55,9 @@ class MCL_TEMPLATE_ORGANISM extends MCL_TEMPLATE {
       'alias_scientific'              => array('req' => FALSE, 'width' => 10, 'desc' => "Alias scientific of the organism."),
       'alias_synonym'                 => array('req' => FALSE, 'width' => 10, 'desc' => "alias_synonym of the organism."),
       'alias_common'                  => array('req' => FALSE, 'width' => 10, 'desc' => "alias common of the organism."),
-      'fertile_with'                  => array('req' => FALSE, 'width' => 10, 'desc' => "fertile with the organism."),
-      'sterile_with'                  => array('req' => FALSE, 'width' => 10, 'desc' => "sterile with the organism."),
-      'incompatible_with'             => array('req' => FALSE, 'width' => 10, 'desc' => "incompatible with the organism."),
+      'fertile_with'                  => array('req' => FALSE, 'width' => 10, 'desc' => "organim IDs of fertile with the organisms."),
+      'sterile_with'                  => array('req' => FALSE, 'width' => 10, 'desc' => "organim IDs of sterile with the organisms."),
+      'incompatible_with'             => array('req' => FALSE, 'width' => 10, 'desc' => "organim IDs of incompatible with the organisms."),
       'grin_id'                       => array('req' => FALSE, 'width' => 10, 'desc' => "GRIN taxonomy ID of the organism."),
       'image'                         => array('req' => FALSE, 'width' => 10, 'desc' => "Image of the organism."),
       'reference'                     => array('req' => FALSE, 'width' => 10, 'desc' => "pub_id if any publication is associated with the organism."),
@@ -89,6 +89,9 @@ class MCL_TEMPLATE_ORGANISM extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['alias_scientific']             = -1;
     $cvterms['SITE_CV']['alias_synonym']                = -1;
     $cvterms['SITE_CV']['alias_common']                 = -1;
+    $cvterms['SITE_CV']['fertile_with']                 = -1;
+    $cvterms['SITE_CV']['sterile_with']                 = -1;
+    $cvterms['SITE_CV']['incompatible_with']            = -1;
     $cvterms['SITE_CV']['comments']                     = -1;
     return $cvterms;
   }
@@ -103,6 +106,11 @@ class MCL_TEMPLATE_ORGANISM extends MCL_TEMPLATE {
 
     // Checks images.
     MCL_CHADO_IMAGE::checkImageID($this, $line['image'], '[;,]');
+
+    // Checks organisms.
+    MCL_CHADO_ORGANISM::checkOrganismID($this, $line['fertile_with'], '[;,]');
+    MCL_CHADO_ORGANISM::checkOrganismID($this, $line['sterile_with'], '[;,]');
+    MCL_CHADO_ORGANISM::checkOrganismID($this, $line['incompatible_with'], '[;,]');
 
     // Checks references.
     MCL_CHADO_PUB::checkPub($this, $line['reference'], '[;,]');
@@ -135,9 +143,9 @@ class MCL_TEMPLATE_ORGANISM extends MCL_TEMPLATE {
       $organism->addProp($this, 'SITE_CV', 'alias_common', $line['alias_common'], "[;,]");
 
       // Adds related organisms.
-      //$organism->addRelatedOrganism($this, 'SITE_CV', 'fertile_with', $line['fertile_with'], "[;,]");
-      //$organism->addRelatedOrganism($this, 'SITE_CV', 'sterile_with', $line['sterile_with'], "[;,]");
-      //$organism->addRelatedOrganism($this, 'SITE_CV', 'sterile_with', $line['incompatible_with'], "[;,]");
+      $organism->addRelatedOrganismsByID($this, $line['fertile_with'], $this->cvterms['SITE_CV']['fertile_with'], "[;,]");
+      $organism->addRelatedOrganismsByID($this, $line['sterile_with'], $this->cvterms['SITE_CV']['sterile_with'], "[;,]");
+      $organism->addRelatedOrganismsByID($this, $line['incompatible_with'], $this->cvterms['SITE_CV']['incompatible_with'], "[;,]");
 
       // Gets db of GRIN and add a dbxref.
       $db = MCL_CHADO_DB::getDB('GRIN');

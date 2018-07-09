@@ -95,23 +95,34 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
   }
 
   /**
-   * Checks the existence of orgainsm by ID. If not, write the error messasge
+   * Checks the existence of the organisms. If not, write the error messasge
    * to the log.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param integer $organism_id
+   * @param string $organism_id_list
+   * @param string $separator
    *
    * @return boolean
    */
-  public static function checkOrganismByID(MCL_TEMPLATE $mcl_tmpl = NULL, $organism_id) {
+  public static function checkOrganismID(MCL_TEMPLATE $mcl_tmpl = NULL, $organism_id_list, $separator = '') {
     $flag = TRUE;
-    if ($organism_id) {
+    if ($organism_id_list) {
 
-      // Gets the orgainsm.
-      $orgainsm = MCL_CHADO_ORGANISM::getOrganismByID($organism_id);
-      if (!$orgainsm) {
-        self::updateMsg($mcl_tmpl, 'E', "(organism_id) = ($organism_id) not found in organism");
-        $flag = FALSE;
+      // Gets organism_id.
+      $organism_ids = preg_split(self::getSepRegex($separator), $organism_id_list, NULL, PREG_SPLIT_NO_EMPTY);
+      foreach ($organism_ids as $organism_id) {
+        $organism_id = trim($organism_id);
+        if (!preg_match("/^\d+$/", $organism_id)) {
+          self::updateMsg($mcl_tmpl, 'E', "$organism_id is not an integer. It must be organism_id");
+          $flag = FALSE;
+          continue;
+        }
+        $args = array('organism_id' => $organism_id);
+        $organism = MCL_CHADO_ORGANISM::byID($organism_id);
+        if (!$organism) {
+          self::addMsg($mcl_tmpl, 'E', 'organism', $args);
+          $flag = FALSE;
+        }
       }
     }
     return $flag;
@@ -131,17 +142,6 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
       'species' => $species,
     );
     return MCL_CHADO_ORGANISM::byKey($args);
-  }
-
-  /**
-   * Returns the orgainsm by organism ID.
-   *
-   * @param integer $organism_id
-   *
-   * @return MCL_CHADO_ORGANISM
-   */
-  public static function getOrganismByID($organism_id) {
-    return MCL_CHADO_ORGANISM::byKey(array('organism_id' => $organism_id));
   }
 
   /**
@@ -262,6 +262,29 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
     return TRUE;
   }
 
+  /**
+   * Adds the related organism by their organism IDs.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param string $organism_id_list
+   * @param integer $type_id_relationship
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addRelatedOrganismsByID(MCL_TEMPLATE $mcl_tmpl = NULL, $organism_id_list, $type_id_relationship, $separator = '') {
+    if ($organism_id_list) {
+
+      // Gets organism_id.
+      $organism_ids = preg_split(self::getSepRegex($separator), $organism_id_list, NULL, PREG_SPLIT_NO_EMPTY);
+      foreach ($organism_ids as $organism_id) {
+        if (!$this->addRelationship($mcl_tmpl, 'organism_relationship', 'subject_organism_id', $this->organism_id, 'object_organism_id', $organism_id, $type_id_relationship)) {
+          return FALSE;
+        }
+      }
+    }
+    return TRUE;
+  }
   /**
    * Adds a dbxref to organism_dbxref.
    *

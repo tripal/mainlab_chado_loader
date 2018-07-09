@@ -93,12 +93,11 @@ class MCL_TEMPLATE_GENOTYPE_SNP_WIDE_FORM extends MCL_TEMPLATE {
 
     // Adds genotype_call for each marker.
     $marker_cols = $this->getJob()->getParamByKey('marker_cols');
-
     foreach ($marker_cols as $marker_name => $feature_id) {
 
       // Adds genotype.
       $genotype_value = $line['$' . $marker_name];
-      $genotype = MCL_CHADO_GENOTYPE::addGenotype($this, $genotype_value, $this->cvterms['sequence']['SNP'], $genotype_value);
+      $genotype = MCL_CHADO_GENOTYPE::addGenotypeSNP($this, $this->cvterms['sequence']['SNP'], $genotype_value);
       if ($genotype) {
 
         // Adds a SNP into genotype_call.

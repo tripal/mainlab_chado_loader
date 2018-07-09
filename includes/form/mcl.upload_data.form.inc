@@ -331,7 +331,7 @@ function mcl_upload_data_form_submit($form, &$form_state) {
   // Moves the file to the user temp directory.
   $dest_filepath    = "$user_tmp_dir/" . $drupal_file->filename;
   $target_filepath  = drupal_realpath($drupal_file->uri);
-  $cmd              = "mv $target_filepath $dest_filepath";
+  $cmd              = "mv \"$target_filepath\" \"$dest_filepath\"";
   exec($cmd);
 
   // Removes from file_managed.
@@ -370,20 +370,25 @@ function mcl_upload_data_form_submit($form, &$form_state) {
     $upload_file = new MCL_FILE($details);
     if ($upload_file->insert()) {
 
-      // Updates the job properties.
+      // Sets the file ID.
       $mcl_job->setFileID($upload_file->getFileID());
-      if ($mcl_job->update()) {
 
-        // Gets 'no_transaction' option.
-        $opt_no_transaction = '';
-        $no_transaction_cb = trim($form_state['values']['add_upload_job']['advanced']['no_transaction_cb']);
-        if ($no_transaction_cb) {
-          $opt_no_transaction = '--no_transaction';
-        }
+      // Sets 'transaction' option.
+      $opt_transaction = '--transaction_on';
+      $trans = TRUE;
+      $no_transaction_cb = trim($form_state['values']['add_upload_job']['advanced']['no_transaction_cb']);
+      if ($no_transaction_cb) {
+        $opt_transaction = '--transaction_off';
+        $trans = FALSE;
+      }
+      $mcl_job->setPropByKey('transaction', $trans);
+
+      // Updates the job properties.
+      if ($mcl_job->update()) {
 
         // Runs the job.
         $drush = mcl_get_config_setting('mcl_drush_binary');
-        $cmd = "$drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_no_transaction > /dev/null 2>/dev/null  & ";
+        $cmd = "$drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_transaction > /dev/null 2>/dev/null  & ";
         $pid = exec($cmd, $output, $return_var);
         if ($return_var) {
           drupal_set_message("Failed o add an uploading job");

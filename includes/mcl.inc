@@ -207,6 +207,19 @@ function mcl_format_bytes($bytes, $precision = 2) {
 }
 
 /**
+ * Format the date in integer to the provided date format.
+ *
+ * @param integer $date_int
+ * @param string $format
+ *
+ * @return string
+ *   A formatted date string.
+ */
+function mcl_format_date($date_int, $format = "m/d/Y") {
+  return date($format, mktime(0, 0 , 0 , 1, $date_int - 1, 1900));
+}
+
+/**
  * Download all log files.
  *
  * @param integer $job_id

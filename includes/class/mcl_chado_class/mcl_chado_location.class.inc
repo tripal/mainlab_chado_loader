@@ -132,6 +132,7 @@ class MCL_CHADO_LOCATION extends CHADO_ND_GEOLOCATION {
    * is empty, return the default nd_geolocation_id.
    *
    * @param string $site_name
+   * @param boolean $default
    *
    * @return integer nd_geolocation_id
    */

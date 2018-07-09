@@ -255,12 +255,12 @@ class MCL_TEMPLATE_PHENOTYPE_COTTON extends MCL_TEMPLATE {
 
     // Saves user-specific properties.
     if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
-      return;
+      $this->updateMsg('E', "Failed to save the special columns");
     }
 
     // Saves the descriptors.
     if (! $this->saveSpecialColumns('#', $cv->getCvID(), $data_lines[0])) {
-      return;
+      $this->updateMsg('E', "Failed to save the special columns");
     }
 
     // Checks the evaluation data for each descriptor.

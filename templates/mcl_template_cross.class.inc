@@ -42,9 +42,9 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
       'dataset_name'    => array('req' => TRUE,  'width' => 17, 'desc' => "Name of the dataset (super-dataset or sub-category) to which the cross belongs. The details of the dataset should be given in the 'Dataset' sheet."),
       'site_name'       => array('req' => FALSE, 'width' => 10, 'desc' => "Site information where the stock for the phenotyping is planted. It should match 'site_name' in the 'Site' sheet."),
       'cross_number'    => array('req' => TRUE,  'width' => 17, 'desc' => "ID number or name for this specific cross."),
-      'mother'          => array('req' => TRUE,  'width' => 13, 'desc' => "ID name or number for the seed parent for the cross.  This ID must also be an entry in the Stock sheet."),
+      'mother'          => array('req' => FALSE, 'width' => 13, 'desc' => "ID name or number for the seed parent for the cross.  This ID must also be an entry in the Stock sheet."),
       'mother_location' => array('req' => FALSE, 'width' => 17, 'desc' => "Location details for the mother of this cross (eg. Plant location, individual stock name, etc)."),
-      'father'          => array('req' => TRUE,  'width' => 13, 'desc' => "ID name or number for the pollen parent for the cross.  This ID must also be an entry in the Stock sheet."),
+      'father'          => array('req' => FALSE, 'width' => 13, 'desc' => "ID name or number for the pollen parent for the cross.  This ID must also be an entry in the Stock sheet."),
       'father_location' => array('req' => FALSE, 'width' => 17, 'desc' => "Location details for the father of this cross (eg. Plant location, individual stock name, etc)."),
       'cross_date'      => array('req' => FALSE, 'width' => 15, 'desc' => "Date for the cross."),
       '##property_name' => array('req' => FALSE, 'width' => 10, 'desc' => "Followed by property (cvterm) name. The data will be stored in property table."),
@@ -78,13 +78,16 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
     // Checks site.
     MCL_CHADO_LOCATION::checkSite($this, $line['site_name']);
 
+    // Checks the parents only if 'progeny' sheet exists.
+    $flag_progeny = $this->hasTemplate('progeny');
+
     // Checks maternal parent.
-    if ($line['mother'] != 'N/A') {
+    if ($line['mother'] && $line['mother'] != 'N/A' && !$flag_progeny) {
       MCL_CHADO_STOCK::checkStock($this, $line['mother']);
     }
 
     // Checks paternal parent.
-    if ($line['father'] != 'N/A') {
+    if ($line['father'] && $line['father'] != 'N/A' && !$flag_progeny) {
       MCL_CHADO_STOCK::checkStock($this, $line['father']);
     }
   }
@@ -118,13 +121,13 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
       $cross->addDataset($this, $line['dataset_name']);
 
       // Adds a maternal parent.
-      if ($line['mother'] != 'N/A') {
+      if ($line['mother'] && $line['mother'] != 'N/A') {
         $maternal_parent = MCL_CHADO_STOCK::getStock($line['mother']);
         $cross->addStock($this, $maternal_parent, $this->cvterms['SITE_CV']['maternal_parent']);
       }
 
       // Adds a paternal parent.
-      if ($line['father'] != 'N/A') {
+      if ($line['father'] && $line['father'] != 'N/A') {
         $paternal_parent = MCL_CHADO_STOCK::getStock($line['father']);
         $cross->addStock($this, $paternal_parent, $this->cvterms['SITE_CV']['paternal_parent']);;
       }
@@ -136,8 +139,11 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
+    // Lists the job paremters.
+    $cv_name = $this->getJob()->getParamByKey('cv');
+
     // Gets the cv.
-    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'));
+    $cv = MCL_CHADO_CV::getCV($cv_name, 'SITE_CV');
     if (!$cv) {
       $this->updateMsg('E', "cv does not exist.");
       return;
@@ -145,7 +151,7 @@ class MCL_TEMPLATE_CROSS extends MCL_TEMPLATE {
 
     // Saves the user-specific properties.
     if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
-      return;
+      $this->updateMsg('E', "Failed to save the special columns");
     }
   }
 }

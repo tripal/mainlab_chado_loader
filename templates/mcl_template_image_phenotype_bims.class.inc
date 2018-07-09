@@ -44,8 +44,9 @@ class MCL_TEMPLATE_IMAGE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
       'primary_order'   => array('req' => TRUE,  'width' => 10, 'var' => TRUE, 'desc' => "The primary order of a sample"),
       'secondary_order' => array('req' => TRUE,  'width' => 10, 'var' => TRUE, 'desc' => "The secondary order of a sample"),
       'filename'        => array('req' => TRUE,  'width' => 10, 'desc' => "Name of the image file."),
-      'descriptor_name' => array('req' => FALSE, 'width' => 10, 'desc' => "The name of the desriptor of the photo."),
-      'caption'         => array('req' => FALSE, 'width' => 10, 'desc' => "Caption of the image file."),
+      'descriptor_name' => array('req' => TRUE,  'width' => 10, 'desc' => "The name of the desriptor of the photo."),
+      'caption'         => array('req' => FALSE, 'width' => 10, 'desc' => "The caption of the photo."),
+      'description'     => array('req' => FALSE, 'width' => 10, 'desc' => "The description of the photo image."),
       '##property_name' => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
     );
     return $headers;
@@ -56,8 +57,9 @@ class MCL_TEMPLATE_IMAGE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
    */
   public function defineCvterms() {
     $cvterms = array();
-    $cvterms['SITE_CV']['photo']    = -1;
-    $cvterms['SITE_CV']['caption']  = -1;
+    $cvterms['SITE_CV']['photo_descriptor'] = -1;
+    $cvterms['SITE_CV']['caption']          = -1;
+    $cvterms['SITE_CV']['description']      = -1;
     return $cvterms;
   }
 
@@ -69,8 +71,11 @@ class MCL_TEMPLATE_IMAGE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
     // Gets the job paremters.
     $program_id = $this->getJob()->getParamByKey('program_id');
 
+    // Gets the prefix.
+    $prefix = BIMS_PROGRAM::getPrefixByID($program_id);
+
     // Checks dataset.
-    MCL_CHADO_DATASET::checkDataset($this, $program_id . '.' . $line['dataset_name']);
+    MCL_CHADO_DATASET::checkDataset($this, $prefix . $line['dataset_name']);
 
     // Checks the image type.
     MCL_CHADO_CVTERM::checkCvterm($this, 'SITE_CV', $line['descriptor_name']);
@@ -82,30 +87,40 @@ class MCL_TEMPLATE_IMAGE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
   public function uploadDataLine($line) {
 
     // Gets the job paremters.
-    $table_pc   = $this->getJob()->getParamByKey('phenotype_call');
     $program_id = $this->getJob()->getParamByKey('program_id');
-    $bims_cols  = $this->getJob()->getParamByKey('bims_cols');
+
+    // Gets the prefix.
+    $prefix = BIMS_PROGRAM::getPrefixByID($program_id);
+
+    // Gets BIMS_CHADO tables.
+    $bc_pc        = new BIMS_CHADO_PHENOTYPE_CALL($program_id);
+    $bc_accession = new BIMS_CHADO_ACCESSION($program_id);
+    $bc_sample    = new BIMS_CHADO_ACCESSION($program_id);
+    $bc_project   = new BIMS_CHADO_PROJECT($program_id);
+    $bc_site      = new BIMS_CHADO_SITE($program_id);
+    $bc_image     = new BIMS_CHADO_IMAGE($program_id);
 
     // Gets the dataset.
-    $dataset_name = $program_id . '.' . $line['dataset_name'];
-    $dataset = MCL_CHADO_DATASET::byName($dataset_name);
+    $dataset = $bc_project->byTKey('project', array('name' => $prefix . $line['dataset_name']));
 
-    // Gets BIMS columns.
+    // Gets FB required columns.
+    $bims_program     = BIMS_PROGRAM::byID($program_id);
+    $bims_cols        = $bims_program->getBIMSCols();
+    $accession        = $line[strtolower($bims_cols['accession'])];
     $unique_id        = $line[strtolower($bims_cols['unique_id'])];
     $primary_order    = $line[strtolower($bims_cols['primary_order'])];
     $secondary_order  = $line[strtolower($bims_cols['secondary_order'])];
 
     // Gets the sample.
     $keys = array(
-      'project_id'      => $dataset->getProjectID(),
+      'project_id'      => $dataset->project_id,
       'unique_id'       => $unique_id,
       'primary_order'   => $primary_order ,
       'secondary_order' => $secondary_order,
     );
-    $phenotype_call = new MCL_CUSTOM_PHENOTYPE_CALL($table_pc);
-    $sample = $phenotype_call->getSample($keys);
+    $sample = $bc_pc->getSample($keys);
     if ($sample) {
-
+/*
       // Sets the default image type if the type is not provided.
       $cvterm_id = $this->cvterms['SITE_CV']['photo'];
       if ($line['descriptor_name']) {
@@ -118,13 +133,20 @@ class MCL_TEMPLATE_IMAGE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
 
         // Adds the properties.
         $eimage->addProp($this, 'SITE_CV', 'caption', $line['caption']);
+        $eimage->addProp($this, 'SITE_CV', 'description', $line['description']);
+
+        // Adds the cvterm ID of the descriptor.
+        $descriptor = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $line['descriptor_name']);
+        $eimage->addProp($this, 'SITE_CV', 'photo_descriptor', $descriptor->getCvtermID());
 
         // Adds the user-specific properties.
         $this->addSpecialColumns('##', $eimage, $line);
 
-        // Adds the image.
-        $sample->addImage($this, 'filename', $value, $cvterm_id, "[;]");
+        // Adds the images.
+       // $bc_image->addSampleImage($this, $sample->getStockID(), $cvterm_id, $value);
+       // $sample->addImage($this, 'filename', $value, $cvterm_id, "[;]");
       }
+*/
     }
   }
 
@@ -133,16 +155,12 @@ class MCL_TEMPLATE_IMAGE_PHENOTYPE_BIMS extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
-    // Gets the cv.
-    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'));
-    if (!$cv) {
-      $this->updateMsg('E', "cv does not exist.");
-      return;
-    }
+    // Lists the job paremters.
+    $cv_arr = $this->getJob()->getParamByKey('cv_arr');
 
     // Saves the user-specific properties.
-    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
-      return;
+    if (!$this->saveSpecialColumns('##', $cv_arr['image']['cv_id'], $data_lines[0])) {
+      $this->updateMsg('E', "Failed to save the special columns");
     }
   }
 

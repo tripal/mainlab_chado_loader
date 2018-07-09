@@ -114,7 +114,8 @@ function mcl_job_view_form($form, &$form_state, $job_id = NULL) {
       $all_logs = _mcl_get_all_logs($mcl_job);
 
       // Adds the log fieldsets.
-      $log_types = array('E', 'N', 'W', 'D');
+      //$log_types = array('E', 'N', 'W', 'D');
+      $log_types = array('E', 'N', 'W');
       foreach ($log_types as $log_type) {
         if (array_key_exists($log_type, $all_logs)) {
           _mcl_add_logs($form, $mcl_job, $log_type, $all_logs[$log_type]);
@@ -405,7 +406,7 @@ function _mcl_get_detail_table(MCL_JOB_UPLOAD $mcl_job) {
   $rows = array();
   $rows []= array(array('data' => '<b>Job ID</b>', 'style' => 'width:160px;'), $mcl_job->getJobID());
   $rows []= array('<b>Name</b>', $mcl_job->getName());
-  $rows []= array('<b>Data Template File</b>', $link_template);
+  $rows []= array('<b>Uploaded Template File</b>', $link_template);
   $rows []= array('<b>File Name</b>', $mcl_file->getFilename());
   $rows []= array('<b>File Size</b>', mcl_format_bytes($mcl_file->getFilesize()));
   $rows []= array('<b>Status</b>', $status_label);
@@ -472,7 +473,7 @@ function mcl_job_view_form_submit($form, &$form_state) {
   // Moves the file to the user temp space.
   $dest_filepath    = "$user_dir/tmp/" . $drupal_file->filename;
   $target_filepath  = drupal_realpath($drupal_file->uri);
-  $cmd              = "mv $target_filepath $dest_filepath";
+  $cmd              = "mv \"$target_filepath\" \"$dest_filepath\";
   exec($cmd);
 
   // Resets the progress file.
@@ -491,12 +492,12 @@ function mcl_job_view_form_submit($form, &$form_state) {
     $opt_force = '--force';
   }
 
-  // Gets 'no_transaction' option.
-  $opt_no_transaction = '';
+  // Sets 'transaction' option.
+  $opt_transaction = '--transaction_on';
   $trans = TRUE;
   $no_transaction_cb = trim($form_state['values']['job_rerun']['advanced']['no_transaction_cb']);
   if ($no_transaction_cb) {
-    $opt_no_transaction = '--no_transaction';
+    $opt_transaction = '--transaction_off';
     $trans = FALSE;
   }
   $mcl_job->setPropByKey('transaction', $trans);
@@ -515,7 +516,7 @@ function mcl_job_view_form_submit($form, &$form_state) {
 
   // Submits the re-uploading job.
   $drush = mcl_get_config_setting('mcl_drush_binary');
-  $cmd = "$drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_force $opt_no_transaction > /dev/null 2>/dev/null & ";
+  $cmd = "$drush mcl-rerun-job $job_id $dest_filepath --move_input $opt_force $opt_transaction > /dev/null 2>/dev/null & ";
   $pid = exec($cmd, $output, $return_var);
   if ($return_var) {
     drupal_set_message("Failed to re-run the job");

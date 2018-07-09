@@ -43,7 +43,7 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
       'germplasm_type'    => array('req' => TRUE,  'width' => 10, 'desc' => "Select from the three choices (cultivar, breeding_research_material, or wild_unimproved) for an individual germplasm or 'population' for a group of individual."),
       'genus'             => array('req' => TRUE,  'width' => 10, 'desc' => "Genus to which the stock belongs to."),
       'species'           => array('req' => TRUE,  'width' => 10, 'desc' => "Species name. Enter 'sp.' to represent one unknown species, 'spp.' to represent multiple unknown species."),
-      'grin_id'           => array('req' => FALSE, 'width' => 10, 'desc' => "Accession ID (ACID) in the GRIN database, if it is known."),
+      'grin_id'           => array('req' => FALSE, 'width' => 10, 'desc' => "Accession ID (ACID) in the GRIN database, if it is known. Multiple GRIN ID, separated by comma, can be added."),
       'subspecies'        => array('req' => FALSE, 'width' => 10, 'desc' => "Subspecies name."),
       'description'       => array('req' => FALSE, 'width' => 10, 'desc' => "Stock_name for the pollen parent of this entry.  This stock_name must also have its own record in this table (it should be entered before being listed as a parent)."),
       'secondary_id'      => array('req' => FALSE, 'width' => 10, 'desc' => "Alternate ID or name that is commonly used to refer to the entry."),
@@ -141,20 +141,9 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
     $stock = MCL_CHADO_STOCK::addStock($this, $line['stock_name'], $name, $organism_id, $type_id);
     if ($stock) {
 
-      // Gets db.
+      // Gets and add the DB.
       $db = MCL_CHADO_DB::getDB('GRIN');
-
-      // Adds a dbxref.
-      $dbxref = MCL_CHADO_DBXREF::addDBXref($this, $db->getDbID(), $line['grin_id']);
-      if ($dbxref) {
-
-        // Adds dbxref to stock_dbxref table.
-        $stock->addDBXref($this, $dbxref);
-
-        // Updates stock.dbxref_id.
-        $stock->setDbxrefID($dbxref->getDbxrefID());
-        $stock->update();
-      }
+      $stock->addDB($this, $db, $line['grin_id'], "[,;]");
 
       // Adds properties.
       $stock->addProp($this, 'SITE_CV', 'secondary_id', $line['secondary_id']);
@@ -174,10 +163,10 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
       $stock->addAlias($this, $line['alias'], "[,;]");
 
       // Adds parents.
-      $stock->addParent($this, $line['maternal_parent'], '', $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
-      $stock->addParent($this, $line['paternal_parent'], '', $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
-      $stock->addParent($this, $line['mutation_parent'], '', $this->cvterms['SITE_CV']['is_a_mutation_parent_of']);
-      $stock->addParent($this, $line['selfing_parent'], '', $this->cvterms['SITE_CV']['is_a_selfing_parent_of']);
+      $stock->addParent($this, $line['maternal_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
+      $stock->addParent($this, $line['paternal_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
+      $stock->addParent($this, $line['mutation_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_mutation_parent_of']);
+      $stock->addParent($this, $line['selfing_parent'], $organism_id, $this->cvterms['SITE_CV']['is_a_selfing_parent_of']);
 
       // Adds images.
       $stock->addImageID($this, $line['image'], "[,;]");
@@ -192,8 +181,11 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
+    // Lists the job paremters.
+    $cv_name = $this->getJob()->getParamByKey('cv');
+
     // Gets the cv.
-    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'), 'SITE_CV');
+    $cv = MCL_CHADO_CV::getCV($cv_name, 'SITE_CV');
     if (!$cv) {
       $this->updateMsg('E', "cv does not exist.");
       return;
@@ -201,8 +193,11 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
 
     // Saves the user-specific properties.
     if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
-      return;
+      $this->updateMsg('E', "Failed to save the special columns");
     }
+
+    // Initializes $GLOBALS.
+    $GLOBALS['stocks'] = array();
   }
 
   /**
@@ -210,18 +205,31 @@ class MCL_TEMPLATE_STOCK extends MCL_TEMPLATE {
    */
   public function postProcess() {
 
-    // Adds all the missing parents now.
-    $parents = $this->getTmpByKey('stock_parents');
+      // Adds all missing parents.
+    $parents = $GLOBALS['stocks'];
     foreach ((array)$parents as $stock_id => $info) {
 
       // Gets the parent info.
-      $uniquename   = $info['uniquename'];
-      $organism_id  = $info['organism_id'];
-      $type_id      = $info['type_id'];
+      $child_stock_id = $info['child_stock_id'];
+      $uniquename     = $info['uniquename'];
+      $organism_id    = $info['organism_id'];
+      $type_id_rel    = $info['type_id_rel'];
 
-      // Adds the parent.
-      $stock = MCL_CHADO_STOCK::byKey(array('stock_id' => $stock_id));
-      $stock->addParent($this, $uniquename, $organism_id, $type_id);
+      // Checks the parent.
+      $keys = array(
+        'uniquename'  => $uniquename,
+        'organism_id' => $organism_id,
+      );
+      $parent = MCL_CHADO_STOCK::byKey($keys);
+      if ($parent) {
+
+        // Adds the parent.
+        $stocks = MCL_CHADO_STOCK::byKey(array('stock_id' => $child_stock_id));
+        $stocks->addParent($this, $uniquename, $organism_id, $type_id_rel);
+      }
+      else {
+        $this->updateMsg('E', "$uniquename [organism ID = $organism_id] does not exist");
+      }
     }
   }
 }

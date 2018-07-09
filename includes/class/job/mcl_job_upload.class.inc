@@ -134,7 +134,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
 
     // Copies 'recent' folder to previous'.
     $target_dir = "$dir_previous/" . date("Y-m-d-G-i-s");
-    $cmd = "cp -r $dir_recent $target_dir";
+    $cmd = "cp -r \"$dir_recent\" \"$target_dir\"";
     exec($cmd, $output, $return_var);
     if ($return_var) {
         return FALSE;
@@ -385,7 +385,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         mcl_print("==================================", 1, 1, FALSE);
         mcl_print("Phase I : Copying CSV files", 1);
         mcl_print("----------------------------------", 1, 1, FALSE);
-        $this->setProgress("Copying CSV files ...");
+        $this->setProgress("Start copying files ...");
         if ($this->_copyCSV()) {
           mcl_print("CSV file created", 1, 2);
           $this->setProgress("Done copying CSV files");
@@ -483,7 +483,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         $dir_new_data = $this->getNewDataLogDir();
         foreach ($new_log_files as $template => $log_file) {
           $new_data_log = "$dir_new_data/$template" . '-' . $date_str . '.log';
-          $cmd = "cp $log_file $new_data_log";
+          $cmd = "cp \"$log_file\" \"$new_data_log\"";
           exec($cmd);
         }
       }
@@ -674,7 +674,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
 
     // Read input Excel file.
     $reader = PHPExcel_IOFactory::createReader($file_type);
-    $reader->setReadDataOnly(true);
+    $reader->setReadDataOnly(false);
     $excel = $reader->load($filepath);
     $num_sheets = $excel->getSheetCount();
     print "\tExcel has $num_sheets sheets\n\n";
@@ -696,6 +696,7 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
     $writer = PHPExcel_IOFactory::createWriter($excel, 'CSV');
     $dup_templates = array();
     for ($i = 0; $i < $num_sheets; $i++) {
+      $this->setProgress("Copying a worksheet... [$i of $num_sheets worksheets]");
       $excel->setActiveSheetIndex($i);
       $template = strtolower($excel->getActiveSheet()->getTitle());
       print "\tcopying $template\n\n";
@@ -717,12 +718,16 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       // Validates sheet name.
       if (MCL_TEMPLATE::validateTemplate($template)) {
 
+        // Update the cell values.
+        $this->_updateCellValues($excel);
+
         // Sets CSV filepath.
         $csv_filepath = $this->csv_dir . "/$template" . '.csv';
 
         // Write to a CSV file.
         $writer->setSheetIndex($i);
         $writer->setLineEnding($line_ending);
+        $writer->setPreCalculateFormulas(true);
         $writer->save($csv_filepath);
 
         // Replace newline characters in cell value with white spaces.
@@ -777,12 +782,17 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
         }
       }
       else {
-        $class_name = 'MCL_TEMPLATE_' . strtoupper($template);
-        $msg = "\nThe sheet name '$template' is not a valid template name.\nIt could be the following reason.\n\n";
-        $msg .= "  1. wrong spelling.\n";
-        $msg .= "  2. $class_name is not defined.\n\n";
-        $msg .= "'$template' is skipped.\n\n";
-        $this->updateMsg('W', $msg);
+
+        // Skips the 'header(s)' templates.
+        if (!preg_match("/^header/i", $template)) {
+
+          $class_name = 'MCL_TEMPLATE_' . strtoupper($template);
+          $msg = "\nThe sheet name '$template' is not a valid template name.\nIt could be the following reason.\n\n";
+          $msg .= "  1. wrong spelling.\n";
+          $msg .= "  2. $class_name is not defined.\n\n";
+          $msg .= "'$template' is skipped.\n\n";
+          $this->updateMsg('W', $msg);
+        }
       }
     }
 
@@ -791,6 +801,57 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
       return FALSE;
     }
     return TRUE;
+  }
+
+  /**
+   * Updates the cell values.
+   *
+   * boolean => 'TRUE' or 'FALSE'
+   * date    => integer to date.
+   *
+   * @param string $filepath
+   * @param string $template
+   *
+   * @return MCL_FILE_CSV
+   */
+  private function _updateCellValues($excel) {
+
+    // Gets the active sheet.
+    $sheet_data   = $excel->getActiveSheet();
+    $max_row      = $sheet_data->getHighestRow();
+    $max_col      = $sheet_data->getHighestColumn();
+    $max_col_idx  = PHPExcel_Cell::columnIndexFromString($max_col);
+    $row_char     = 'A';
+    for ($row = 1; $row <= $max_row; $row++) {
+      $row_values = '';
+      for ($col = 0; $col < $max_col_idx; ++$col) {
+        $cell   = $sheet_data->getCellByColumnAndRow($col, $row);
+        $value  = $cell->getValue();
+        $type   = $cell->getDataType();
+        $row_values .= trim($value);
+        if ($type == 'b') {
+          $cell->setDataType(PHPExcel_Cell_DataType::TYPE_STRING);
+          $bool = ($value) ? 'TRUE' : 'FALSE';
+          $cell->setValue($bool);
+        }
+        else if (PHPExcel_Shared_Date::isDateTime($cell)) {
+          if (preg_match("/^\d+$/", $value)) {
+            $date_value = mcl_format_date($value, "m/d/Y");
+            $cell->setValue($date_value);
+          }
+        }
+        else {
+          // Sets the format of the rest of cell to be 'General'.
+          $cell->getStyle()->getNumberFormat()->setFormatCode(PHPExcel_Style_NumberFormat::FORMAT_GENERAL);
+          //$sheet_data->getStyle($row_char.$col)->getNumberFormat()->setFormatCode(PHPExcel_Style_NumberFormat::FORMAT_GENERAL);
+
+        }
+      }
+      $row_char++;
+      if (!$row_values) {
+        return;
+      }
+    }
   }
 
   /**
@@ -1443,6 +1504,15 @@ class MCL_JOB_UPLOAD extends MCL_JOB {
    */
   public function getUploadFile() {
     return $this->upload_file;
+  }
+
+  /**
+   * Retrieves the filename of the uploaded file.
+   *
+   * @retrun string
+   */
+  public function getFilename() {
+    return $this->upload_file->getFilename();
   }
 
   /**

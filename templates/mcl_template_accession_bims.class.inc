@@ -43,7 +43,7 @@ class MCL_TEMPLATE_ACCESSION_BIMS extends MCL_TEMPLATE {
       'type'              => array('req' => TRUE,  'width' => 10, 'desc' => "Select from the three choices (cultivar, breeding_research_material, or wild_unimproved) for an individual accession or 'population' for a group of individual."),
       'genus'             => array('req' => TRUE,  'width' => 10, 'desc' => "Genus to which the accession belongs to."),
       'species'           => array('req' => TRUE,  'width' => 10, 'desc' => "Species name. Enter 'sp.' to represent one unknown species, 'spp.' to represent multiple unknown species."),
-      'grin_id'           => array('req' => FALSE, 'width' => 10, 'desc' => "Accession ID (ACID) in the GRIN database, if it is known."),
+      'grin_id'           => array('req' => FALSE, 'width' => 10, 'desc' => "Accession ID (ACID) in the GRIN database, if it is known. Multiple GRIN ID, separated by comma, can be added."),
       'subspecies'        => array('req' => FALSE, 'width' => 10, 'desc' => "Subspecies name."),
       'secondary_id'      => array('req' => FALSE, 'width' => 10, 'desc' => "Alternate ID or name that is commonly used to refer to the entry."),
       'maternal_parent'   => array('req' => FALSE, 'width' => 10, 'desc' => "accession for the seed parent of this entry.  This accession must also have its own record in this table (it should be entered before being listed as a parent)."),
@@ -56,7 +56,6 @@ class MCL_TEMPLATE_ACCESSION_BIMS extends MCL_TEMPLATE {
       'origin'            => array('req' => FALSE, 'width' => 10, 'desc' => "The original country for the variety (especially for wild variety)."),
       'population_size'   => array('req' => FALSE, 'width' => 10, 'desc' => "Only for type 'population'."),
       'germplasm_center'  => array('req' => FALSE, 'width' => 10, 'desc' => "Germplasm center or lab where the accession is distributed.  Otherwise, provide the details of the contact person in contact column (from whom the material can be obtained) in the 'Contact' sheet."),
-      'image'             => array('req' => FALSE, 'width' => 10, 'desc' => "Image_ID of any associated image (Detailed info in 'Image' sheet.) Multiple images, separated by comma, can be added."),
       'description'       => array('req' => FALSE, 'width' => 10, 'desc' => "any description for the accession."),
       'comments'          => array('req' => FALSE, 'width' => 10, 'desc' => "Any comments on the accession."),
       '##property_name'   => array('req' => FALSE, 'width' => 10, 'desc' => "Special columns (##) : followed by name (cvterm name) of the property."),
@@ -99,23 +98,11 @@ class MCL_TEMPLATE_ACCESSION_BIMS extends MCL_TEMPLATE {
    */
   public function runErrorCheckDataLine($line) {
 
-    // Checks program_id.
-    $program_id = $this->getJob()->getParamByKey('program_id');
-    if (!$program_id) {
-      $this->updateMsg('E', "program_id not found in job.param");
-    }
-
     // Checks DB for GRIN.
     MCL_CHADO_DB::checkDB($this, 'GRIN');
 
     // Checks organism.
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
-
-    // Checks aliases.
-    MCL_CHADO_STOCK::checkAlias($this, $line['alias'], '[;,]');
-
-    // Checks images.
-    MCL_CHADO_IMAGE::checkImageID($this, $line['image'], '[;,]');
 
     // Checks accession type.
     if (!MCL_DATA_VALID_TYPE::validate('stock_type', $line['type'])) {
@@ -130,7 +117,16 @@ class MCL_TEMPLATE_ACCESSION_BIMS extends MCL_TEMPLATE {
 
     // Gets the job paremters.
     $program_id = $this->getJob()->getParamByKey('program_id');
-    $bims_cols  = $this->getJob()->getParamByKey('bims_cols');
+
+    // Gets the prefix.
+    $prefix = BIMS_PROGRAM::getPrefixByID($program_id);
+
+    // Gets BIMS_CHADO table.
+    $bc_accession = new BIMS_CHADO_ACCESSION($program_id);
+
+    // Gets FB required columns.
+    $bims_program = BIMS_PROGRAM::byID($program_id);
+    $bims_cols    = $bims_program->getBIMSCols();
 
     // Gets the organism.
     $organism = MCL_CHADO_ORGANISM::getOrganism($line['genus'], $line['species']);
@@ -139,60 +135,53 @@ class MCL_TEMPLATE_ACCESSION_BIMS extends MCL_TEMPLATE {
     // Gets accession type.
     $type_id = MCL_CHADO_CVTERM::getCvterm('SITE_CV', $line['type'])->getCvtermID();
 
-    // Sets the uniquename [program_id + accession].
-    $name = $line[strtolower($bims_cols['accession'])];
-    $uniquename = $program_id . '.' . $name;
+    // Sets the uniquename.
+    $label = $bims_program->getBIMSLabel('accession', BIMS_LOWER);
+    $name = $line[$label];
 
     // Adds an accession.
-    $accession = MCL_CHADO_STOCK::addStock($this, $uniquename, $name, $organism_id, $type_id);
-    if ($accession) {
+    $details = array(
+      'uniquename'  => $prefix . $name,
+      'name'        => $name,
+      'organism_id' => $organism_id,
+      'type_id'     => $type_id,
+    );
+    $stock_id = $bc_accession->addAccession($this, $details);
+    if ($stock_id) {
+      $bc_accession->setStockID($stock_id);
 
-      // Gets db of GRIN and add a dbxref.
+      // Gets db.
       $db = MCL_CHADO_DB::getDB('GRIN');
-      $dbxref = MCL_CHADO_DBXREF::addDBXref($this, $db->getDbID(), $line['grin_id']);
-      if ($dbxref) {
-
-        // Adds dbxref.
-        $accession->addDBXref($this, $dbxref);
-
-        // Updates dbxref_id.
-        $accession->setDbxrefID($dbxref->getDbxrefID());
-        $accession->update();
-      }
+      $bc_accession->addDB($this, $db, $line['grin_id'], "[,;]");
 
       // Adds properties.
-      $accession->addProp($this, 'SITE_CV', 'secondary_id', $line['secondary_id']);
-      $accession->addProp($this, 'SITE_CV', 'description', $line['description']);
-      $accession->addProp($this, 'SITE_CV', 'cultivar', $line['cultivar']);
-      $accession->addProp($this, 'SITE_CV', 'pedigree', $line['pedigree']);
-      $accession->addProp($this, 'SITE_CV', 'origin', $line['origin']);
-      $accession->addProp($this, 'SITE_CV', 'population_size', $line['population_size']);
-      $accession->addProp($this, 'SITE_CV', 'subspecies', $line['subspecies']);
-      $accession->addProp($this, 'SITE_CV', 'germplasm_center', $line['germplasm_center']);
-      $accession->addProp($this, 'SITE_CV', 'comments', $line['comments']);
+      $bc_accession->addProp($this, 'SITE_CV', 'secondary_id', $line['secondary_id']);
+      $bc_accession->addProp($this, 'SITE_CV', 'description', $line['description']);
+      $bc_accession->addProp($this, 'SITE_CV', 'cultivar', $line['cultivar']);
+      $bc_accession->addProp($this, 'SITE_CV', 'pedigree', $line['pedigree']);
+      $bc_accession->addProp($this, 'SITE_CV', 'origin', $line['origin']);
+      $bc_accession->addProp($this, 'SITE_CV', 'population_size', $line['population_size']);
+      $bc_accession->addProp($this, 'SITE_CV', 'subspecies', $line['subspecies']);
+      $bc_accession->addProp($this, 'SITE_CV', 'germplasm_center', $line['germplasm_center']);
+      $bc_accession->addProp($this, 'SITE_CV', 'comments', $line['comments']);
+      $bc_accession->addProp($this, 'SITE_CV', 'alias', $line['alias'], "[,;]");
 
       // Adds the user-specific properties.
-      $this->addSpecialColumns('##', $accession, $line);
-
-      // Adds aliases.
-      $accession->addAlias($this, $line['alias'], "[,;]");
+      $this->addSpecialColumns('##', $bc_accession, $line);
 
       // Adds parents.
-      if ($line['paternal_parent']) {
-        $accession->addParent($this, $program_id . '.' . $line['paternal_parent'], '', $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
-      }
       if ($line['maternal_parent']) {
-        $accession->addParent($this, $program_id . '.' . $line['maternal_parent'], '', $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
+        $bc_accession->addParent($this, $prefix . $line['maternal_parent'], '', $this->cvterms['SITE_CV']['is_a_maternal_parent_of']);
+      }
+      if ($line['paternal_parent']) {
+        $bc_accession->addParent($this, $prefix . $line['paternal_parent'], '', $this->cvterms['SITE_CV']['is_a_paternal_parent_of']);
       }
       if ($line['mutation_parent']) {
-        $accession->addParent($this, $program_id . '.' . $line['mutation_parent'], '', $this->cvterms['SITE_CV']['is_a_mutation_parent_of']);
+        $bc_accession->addParent($this, $prefix . $line['mutation_parent'], '', $this->cvterms['SITE_CV']['is_a_mutation_parent_of']);
       }
       if ($line['selfing_parent']) {
-        $accession->addParent($this, $program_id . '.' . $line['selfing_parent'], '', $this->cvterms['SITE_CV']['is_a_selfing_parent_of']);
+        $bc_accession->addParent($this, $prefix . $line['selfing_parent'], '', $this->cvterms['SITE_CV']['is_a_selfing_parent_of']);
       }
-
-      // Adds images.
-      $accession->addImageID($this, $line['image'], "[,;]");
     }
   }
 
@@ -201,31 +190,24 @@ class MCL_TEMPLATE_ACCESSION_BIMS extends MCL_TEMPLATE {
    */
   public function preProcess($data_lines) {
 
-    // Gets the cv.
-    $cv = MCL_CHADO_CV::getCV($this->getJob()->getParamByKey('cv'));
-    if (!$cv) {
-      $this->updateMsg('E', "cv does not exist.");
-      return;
+    // Lists the job paremters.
+    $program_id = $this->getJob()->getParamByKey('program_id');
+    $cv_arr     = $this->getJob()->getParamByKey('cv_arr');
+
+    // Checks the accession column.
+    $bims_program = BIMS_PROGRAM::byID($program_id);
+    $label = $bims_program->getBIMSLabel('accession', BIMS_LOWER);
+    if (!array_key_exists($label, $data_lines[0])) {
+      $this->updateMsg('E', "Error : Accession ($label) column does not exist");
     }
 
     // Saves the user-specific properties.
-    if (!$this->saveSpecialColumns('##', $cv->getCvID(), $data_lines[0])) {
-      return;
+    if (!$this->saveSpecialColumns('##', $cv_arr['accession']['cv_id'], $data_lines[0])) {
+      $this->updateMsg('E', "Failed to save the special columns");
     }
 
-    // Saves the parents info.
-    $parents = array();
-    $types = array('paternal_parent', 'maternal_parent', 'mutation_parent', 'selfing_parent');
-    foreach ($data_lines as $data_line) {
-      $accession = $data_line['accession'];
-      foreach ($types as $type) {
-        if (array_key_exists($type, $data_line) && $data_line[$type]) {
-          $parents[$accession][$type] = $data_line[$type];
-        }
-      }
-    }
-    $this->getJob()->setParamByKey('parents', $parents);
-    $this->getJob()->update();
+    // Initializes $GLOBALS.
+    $GLOBALS['accession_bims'] = array();
   }
 
   /**
@@ -233,21 +215,32 @@ class MCL_TEMPLATE_ACCESSION_BIMS extends MCL_TEMPLATE {
    */
   public function postProcess() {
 
-    // Gets the program_id.
+    // Gets the job paremters.
     $program_id = $this->getJob()->getParamByKey('program_id');
 
-    // Adds all missing parents now.
-    $parents = $this->getTmpByKey('stock_parents');
+    // Gets BIMS_CHADO table.
+    $bc_accession = new BIMS_CHADO_ACCESSION($program_id);
+
+    // Adds all missing parents.
+    $parents = $GLOBALS['accession_bims'];
     foreach ((array)$parents as $stock_id => $info) {
 
       // Gets the parent info.
-      $uniquename   = $info['uniquename'];
-      $organism_id  = $info['organism_id'];
-      $type_id      = $info['type_id'];
+      $child_stock_id = $info['child_stock_id'];
+      $uniquename     = $info['uniquename'];
+      $type_id_rel    = $info['type_id_rel'];
 
-      // Adds the parent.
-      $accession = MCL_CHADO_STOCK::byKey(array('stock_id' => $stock_id));
-      $accession->addParent($this, $program_id . '.' . $uniquename, $organism_id, $type_id);
+      // Checks the parent accession.
+      $parent = $bc_accession->getAccessionByUniquename($uniquename);
+      if ($parent) {
+
+        // Adds the parent.
+        $bc_accession->setStockID($child_stock_id);
+        $bc_accession->addParent($this, $uniquename, '', $type_id_rel);
+      }
+      else {
+        $this->updateMsg('E', "$uniquename does not exist");
+      }
     }
   }
 
@@ -279,19 +272,19 @@ class MCL_TEMPLATE_ACCESSION_BIMS extends MCL_TEMPLATE {
     $data = array();
     foreach ($this->headers as $heading => $prop) {
       $name = array(
-          'col'   => 'A',
-          'type'  => 'text',
-          'value' => $heading,
+        'col'   => 'A',
+        'type'  => 'text',
+        'value' => $heading,
       );
       $req = array(
-          'col'   => 'B',
-          'type'  => 'text',
-          'value' => ($prop['req']) ? 'REQ' : ''
+        'col'   => 'B',
+        'type'  => 'text',
+        'value' => ($prop['req']) ? 'REQ' : ''
       );
       $def = array(
-          'col'   => 'C',
-          'type'  => 'text',
-          'value' => $prop['desc'],
+        'col'   => 'C',
+        'type'  => 'text',
+        'value' => $prop['desc'],
       );
       $data[] = array($name, $req, $def);
     }

@@ -79,6 +79,55 @@ class MCL_CHADO_GENOTYPE extends CHADO_GENOTYPE {
   }
 
   /**
+   * Adds a SNP genotype.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param integer $type_id
+   * @param string $description
+   *
+   * @return MCL_CHADO_GENOTYPE
+   */
+  public static function addGenotypeSNP(MCL_TEMPLATE $mcl_tmpl = NULL, $type_id, $description) {
+
+    // Sets the uniquename and updates the description if no bar provided.
+    $uniquename = $description;
+//    if (preg_match("/^([a-z\-])(a-z\-)$/i", $description, $matches)) {
+//      $uniquename = $description = $matches[1] . '|' . $matches[2];
+//    }
+
+    // Sets the arguments.
+    $args = array(
+      'uniquename' => $uniquename,
+      'type_id'    => $type_id,
+    );
+
+    // Checks the arguments.
+    if (!self::checkReqArgs($args)) {
+      return NULL;
+    }
+
+    // Checks for duplication.
+    $genotype = MCL_CHADO_GENOTYPE::byKey($args);
+    if ($genotype) {
+      self::addMsg($mcl_tmpl, 'D', 'genotype', $args);
+    }
+    else {
+
+      // Adds a new genotype.
+      $args['description'] = $description;
+      $genotype = new MCL_CHADO_GENOTYPE($args);
+      if ($genotype->insert()) {
+        self::addMsg($mcl_tmpl, 'N', 'genotype', $args);
+      }
+      else {
+        self::addMsg($mcl_tmpl, 'E', 'genotype', $args);
+        return NULL;
+      }
+    }
+    return $genotype;
+  }
+
+  /**
    * Adds a property by type ID (cvterm ID).
    *
    * @param MCL_TEMPLATE $mcl_tmpl

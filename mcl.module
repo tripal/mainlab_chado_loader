@@ -5,8 +5,14 @@
  * Use this module
  */
 /**
- * Global variables.
+ * Global constancts.
  */
+const MCL_CLASS          = 1;
+const MCL_OBJECT         = 2;
+const MCL_OPTION         = 3;
+const MCL_ASSOC          = 4;
+const MCL_OPTION_DEPTH	  = 5;
+const MCL_VARIOUS        = 6;
 /**
  * Implementation of hook_init().
  */
@@ -402,12 +408,68 @@ function mcl_download_template_excel($args) {
     return FALSE;
   }
 
-  // Gets the template.
-  $mcl_template = MCL_TEMPLATE::getTemplateByID($template_id);
-  $filename = 'mcl_template_' . $mcl_template->getTemplate() . '.xlsx';
+  // Separates the template ID.
+  $template_ids = explode(':', $template_id);
 
-  // Gets template array for excel sheet.
-  $sheets = $mcl_template->getTemplateInfo();
+  // Adds Excel sheets.
+  $sheets = array();
+	if (sizeof($template_ids) > 1) {
+
+    // Sets the filename.
+		$filename = 'mcl_template' . date("-Y-m-d") . '.xlsx';
+
+    // Sets the headers.
+    $def_sheet = array(
+      'name'    => 'Headers',
+      'headers' => array(
+        'A' => array('heading' => 'Template',    'width' => 20),
+        'B' => array('heading' => 'Name',        'width' => 25),
+        'C' => array('heading' => 'Required',    'width' => 10),
+        'D' => array('heading' => 'Definition',  'width' => 100),
+      ),
+      'data' => array(),
+    );
+
+		// Gets the template.
+    //$def_sheet   = array();
+    $data_sheets = array();
+    foreach ($template_ids as $template_id) {
+      $mcl_template = MCL_TEMPLATE::getTemplateByID($template_id);
+      $tmp = $mcl_template->getTemplateInfo();
+
+      //Adds the headers.
+      $template_name = $mcl_template->getTemplate();
+			foreach ($tmp[0]['data'] as $data) {
+        $data[0]['col'] = 'B';
+        $data[1]['col'] = 'C';
+        $data[2]['col'] = 'D';
+        $data[3] = array(
+          'col' => 'A',
+          'type' => 'text',
+          'value' => $template_name,
+        );
+        if ($template_name) {
+          $template_name = '';
+        }
+			  $def_sheet['data'][] = $data;
+      }
+
+      // Adds the data sheet.
+			$data_sheets []= $tmp[1];
+    }
+		$sheets = array_merge(array($def_sheet), $data_sheets);
+ }
+  else {
+
+    // Sets the filename.
+    $mcl_template = MCL_TEMPLATE::getTemplateByID($template_ids[0]);
+
+    // Gets the template.
+    $filename = 'mcl_template_' . $mcl_template->getTemplate() . date("-Y-m-d") . '.xlsx';
+
+    // Gets template array for excel sheet.
+    $sheets = $mcl_template->getTemplateInfo();
+  }
 
   // Creates MCL_EXCEL.
   $details = array(
@@ -423,7 +485,7 @@ function mcl_download_template_excel($args) {
 }
 
 /**
- * Adds additional ajax commands to be returned by the bims_ajax_render_alter hook().
+ * Adds additional ajax commands to be returned by the mcl_ajax_render_alter hook().
  * This is useful in the case of ajax callbacks on forms where the form still needs
  * to be returned as usual via the form callback hook but ajax commands also need
  * to be executed

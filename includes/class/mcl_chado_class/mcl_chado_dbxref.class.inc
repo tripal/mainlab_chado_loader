@@ -65,10 +65,11 @@ class MCL_CHADO_DBXREF extends CHADO_DBXREF {
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $db_id
    * @param string $accession
+   * @param string $separator
    *
    * @return MCL_CHADO_DBXREF
    */
-  public static function addDBXref(MCL_TEMPLATE $mcl_tmpl = NULL, $db_id, $accession) {
+  public static function addDBXref(MCL_TEMPLATE $mcl_tmpl = NULL, $db_id, $accession, $separator = '') {
 
     // Sets the arguments.
     $args = array(

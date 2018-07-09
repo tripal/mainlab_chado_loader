@@ -30,7 +30,7 @@ class MCL_TEMPLATE_GENOTYPE_C extends MCL_TEMPLATE {
    * @see MCL_TEMPLATE::defineDescription()
    */
   public function defineDescription() {
-    $desc = 'The description for genotype sheet';
+    $desc = 'The description for GENOTYPE_C sheet';
     return $desc;
   }
 
@@ -98,8 +98,8 @@ class MCL_TEMPLATE_GENOTYPE_C extends MCL_TEMPLATE {
     $stock = MCL_CHADO_STOCK::getStock($line['stock_name']);
 
     // Adds genotyping data.
-    $genotype_columns = $this->getJob()->getParamByKey('genotype_columns');
-    foreach ($genotype_columns as $feature_id => $columns) {
+    $genotype_columns = $GLOBALS['genotype_columns'];
+    foreach ((array)$genotype_columns as $feature_id => $column) {
 
       // Gets the marker.
       $marker = MCL_CHADO_FEATURE::byKey(array('feature_id' => $feature_id));
@@ -132,11 +132,11 @@ class MCL_TEMPLATE_GENOTYPE_C extends MCL_TEMPLATE {
           // Adds evaluators.
           $nd_experiment->addContact($this, $line['experimenter'], "[;]");
 
-          // Adds a genotype for nd_experiment.
-          $nd_experiment->addGenotype($this, $genotype);
-
           // Adds a dataset.
           $nd_experiment->addDataset($this, $line['dataset_name']);
+
+          // Adds a genotype for nd_experiment.
+          $nd_experiment->addGenotype($this, $genotype);
 
           // Adds a genotype for marker.
           $marker->addGenotype($this, $genotype, $this->cvterms['sequence']['allele']);
@@ -163,7 +163,17 @@ class MCL_TEMPLATE_GENOTYPE_C extends MCL_TEMPLATE {
         $genotype_columns[$marker->getFeatureID()] = $column;
       }
     }
-    $this->getJob()->setParamByKey('genotype_columns', $genotype_columns);
-    $this->getJob()->update();
+    $GLOBALS['genotype_columns'] = $genotype_columns;
+
+    // Checks alleles.
+    foreach ($data_lines as $data_line) {
+      foreach ((array)$genotype_columns as $feature_id => $column) {
+        $allele_str = $data_line[$column];
+        if (!preg_match("/\|/", $allele_str)) {
+          $this->updateMsg('E', "Allele '$allele_str' does not have a bar '|' at " . $data_line['line_no']);
+          continue;
+        }
+      }
+    }
   }
 }

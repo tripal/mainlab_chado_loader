@@ -245,6 +245,9 @@ class MCL_JOB extends PUBLIC_MCL_JOB {
       $args[':type'] = $type;
     }
 
+    // Filters BIMS.
+    $sql .= " AND J.name NOT LIKE 'BIMS_UPLOAD-%'  ";
+
     $sql .= ' ORDER BY J.submit_date DESC';
     $results = db_query($sql, $args);
     $mcl_jobs = array();

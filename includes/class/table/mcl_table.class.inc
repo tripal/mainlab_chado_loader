@@ -437,13 +437,14 @@ class MCL_TABLE {
     // Adds fields.
     $fields_arr = array();
     foreach ($fields as $field) {
-      $fields_arr[$field] =NULL;
+      $fields_arr[$field] = NULL;
     }
     $query->fields($fields_arr);
 
     // Adds conditions.
     foreach ($conditions as $idx => $condition) {
-      $operator = $condition['operator'] ? $condition['operator'] : '=';
+      $op = array_key_exists('operator', $condition) ?  $condition['operator'] : '';
+      $operator = $op ? $op : '=';
       $query->condition($condition['field'], $condition['value'], $operator);
     }
     $query->execute();

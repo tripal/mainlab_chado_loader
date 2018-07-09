@@ -46,6 +46,22 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
   }
 
   /**
+   * Deletes samples and clones of this stock.
+   *
+   * @param boolean $clone_flag
+   *
+   */
+  public function deleteSamples($clone_flag = TRUE) {
+
+    $cvterm_id_sample_of ='';
+    $cvterm_id_clone_of  ='';
+
+
+
+
+  }
+
+  /**
    * Checks the existence of stock. If not, write the error messasge
    * to the log.
    *
@@ -535,16 +551,15 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
           // listed in the later row of the same Excel file.
           // Adds them after processing the stock sheet.
           $missing_parent = array(
-            'uniquename'  => $uniquename,
-            'organism_id' => $organism_id,
-            'type_id'     => $type_id_relationship,
+            'child_stock_id'  => $this->stock_id,
+            'uniquename'      => $uniquename,
+            'type_id_rel'     => $type_id_relationship,
           );
-          $parents = $mcl_tmpl->getTmpByKey('stock_parents');
-          if (!is_array($parents)) {
-            $parents = array();
+          if (!$organism_id) {
+            $missing_parent['organism_id'] = $organism_id;
           }
-          $parents[$this->stock_id] = $missing_parent;
-          $mcl_tmpl->setTmpByKey('stock_parents', $parents);
+
+          $GLOBALS['accession_bims'][] = $missing_parent;
         }
         else {
           return FALSE;
@@ -598,7 +613,7 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
    * Adds alias to stockprop.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
-   * @param string $reference
+   * @param string $alias
    * @param string $separator
    *
    * @return boolean
@@ -635,6 +650,38 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
     }
     return $flag;
   }
+
+  /**
+   * Adds a dbxref to stock_dbxref.
+   *
+   * @param MCL_TEMPLATE $mcl_tmpl
+   * @param MCL_CHADO_DBXREF $dbxref
+   * @param string $accession
+   * @param string $separator
+   *
+   * @return boolean
+   */
+  public function addDB(MCL_TEMPLATE $mcl_tmpl = NULL, MCL_CHADO_DB $db, $accession, $separator = '') {
+    if ($accession) {
+      $accessions = preg_split($this->getSepRegex($separator), $accession, NULL, PREG_SPLIT_NO_EMPTY);
+      foreach ($accessions as $accession) {
+
+        // Adds a dbxref.
+        $dbxref = MCL_CHADO_DBXREF::addDBXref($mcl_tmpl, $db->getDbID(), $accession);
+        if ($dbxref) {
+
+          // Adds dbxref to stock_dbxref table.
+          $this->addDBXref($mcl_tmpl, $dbxref);
+
+          // Updates stock.dbxref_id.
+          //$this->setDbxrefID($dbxref->getDbxrefID());
+          //$this->update();
+        }
+      }
+    }
+  }
+
+
 
   /**
    * Adds a dbxref to stock_dbxref.
@@ -774,7 +821,7 @@ class MCL_CHADO_STOCK extends CHADO_STOCK {
   }
 
   /**
-   * Adds reference to stock_pub.
+   * Adds the previous entry.
    *
    * @param MCL_TEMPLATE $mcl_tmpl
    * @param string $previous_entry
