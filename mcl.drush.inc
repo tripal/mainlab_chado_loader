@@ -204,7 +204,20 @@ function mcl_drush_command() {
       'def' => t('The definition of the cvterm'),
     ),
     'examples' => array(
-      'Standard example' => 'mcl-add-cvterm [cvterm_name] [cvterm_name] --def=<definition>',
+      'Standard example' => 'mcl-add-cvterm [cvterm_name] [cv_name] --def=<definition>',
+    ),
+  );
+  $items['mcl-add-cvterm-by-template'] = array(
+    'description' => t('Add all the cvterms that required by the given template name.'),
+    'arguments' => array(
+      'cvterm_name' => t('The template name.'),
+      'cv_name' => t('The cv name.'),
+    ),
+    'options' => array(
+      'upload' => t('Add this option to upload the missing cvterms'),
+    ),
+    'examples' => array(
+      'Standard example' => 'mcl-add-cvterm-by-template [template_name] [cv_name]',
     ),
   );
   $items['mcl-add-organism'] = array(
@@ -660,6 +673,67 @@ function drush_mcl_add_cvterm($cvterm_name, $cv_name = 'SITE_CV') {
     }
   }
   mcl_print("DONE", 1, 3);
+}
+
+/**
+ * Callback for mcl-add-cvterm-by-template.
+ */
+function drush_mcl_add_cvterm_by_template($template_name, $cv_name = 'SITE_CV') {
+
+  // Checks the name of template.
+  $mcl_template = MCL_TEMPLATE::getByTemplate($template_name);
+  if (!$mcl_template) {
+    mcl_print("The template '$template_name' does not exists", 1, 2.3);
+    exit;
+  }
+
+  // Gets the optoins.
+  $upload_flag = drush_get_option('upload') ? TRUE : FALSE;
+
+  // Gets the site CV name.
+  $site_cv_name = MCL_VAR::getValueByName('SITE_CV');
+
+  // Adds all the cvterms required by this template.
+  $cvterms = $mcl_template->defineCvterms();
+  $missing_cvterms = array();
+  mcl_print("List of the cvterms required by '$template_name'", 1, 2);
+  foreach ((array)$cvterms as $cv_name => $cvterms) {
+    foreach ((array)$cvterms as $cvterm_name => $val) {
+      $cvterm = MCL_CHADO_CVTERM::getCvterm($cv_name, $cvterm_name);
+      $prefix = '[X]';
+      if (!$cvterm) {
+        $prefix = '[ ]';
+        $missing_cvterms[$cvterm_name] = $cv_name;
+
+      }
+      mcl_print("$prefix $cv_name : $cvterm_name", 1);
+    }
+  }
+
+  // Adds cvterms.
+  if (empty($missing_cvterms)) {
+    mcl_print("'$template_name' does not need to add cvterms", 1, 2.2);
+  }
+  else {
+    if ($upload_flag) {
+      mcl_print("The following cvterms will be added", 1, 2.2);
+      foreach ($missing_cvterms as $cvterm_name => $cv_name) {
+        if ($cv_name == $site_cv_name || $cv_name == 'SITE_CV') {
+          drush_mcl_add_cvterm($cvterm_name, $cv_name);
+        }
+        else {
+          mcl_print("MCL cannot add '$cvterm_name' for $cv_name ontology. Please add manually", 1, 2);
+        }
+      }
+    }
+    else {
+      mcl_print("'$template_name' needs the following cvterms", 1, 2.2);
+      foreach ($missing_cvterms as $cvterm_name => $cv_name) {
+         mcl_print("$cv_name : $cvterm_name", 1);
+      }
+    }
+  }
+  mcl_print("DONE", 1, 2.3);
 }
 
 /**

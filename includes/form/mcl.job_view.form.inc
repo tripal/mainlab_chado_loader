@@ -473,7 +473,7 @@ function mcl_job_view_form_submit($form, &$form_state) {
   // Moves the file to the user temp space.
   $dest_filepath    = "$user_dir/tmp/" . $drupal_file->filename;
   $target_filepath  = drupal_realpath($drupal_file->uri);
-  $cmd              = "mv \"$target_filepath\" \"$dest_filepath\";
+  $cmd              = "mv \"$target_filepath\" \"$dest_filepath\"";
   exec($cmd);
 
   // Resets the progress file.

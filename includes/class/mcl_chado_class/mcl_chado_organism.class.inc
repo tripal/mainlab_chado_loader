@@ -337,7 +337,7 @@ class MCL_CHADO_ORGANISM extends CHADO_ORGANISM {
    */
   public function addReference(MCL_TEMPLATE $mcl_tmpl = NULL, $reference, $separator = '') {
     $flag = TRUE;
-    if ($reference) {
+    if ($reference != '') {
       $pub_ids = preg_split($this->getSepRegex($separator), $reference, NULL, PREG_SPLIT_NO_EMPTY);
       foreach ($pub_ids as $pub_id) {
         $pub_id = trim($pub_id);

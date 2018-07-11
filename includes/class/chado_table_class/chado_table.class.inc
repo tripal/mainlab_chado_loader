@@ -435,7 +435,7 @@ class CHADO_TABLE  {
    * @return boolean
    */
   public function addLink(MCL_TEMPLATE $mcl_tmpl = NULL, $table_name, $field_1, $id_1, $field_2, $id_2, $type_id = NULL) {
-    if ($id_1 && $id_2) {
+    if ($id_1 != '' && $id_2 != '') {
 
       // Checks for a duplication before adding a new relationship.
       $args = array(
