@@ -68,7 +68,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['comments']                     = -1;
     $cvterms['SITE_CV']['chr_name']                     = -1;
     $cvterms['SITE_CV']['chr_number']                   = -1;
-    $cvterms['sequence']['marker_locus']                = -1;
+    $cvterms['SITE_CV']['marker_locus']                 = -1;
     $cvterms['sequence']['genetic_marker']              = -1;
     $cvterms['sequence']['qtl']                         = -1;
     $cvterms['sequence']['heritable_phenotypic_marker'] = -1;
@@ -231,6 +231,23 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
   /**
    * Checks the map positions for Genetic marker, QTL and MTL.
    *
+   * QTL must have both or one of 'qtl_peack' and 'start and stop' positions.
+   * Throws an error if it finds any of the followings
+   *   - only start or stop exists
+   *   - both start and stop exist but they holds the same value (It should be 'qtl_peack').
+   *   - start > stop if both exist.
+   *   - qtl_peak out of the range (start - stop) if start, stop and qtl_peak exist.
+   *
+   * MTL can only have 'start' position.
+   * Throws an error if it finds any of the followings
+   *   - qtl_peak value exists
+   *   - stop exists
+   *
+   * Genetic marker can have 'start andstop' positions or 'start' only.
+   * Throws an error if it finds any of the followings
+   *   - qtl_peak value exists
+   *   - only stop exists
+   *
    * @param array $line
    * @param string $type
    *
@@ -267,14 +284,7 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
       }
     }
 
-    /**
-      QTL : QTL must have both or one of 'qtl_peak' and 'start and stop' positions.
-      Throws an error if it finds any of the followings
-        - only start or stop exists
-        - both start and stop exist but they holds the same value (It should be 'qtl_peak').
-        - start > stop if both exist.
-        - qtl_peak out of the range (start - stop) if start, stop and qtl_peak exist.
-    */
+    // QTL.
     if ($type == 'qtl') {
 
       // Both or one of 'qtl_peak' and 'start and stop' positions must exist.
@@ -310,14 +320,8 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
       }
     }
 
-    /**
-      'Genetic marker' and 'MTL' can have 'start andstop' positions or 'start' only.
-      Throws an error if it finds any of the followings
-      - qtl_peak value exists
-      - only stop exists
-      - start > stop if both exist.
-     */
-    else if ($type == 'marker' || $type == 'mtl') {
+    // Genetic marker.
+    else if ($type == 'marker') {
 
       // qtl_peak value exists.
       if ($line['qtl_peak'] || $line['qtl_peak'] == '0') {
@@ -327,6 +331,20 @@ class MCL_TEMPLATE_MAP_POSITION extends MCL_TEMPLATE {
       // Only stop position exists.
       if ((!$line['start'] && $line['start'] != '0') && ($line['stop'] || $line['stop'] == '0')) {
         $this->updateMsg('E', 'Only stop position exists. Please add start position');
+      }
+    }
+
+    // MTL.
+    else if ($type == 'mtl') {
+
+      // qtl_peak value exists.
+      if ($line['qtl_peak'] || $line['qtl_peak'] == '0') {
+        $this->updateMsg('E', 'Marker/MTL cannot have qtl_peak');
+      }
+
+      // stop position exists.
+      if ($line['stop'] || $line['stop'] == '0') {
+        $this->updateMsg('E', 'stop position exists. Please remove the stop position');
       }
     }
     return TRUE;

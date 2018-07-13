@@ -99,7 +99,7 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['population_low_value']       = -1;
     $cvterms['SITE_CV']['population_high_value']      = -1;
     $cvterms['sequence']['genetic_marker']            = -1;
-    $cvterms['sequence']['marker_locus']              = -1;
+    $cvterms['SITE_CV']['marker_locus']               = -1;
     $cvterms['sequence']['qtl']                       = -1;
     $cvterms['relationship']['located_in']            = -1;
     $cvterms['relationship']['adjacent_to']           = -1;
@@ -225,7 +225,7 @@ class MCL_TEMPLATE_QTL extends MCL_TEMPLATE {
   private function _getRelatedMarker($uniquename) {
     $marker = NULL;
     if ($uniquename) {
-      $marker = MCL_CHADO_FEATURE::getFeature($uniquename, '', '', $this->cvterms['sequence']['marker_locus']);
+      $marker = MCL_CHADO_FEATURE::getFeature($uniquename, '', '', $this->cvterms['SITE_CV']['marker_locus']);
       if (!$marker) {
         $marker = MCL_CHADO_FEATURE::getFeature($uniquename, '', '', $this->cvterms['sequence']['genetic_marker']);
       }

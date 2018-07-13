@@ -73,7 +73,7 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['description']                  = -1;
     $cvterms['SITE_CV']['published_symbol']             = -1;
     $cvterms['sequence']['genetic_marker']              = -1;
-    $cvterms['sequence']['marker_locus']                = -1;
+    $cvterms['SITE_CV']['marker_locus']                 = -1;
     $cvterms['sequence']['heritable_phenotypic_marker'] = -1;
     $cvterms['relationship']['located_in']              = -1;
     $cvterms['relationship']['adjacent_to']             = -1;
@@ -129,10 +129,10 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
       $this->addSpecialColumns('##', $mtl, $line);
 
       // Adds colocalized_markers.
-      $mtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]", TRUE);
+      $mtl->addRelatedFeatures($this, $line['colocalized_marker'], $this->cvterms['SITE_CV']['marker_locus'], FALSE, $this->cvterms['relationship']['adjacent_to'], "[,;]", TRUE);
 
       // Adds neighboring_markers.
-      $mtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['sequence']['marker_locus'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]", TRUE);
+      $mtl->addRelatedFeatures($this, $line['neighboring_marker'], $this->cvterms['SITE_CV']['marker_locus'], FALSE, $this->cvterms['relationship']['located_in'], "[,;]", TRUE);
 
       // Adds dbxref.
       $db = MCL_CHADO_DB::getDB('DB:genbank');
@@ -183,7 +183,7 @@ class MCL_TEMPLATE_MTL extends MCL_TEMPLATE {
   private function _getRelatedMarker($uniquename) {
     $marker = NULL;
     if ($uniquename) {
-      $marker = MCL_CHADO_FEATURE::getFeature($uniquename, '', '', $this->cvterms['sequence']['marker_locus']);
+      $marker = MCL_CHADO_FEATURE::getFeature($uniquename, '', '', $this->cvterms['SITE_CV']['marker_locus']);
       if (!$marker) {
         $marker = MCL_CHADO_FEATURE::getFeature($uniquename, '', '', $this->cvterms['sequence']['genetic_marker']);
       }

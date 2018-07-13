@@ -110,7 +110,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     $cvterms['SITE_CV']['comments']                     = -1;
     $cvterms['SITE_CV']['SNP_chip']                     = -1;
     $cvterms['sequence']['genetic_marker']              = -1;
-    $cvterms['sequence']['marker_locus']                = -1;
+    $cvterms['SITE_CV']['marker_locus']                 = -1;
     $cvterms['sequence']['gene']                        = -1;
     $cvterms['sequence']['mRNA']                        = -1;
     $cvterms['sequence']['primer']                      = -1;
@@ -139,7 +139,7 @@ class MCL_TEMPLATE_MARKER extends MCL_TEMPLATE {
     MCL_CHADO_FEATURE::checkFeatureUniquenameForUniqueness($this, $line['marker_name'], $line['genus'], $line['species'], $this->cvterms['sequence']['genetic_marker']);
 
     // Checks marker locus name for uniqueness.
-    MCL_CHADO_FEATURE::checkFeatureUniquenameForUniqueness($this, $line['marker_locus'], $line['genus'], $line['species'], $this->cvterms['sequence']['marker_locus']);
+    MCL_CHADO_FEATURE::checkFeatureUniquenameForUniqueness($this, $line['marker_locus'], $line['genus'], $line['species'], $this->cvterms['SITE_CV']['marker_locus']);
 
     // Checks organism.
     MCL_CHADO_ORGANISM::checkOrganism($this, $line['genus'], $line['species']);
